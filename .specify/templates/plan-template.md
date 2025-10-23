@@ -31,7 +31,11 @@
 
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-[Gates determined based on constitution file]
+**Code Quality Excellence**: Code standards compliance established? Peer review process defined?
+**Test-Driven Development**: Testing strategy defined? Coverage targets (>90%) established? CI/CD test automation configured?
+**User Experience Consistency**: Design patterns defined? Accessibility standards (WCAG 2.1 AA) addressed? User validation process planned?
+**Performance-First Design**: Performance benchmarks defined (<200ms response times)? Resource monitoring planned?
+**Observability and Monitoring**: Logging strategy defined? Key metrics identified? Error tracking configured?
 
 ## Project Structure
 

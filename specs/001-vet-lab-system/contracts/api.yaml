@@ -1,0 +1,625 @@
+openapi: 3.0.0
+info:
+  title: 宠物医院检验系统 API
+  description: 微信小程序后端API接口文档
+  version: 1.0.0
+  contact:
+    name: PETLISWX Team
+    email: support@petliswx.com
+
+servers:
+  - url: https://api.petliswx.com/v1
+    description: 生产环境
+  - url: https://staging-api.petliswx.com/v1
+    description: 测试环境
+
+# 安全定义
+security:
+  - bearerAuth: []
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+# 通用响应定义
+  schemas:
+    ApiResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          example: 200
+        message:
+          type: string
+          example: "操作成功"
+        data:
+          type: object
+        timestamp:
+          type: string
+          format: date-time
+          example: "2024-10-22T10:30:00Z"
+
+    ErrorResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          example: 400
+        message:
+          type: string
+          example: "请求参数错误"
+        error:
+          type: string
+          example: "详细的错误信息"
+        timestamp:
+          type: string
+          format: date-time
+
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        userId:
+          type: string
+          example: "user123"
+        name:
+          type: string
+          example: "张医生"
+        phone:
+          type: string
+          example: "13812345678"
+        role:
+          type: string
+          enum: [NORMAL, ADMIN, SUPER_ADMIN]
+          example: "NORMAL"
+        avatar:
+          type: string
+          example: "https://example.com/avatar.jpg"
+        position:
+          type: string
+          example: "主治医生"
+        hospital:
+          $ref: '#/components/schemas/Hospital'
+
+    Hospital:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        hospitalCode:
+          type: string
+          example: "PET001"
+        name:
+          type: string
+          example: "阳光宠物医院"
+        address:
+          type: string
+          example: "北京市朝阳区宠物医院路1号"
+        contactPhone:
+          type: string
+          example: "010-12345678"
+
+    Pet:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: "小白"
+        type:
+          type: string
+          enum: [DOG, CAT, RABBIT, HAMSTER, OTHER]
+          example: "DOG"
+        breed:
+          type: string
+          example: "金毛"
+        age:
+          type: integer
+          example: 2
+        gender:
+          type: string
+          enum: [MALE, FEMALE]
+          example: "MALE"
+        weight:
+          type: number
+          format: double
+          example: 25.5
+
+    TestApplication:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        applicationNo:
+          type: string
+          example: "VET20241022001"
+        pet:
+          $ref: '#/components/schemas/Pet'
+        hospital:
+          $ref: '#/components/schemas/Hospital'
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ApplicationItem'
+        expressNo:
+          type: string
+          example: "SF1234567890"
+        status:
+          type: string
+          enum: [DRAFT, SUBMITTED, SHIPPED, RECEIVED, TESTING, COMPLETED, CANCELLED]
+          example: "SUBMITTED"
+        urgency:
+          type: string
+          enum: [NORMAL, URGENT, EMERGENCY]
+          example: "NORMAL"
+        totalPrice:
+          type: number
+          format: double
+          example: 120.00
+        paymentStatus:
+          type: string
+          enum: [UNPAID, PAID, REFUNDED]
+          example: "UNPAID"
+        submitTime:
+          type: string
+          format: date-time
+
+    ApplicationItem:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        testItem:
+          $ref: '#/components/schemas/TestItem'
+        price:
+          type: number
+          format: double
+          example: 60.00
+        remarks:
+          type: string
+          example: "常规血液检查"
+
+    TestItem:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        code:
+          type: string
+          example: "BLOOD001"
+        name:
+          type: string
+          example: "血常规检查"
+        category:
+          type: string
+          enum: [BLOOD, URINE, PATHOLOGY, IMAGING, OTHER]
+          example: "BLOOD"
+        price:
+          type: number
+          format: double
+          example: 60.00
+        estimatedHours:
+          type: integer
+          example: 24
+
+    Report:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        reportNo:
+          type: string
+          example: "RPT20241022001"
+        filePath:
+          type: string
+          example: "https://example.com/reports/RPT20241022001.pdf"
+        fileType:
+          type: string
+          enum: [PDF, IMAGE]
+          example: "PDF"
+        summary:
+          type: string
+          example: "各项指标正常，建议定期检查"
+        doctorAdvice:
+          type: string
+          example: "保持良好的饮食习惯，2个月后复查"
+        generateTime:
+          type: string
+          format: date-time
+
+# API 路径定义
+paths:
+  # 用户认证相关
+  /auth/login:
+    post:
+      tags:
+        - 认证管理
+      summary: 用户登录
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - loginType
+              properties:
+                loginType:
+                  type: string
+                  enum: [PHONE, WECHAT]
+                  example: "PHONE"
+                phone:
+                  type: string
+                  example: "13812345678"
+                verifyCode:
+                  type: string
+                  example: "123456"
+                wechatCode:
+                  type: string
+                  example: "wx_code"
+      responses:
+        '200':
+          description: 登录成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          token:
+                            type: string
+                            example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                          user:
+                            $ref: '#/components/schemas/User'
+
+  # 检验申请相关
+  /applications:
+    get:
+      tags:
+        - 检验申请
+      summary: 获取检验申请列表
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [DRAFT, SUBMITTED, SHIPPED, RECEIVED, TESTING, COMPLETED, CANCELLED]
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: size
+          in: query
+          schema:
+            type: integer
+            default: 10
+      responses:
+        '200':
+          description: 获取成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          list:
+                            type: array
+                            items:
+                              $ref: '#/components/schemas/TestApplication'
+                          total:
+                            type: integer
+                            example: 50
+
+    post:
+      tags:
+        - 检验申请
+      summary: 创建检验申请
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - petId
+                - itemIds
+              properties:
+                petId:
+                  type: integer
+                  example: 1
+                itemIds:
+                  type: array
+                  items:
+                    type: integer
+                  example: [1, 2, 3]
+                urgency:
+                  type: string
+                  enum: [NORMAL, URGENT, EMERGENCY]
+                  default: "NORMAL"
+                remarks:
+                  type: string
+                  example: "例行检查"
+      responses:
+        '201':
+          description: 创建成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/TestApplication'
+
+  /applications/{id}:
+    get:
+      tags:
+        - 检验申请
+      summary: 获取检验申请详情
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: 获取成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/TestApplication'
+
+    put:
+      tags:
+        - 检验申请
+      summary: 更新检验申请
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                expressNo:
+                  type: string
+                  example: "SF1234567890"
+                urgency:
+                  type: string
+                  enum: [NORMAL, URGENT, EMERGENCY]
+                  example: "URGENT"
+                remarks:
+                  type: string
+                  example: "更新备注信息"
+      responses:
+        '200':
+          description: 更新成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/TestApplication'
+
+  # 检验项目相关
+  /test-items:
+    get:
+      tags:
+        - 检验项目
+      summary: 获取检验项目列表
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: category
+          in: query
+          schema:
+            type: string
+            enum: [BLOOD, URINE, PATHOLOGY, IMAGING, OTHER]
+        - name: active
+          in: query
+          schema:
+            type: boolean
+            default: true
+      responses:
+        '200':
+          description: 获取成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/TestItem'
+
+  # 报告相关
+  /reports/{applicationId}:
+    get:
+      tags:
+        - 检验报告
+      summary: 获取检验报告
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: applicationId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: 获取成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Report'
+
+  # 用户相关
+  /users/profile:
+    get:
+      tags:
+        - 用户管理
+      summary: 获取用户个人信息
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: 获取成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/User'
+
+    put:
+      tags:
+        - 用户管理
+      summary: 更新用户个人信息
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  example: "张医生"
+                avatar:
+                  type: string
+                  example: "https://example.com/avatar.jpg"
+                position:
+                  type: string
+                  example: "主治医生"
+      responses:
+        '200':
+          description: 更新成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/User'
+
+  # 支付相关
+  /payments/{applicationId}/create:
+    post:
+      tags:
+        - 支付管理
+      summary: 创建支付订单
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: applicationId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - paymentType
+              properties:
+                paymentType:
+                  type: string
+                  enum: [WECHAT, ALIPAY]
+                  example: "WECHAT"
+      responses:
+        '200':
+          description: 创建成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          paymentId:
+                            type: string
+                            example: "PAY20241022001"
+                          paymentParams:
+                            type: object
+                            properties:
+                              timeStamp:
+                                type: string
+                                example: "1698234567"
+                              nonceStr:
+                                type: string
+                                example: "abc123def456"
+                              package:
+                                type: string
+                                example: "prepay_id=abc123"
+                              signType:
+                                type: string
+                                example: "MD5"
+                              paySign:
+                                type: string
+                                example: "abc123def456"
