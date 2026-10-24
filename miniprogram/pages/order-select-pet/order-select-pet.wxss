@@ -1,0 +1,173 @@
+/* pages/order-select-pet/order-select-pet.wxss */
+/* 微信原生简洁风格 */
+
+/* 页面容器 */
+.page {
+  min-height: 100vh;
+  background-color: #F7F7F7;
+  padding-bottom: 160rpx;
+}
+
+.page-content {
+  padding: 0 24rpx;
+}
+
+/* 页面头部 */
+.page-header {
+  padding: 32rpx 0 24rpx;
+  text-align: center;
+}
+
+.header-title {
+  font-size: 36rpx;
+  font-weight: 600;
+  color: #000000;
+  margin-bottom: 12rpx;
+  line-height: 1.4;
+}
+
+.header-desc {
+  font-size: 28rpx;
+  color: #888888;
+  line-height: 1.5;
+}
+
+/* 搜索区域 */
+.search-section {
+  margin-bottom: 24rpx;
+}
+
+/* 宠物列表 */
+.pet-list {
+  margin-bottom: 16rpx;
+}
+
+/* 空状态 */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 120rpx 24rpx;
+  background-color: #FFFFFF;
+  border-radius: 8rpx;
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.04);
+}
+
+.empty-icon {
+  width: 96rpx;
+  height: 96rpx;
+  margin-bottom: 24rpx;
+  opacity: 0.4;
+}
+
+.empty-text {
+  font-size: 28rpx;
+  color: #888888;
+  margin-bottom: 32rpx;
+  text-align: center;
+  line-height: 1.4;
+}
+
+.btn-clear {
+  padding: 16rpx 48rpx;
+  background: #2563EB;
+  color: #FFFFFF;
+  border: none;
+  border-radius: 8rpx;
+  font-size: 28rpx;
+  font-weight: 500;
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.1);
+}
+
+.btn-clear::after {
+  border: none;
+}
+
+.btn-clear:active {
+  background: #1D4ED8;
+}
+
+/* 加载状态 */
+.loading-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 80rpx 0;
+  color: #CCCCCC;
+  font-size: 28rpx;
+}
+
+/* 添加新宠物按钮 */
+.add-pet-btn {
+  margin: 0 0 24rpx;
+  background: #FFFFFF;
+  border: 1rpx dashed #E5E5E5;
+  border-radius: 8rpx;
+  padding: 32rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12rpx;
+  color: #2563EB;
+  font-size: 28rpx;
+  font-weight: 500;
+  transition: background-color 0.2s;
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.04);
+}
+
+.add-pet-btn:active {
+  background-color: #F7F7F7;
+  border-color: #2563EB;
+}
+
+.plus-icon {
+  width: 32rpx;
+  height: 32rpx;
+}
+
+/* 底部按钮 */
+.bottom-action {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: #FFFFFF;
+  padding: 16rpx 24rpx;
+  padding-bottom: calc(16rpx + env(safe-area-inset-bottom));
+  border-top: 1rpx solid #E5E5E5;
+  box-shadow: 0 -2rpx 8rpx rgba(0, 0, 0, 0.05);
+  z-index: 100;
+}
+
+.action-tip {
+  font-size: 24rpx;
+  color: #888888;
+  text-align: center;
+  margin-bottom: 12rpx;
+  line-height: 1.4;
+}
+
+.btn-primary {
+  width: 100%;
+  height: 96rpx;
+  background: #2563EB;
+  color: #FFFFFF;
+  font-size: 32rpx;
+  font-weight: 500;
+  border-radius: 8rpx;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.1);
+  transition: background-color 0.2s;
+}
+
+.btn-primary::after {
+  border: none;
+}
+
+.btn-primary:active {
+  background: #1D4ED8;
+}

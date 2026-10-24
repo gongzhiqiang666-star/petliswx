@@ -1,0 +1,9 @@
+{
+  "usingComponents": {
+    "popup-selector": "/components/popup-selector/popup-selector"
+  },
+  "navigationBarTitleText": "宠物建档",
+  "navigationBarBackgroundColor": "#ffffff",
+  "navigationBarTextStyle": "black",
+  "backgroundColor": "#f9fafb"
+}

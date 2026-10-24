@@ -1,0 +1,285 @@
+/* pages/pets/pets.wxss */
+/* 微信原生简洁风格 */
+
+/* Page Container */
+.page {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background: #F7F7F7;
+}
+
+/* Search Bar */
+.search-bar {
+  flex-shrink: 0;
+  margin: 16rpx 24rpx;
+  height: 88rpx;
+  background: #FFFFFF;
+  border-radius: 8rpx;
+  border: 1rpx solid #E5E5E5;
+  display: flex;
+  align-items: center;
+  padding: 0 32rpx;
+  gap: 16rpx;
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.04);
+  transition: box-shadow 0.2s;
+}
+
+.search-icon {
+  width: 32rpx;
+  height: 32rpx;
+}
+
+.search-input {
+  flex: 1;
+  font-size: 28rpx;
+  height: 100%;
+}
+
+.clear-icon {
+  width: 32rpx;
+  height: 32rpx;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.clear-icon.show {
+  opacity: 1;
+}
+
+/* Pet List */
+.pet-list {
+  flex: 1;
+  padding-bottom: 140rpx; /* 为底部按钮留出空间 */
+}
+
+.pet-card {
+  background: #FFFFFF;
+  border-radius: 8rpx;
+  padding: 32rpx;
+  margin: 0 24rpx 24rpx;
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.04);
+  border: 1rpx solid #F0F0F0;
+  transition: box-shadow 0.2s;
+}
+
+.pet-card:active {
+  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.08);
+}
+
+.pet-main {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.pet-info {
+  flex: 1;
+}
+
+.pet-name-row {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  margin-bottom: 16rpx;
+}
+
+.pet-name {
+  font-size: 28rpx;
+  color: #000000;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.gender-badge {
+  width: 40rpx;
+  height: 40rpx;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24rpx;
+}
+
+.gender-badge.male {
+  background: #F0F9FF;
+  color: #2563EB;
+}
+
+.gender-badge.female {
+  background: #FFF0F5;
+  color: #FA5151;
+}
+
+.pet-details {
+  display: flex;
+  flex-direction: column;
+  gap: 8rpx;
+}
+
+.detail-item {
+  font-size: 28rpx;
+  color: #888888;
+  line-height: 1.4;
+}
+
+.edit-btn {
+  padding: 20rpx 32rpx;
+  color: #2563EB;
+  font-size: 28rpx;
+  min-height: 72rpx;
+  display: flex;
+  align-items: center;
+  line-height: 1.4;
+  transition: opacity 0.2s;
+}
+
+.edit-btn:active {
+  opacity: 0.8;
+}
+
+/* Empty State */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 128rpx 0;
+}
+
+.empty-icon {
+  width: 160rpx;
+  height: 160rpx;
+  background: #F7F7F7;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 32rpx;
+}
+
+.empty-icon .icon {
+  width: 80rpx;
+  height: 80rpx;
+  opacity: 0.5;
+}
+
+.empty-text {
+  font-size: 28rpx;
+  color: #888888;
+  margin-bottom: 8rpx;
+  line-height: 1.4;
+}
+
+.empty-hint {
+  font-size: 24rpx;
+  color: #888888;
+  margin-bottom: 48rpx;
+  line-height: 1.4;
+}
+
+.btn-primary {
+  padding: 20rpx 64rpx;
+  background: #2563EB;
+  color: #FFFFFF;
+  font-size: 30rpx;
+  border-radius: 8rpx;
+  border: none;
+  font-weight: 500;
+  min-height: 88rpx;
+  line-height: 1.4;
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.1);
+}
+
+.btn-primary::after {
+  border: none;
+}
+
+.btn-primary:active {
+  opacity: 0.8;
+}
+
+/* Bottom Action Button */
+.bottom-action {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 24rpx;
+  background: #fff;
+  box-shadow: 0 -2rpx 8rpx rgba(0, 0, 0, 0.05);
+  z-index: 10;
+}
+
+/* 添加新宠物按钮 */
+.add-pet-btn {
+  background: #FFFFFF;
+  border: 1rpx dashed #E5E5E5;
+  border-radius: 8rpx;
+  padding: 32rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12rpx;
+  color: #2563EB;
+  font-size: 28rpx;
+  font-weight: 500;
+  min-height: 88rpx;
+  transition: all 0.2s;
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.04);
+}
+
+.add-pet-btn:active {
+  background-color: #F7F7F7;
+  border-color: #2563EB;
+}
+
+.plus-icon {
+  width: 32rpx;
+  height: 32rpx;
+}
+
+/* Loading More */
+.loading-more {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32rpx 0;
+}
+
+.loading-spinner {
+  width: 32rpx;
+  height: 32rpx;
+  border: 3rpx solid #F1F5F9;
+  border-top-color: #2563EB;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-right: 16rpx;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.loading-text {
+  font-size: 24rpx;
+  color: #888888;
+  line-height: 1.4;
+}
+
+/* No More */
+.no-more {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32rpx 0;
+}
+
+.no-more-text {
+  font-size: 24rpx;
+  color: #CCCCCC;
+  line-height: 1.4;
+}
+

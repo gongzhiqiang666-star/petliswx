@@ -1,0 +1,320 @@
+/* pages/pet-add/pet-add.wxss */
+/* Flat Design Bold - 扁平几何风格 */
+
+/* ============================================
+   页面容器
+   ============================================ */
+.flat-page {
+  min-height: 100vh;
+  background: #FAFAFA;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ============================================
+   几何头部
+   ============================================ */
+.flat-header {
+  padding: 48rpx 28rpx 32rpx;
+  background: #ffffff;
+  border-bottom: 3rpx solid #000000;
+}
+
+.header-block {
+  position: relative;
+  margin-bottom: 12rpx;
+}
+
+.flat-title {
+  display: block;
+  font-size: 48rpx;
+  font-weight: 800;
+  color: #000000;
+  line-height: 1;
+  letter-spacing: -1rpx;
+}
+
+.title-accent {
+  width: 60rpx;
+  height: 6rpx;
+  background: #FF6B6B;
+  margin-top: 8rpx;
+}
+
+.flat-desc {
+  display: block;
+  font-size: 24rpx;
+  font-weight: 500;
+  color: #666666;
+  letter-spacing: 1rpx;
+  text-transform: uppercase;
+}
+
+/* ============================================
+   滚动内容
+   ============================================ */
+.flat-scroll {
+  flex: 1;
+  height: 0;
+  padding: 24rpx 20rpx;
+}
+
+/* ============================================
+   扁平区块
+   ============================================ */
+.flat-block {
+  background: #ffffff;
+  border: 3rpx solid #000000;
+  margin-bottom: 24rpx;
+  overflow: hidden;
+}
+
+.block-header {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  padding: 20rpx 20rpx;
+  background: #000000;
+}
+
+.block-number {
+  width: 56rpx;
+  height: 56rpx;
+  background: #FF6B6B;
+  color: #ffffff;
+  font-size: 28rpx;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.block-secondary .block-number {
+  background: #4ECDC4;
+}
+
+.block-accent .block-number {
+  background: #FFE66D;
+  color: #000000;
+}
+
+.block-title {
+  font-size: 28rpx;
+  font-weight: 700;
+  color: #ffffff;
+  letter-spacing: 1rpx;
+}
+
+/* ============================================
+   扁平字段
+   ============================================ */
+.flat-field {
+  padding: 20rpx 20rpx;
+  border-bottom: 2rpx solid #F0F0F0;
+}
+
+.flat-field:last-child {
+  border-bottom: none;
+}
+
+.flat-label {
+  display: block;
+  font-size: 24rpx;
+  font-weight: 600;
+  color: #000000;
+  letter-spacing: 0.5rpx;
+  text-transform: uppercase;
+  margin-bottom: 12rpx;
+}
+
+/* ============================================
+   扁平输入框
+   ============================================ */
+.flat-input {
+  width: 100%;
+  height: 80rpx;
+  padding: 0 16rpx;
+  font-size: 28rpx;
+  font-weight: 500;
+  color: #000000;
+  background: #ffffff;
+  border: 2rpx solid #000000;
+  border-radius: 0;
+  box-sizing: border-box;
+  transition: all 0.15s ease;
+}
+
+.flat-input:focus {
+  background: #FFF4E6;
+  border-color: #FF6B6B;
+  outline: none;
+}
+
+.flat-input::placeholder {
+  color: #999999;
+  font-weight: 400;
+}
+
+.input-flat-disabled {
+  background: #F5F5F5;
+  color: #666666;
+  border-color: #E0E0E0;
+}
+
+/* ============================================
+   扁平触发器
+   ============================================ */
+.flat-trigger {
+  height: 80rpx;
+  padding: 0 16rpx;
+  background: #ffffff;
+  border: 2rpx solid #000000;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-sizing: border-box;
+  transition: all 0.15s ease;
+}
+
+.flat-trigger:active {
+  background: #FFF4E6;
+  border-color: #FF6B6B;
+}
+
+.trigger-text {
+  flex: 1;
+  font-size: 28rpx;
+  font-weight: 500;
+  color: #000000;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.trigger-text.trigger-placeholder {
+  color: #999999;
+  font-weight: 400;
+}
+
+.trigger-arrow {
+  width: 0;
+  height: 0;
+  border-left: 8rpx solid transparent;
+  border-right: 8rpx solid transparent;
+  border-top: 10rpx solid #000000;
+  flex-shrink: 0;
+  margin-left: 12rpx;
+}
+
+/* ============================================
+   扁平开关
+   ============================================ */
+.flat-toggles {
+  display: flex;
+  gap: 12rpx;
+}
+
+.flat-toggle {
+  flex: 1;
+  height: 80rpx;
+  background: #ffffff;
+  border: 2rpx solid #000000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+}
+
+.flat-toggle:active {
+  transform: scale(0.98);
+}
+
+.toggle-on {
+  background: #FF6B6B;
+  border-color: #FF6B6B;
+}
+
+.toggle-label {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #000000;
+  transition: color 0.15s ease;
+}
+
+.toggle-on .toggle-label {
+  color: #ffffff;
+}
+
+/* ============================================
+   底部占位
+   ============================================ */
+.flat-spacer {
+  height: 120rpx;
+}
+
+/* ============================================
+   扁平底部栏
+   ============================================ */
+.flat-footer {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: #ffffff;
+  padding: 20rpx 20rpx;
+  padding-bottom: calc(20rpx + constant(safe-area-inset-bottom));
+  padding-bottom: calc(20rpx + env(safe-area-inset-bottom));
+  border-top: 3rpx solid #000000;
+  display: flex;
+  gap: 12rpx;
+  z-index: 100;
+}
+
+.flat-btn {
+  flex: 1;
+  height: 88rpx;
+  border-radius: 0;
+  font-size: 28rpx;
+  font-weight: 700;
+  border: 3rpx solid #000000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+}
+
+.flat-btn::after {
+  border: none;
+}
+
+.btn-cancel {
+  background: #ffffff;
+  color: #000000;
+}
+
+.btn-cancel:active {
+  background: #F0F0F0;
+}
+
+.btn-confirm {
+  background: #FF6B6B;
+  color: #ffffff;
+  border-color: #FF6B6B;
+}
+
+.btn-confirm:active {
+  background: #FF5252;
+}
+
+.btn-busy {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.btn-label {
+  font-size: 28rpx;
+  font-weight: 700;
+  letter-spacing: 0.5rpx;
+  line-height: 1;
+}

@@ -1,0 +1,147 @@
+/* pages/order-preview/order-preview.wxss */
+
+.content {
+  flex: 1;
+  padding-bottom: 140rpx;
+}
+
+.card {
+  margin: 0 24rpx 30rpx;
+  background: white;
+  border-radius: 16rpx;
+  padding: 30rpx;
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 30rpx;
+}
+
+.header-line {
+  width: 6rpx;
+  height: 32rpx;
+  background: #007aff;
+  margin-right: 16rpx;
+  border-radius: 3rpx;
+}
+
+.card-title {
+  font-size: 32rpx;
+  font-weight: bold;
+  color: #333;
+}
+
+.info-grid {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.info-item {
+  width: 50%;
+  padding: 16rpx 0;
+}
+
+.info-item.info-full {
+  width: 100%;
+}
+
+.info-label {
+  font-size: 28rpx;
+  color: #666;
+}
+
+.info-value {
+  font-size: 28rpx;
+  color: #333;
+  margin-left: 8rpx;
+}
+
+.info-row-list {
+  display: flex;
+  flex-direction: column;
+  gap: 24rpx;
+}
+
+.info-row {
+  display: flex;
+  align-items: center;
+}
+
+.row-label {
+  font-size: 28rpx;
+  color: #666;
+  min-width: 160rpx;
+}
+
+.row-value {
+  flex: 1;
+  font-size: 28rpx;
+  color: #333;
+}
+
+.test-items {
+  display: flex;
+  flex-direction: column;
+  gap: 20rpx;
+}
+
+.test-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 24rpx 0;
+  border-bottom: 1rpx solid #f0f0f0;
+}
+
+.test-item:last-child {
+  border-bottom: none;
+}
+
+.test-name {
+  font-size: 28rpx;
+  color: #333;
+}
+
+.test-price {
+  font-size: 28rpx;
+  color: #ff6b6b;
+  font-weight: bold;
+}
+
+.total-price {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  padding-top: 30rpx;
+  border-top: 2rpx solid #f0f0f0;
+  margin-top: 20rpx;
+}
+
+.total-label {
+  font-size: 32rpx;
+  color: #666;
+  margin-right: 16rpx;
+}
+
+.total-amount {
+  font-size: 40rpx;
+  color: #ff6b6b;
+  font-weight: bold;
+}
+
+.remark-text {
+  font-size: 28rpx;
+  color: #666;
+  line-height: 1.6;
+}
+
+/* 空值样式 */
+.info-value.empty, .row-value.empty {
+  color: #999;
+  font-style: italic;
+}
+
+.btn-primary[disabled] {
+  background: #ccc;
+}

@@ -1,0 +1,163 @@
+<!--pages/pet-detail/pet-detail.wxml-->
+<view class="page" role="main" aria-label="宠物详情">
+  <!-- Loading State -->
+  <view class="loading-state"
+        role="status"
+        aria-live="polite"
+        aria-label="正在加载宠物信息"
+        wx:if="{{loading}}">
+    <view class="loading-text">加载中...</view>
+  </view>
+
+  <!-- Error State -->
+  <view class="error-state"
+        role="alert"
+        aria-label="加载失败"
+        wx:if="{{error}}">
+    <view class="error-icon">
+      <image src="/assets/icons/warning-icon.png" class="icon" mode="aspectFit" lazy-load="{{true}}" aria-hidden="true"></image>
+    </view>
+    <view class="error-text">加载失败</view>
+    <button class="btn-retry"
+            role="button"
+            aria-label="重新加载"
+            bindtap="loadPetDetail"
+            data-id="{{petData.id}}">重试</button>
+  </view>
+
+  <!-- Content -->
+  <view wx:if="{{!loading && !error}}">
+    <scroll-view class="content" scroll-y role="main" aria-label="详细信息">
+      <!-- Basic Info Card -->
+      <view class="card" role="region" aria-label="宠物基本信息">
+        <view class="card-header">
+          <view class="header-line"></view>
+          <text class="card-title">宠物基本信息</text>
+        </view>
+
+        <!-- 宠物名称 -->
+        <view class="info-section">
+          <view class="info-row">
+            <view class="info-item half">
+              <text class="info-label">中文名</text>
+              <text class="info-value">{{petData.animalName}}</text>
+            </view>
+            <view class="info-item half">
+              <text class="info-label">英文名</text>
+              <text class="info-value">{{petData.animalNameEn}}</text>
+            </view>
+          </view>
+        </view>
+
+        <!-- 物种和品种 -->
+        <view class="info-section">
+          <view class="info-row">
+            <view class="info-item half">
+              <text class="info-label">物种</text>
+              <text class="info-value">{{petData.speciesText}}</text>
+            </view>
+            <view class="info-item half">
+              <text class="info-label">品种</text>
+              <text class="info-value">{{petData.animalType}}</text>
+            </view>
+          </view>
+        </view>
+
+        <!-- 性别和体重 -->
+        <view class="info-section">
+          <view class="info-row">
+            <view class="info-item half">
+              <text class="info-label">性别</text>
+              <text class="info-value">{{petData.genderText}}</text>
+            </view>
+            <view class="info-item half">
+              <text class="info-label">体重</text>
+              <text class="info-value">{{petData.animalWeight}}kg</text>
+            </view>
+          </view>
+        </view>
+
+        <!-- 出生日期和年龄 -->
+        <view class="info-section">
+          <view class="info-row">
+            <view class="info-item half">
+              <text class="info-label">出生日期</text>
+              <text class="info-value">{{petData.birthday}}</text>
+            </view>
+            <view class="info-item half">
+              <text class="info-label">年龄</text>
+              <text class="info-value">{{petData.age}}</text>
+            </view>
+          </view>
+        </view>
+
+        <!-- 芯片号 -->
+        <view class="info-section">
+          <view class="info-item full">
+            <text class="info-label">芯片号</text>
+            <text class="info-value info-mono">{{petData.chipNo || '未填写'}}</text>
+          </view>
+        </view>
+
+        <!-- 主人信息 -->
+        <view class="info-section">
+          <view class="info-item full">
+            <text class="info-label">主人</text>
+            <text class="info-value">{{petData.ownerName}} ({{petData.ownerNameEn}})</text>
+          </view>
+        </view>
+      </view>
+
+      <!-- Testing History Card -->
+      <view class="card" role="region" aria-label="检测报告">
+        <view class="card-header">
+          <view class="header-line"></view>
+          <text class="card-title">检测报告</text>
+        </view>
+
+        <view class="test-list" role="list">
+          <view class="test-item"
+                role="listitem"
+                aria-label="{{item.testTypeName}}，申请时间{{item.applicationTime}}，状态{{item.statusLabel}}"
+                wx:for="{{reports}}"
+                wx:key="id"
+                bindtap="onViewReport"
+                data-id="{{item.id}}">
+            <view class="test-icon">
+              <image src="/assets/icons/icon-file.png" class="file-icon" mode="aspectFit" lazy-load="{{true}}" aria-hidden="true"></image>
+            </view>
+            <view class="test-info">
+              <view class="test-name">{{item.testTypeName}}</view>
+              <view class="test-meta">申请时间: {{item.applicationTime}}</view>
+              <view class="test-status">
+                <text class="status-label">状态：</text>
+                <text class="status-value">{{item.statusLabel}}</text>
+              </view>
+            </view>
+            <image src="/assets/icons/arrow-down.png" class="arrow-icon" mode="aspectFit" lazy-load="{{true}}" aria-hidden="true"></image>
+          </view>
+        </view>
+
+        <view class="empty-state" wx:if="{{reports.length === 0}}">
+          <view class="empty-icon">
+            <image src="/assets/icons/empty-file.png" class="icon" mode="aspectFit" lazy-load="{{true}}" aria-hidden="true"></image>
+          </view>
+          <view class="empty-text">暂无检测报告</view>
+          <view class="empty-hint">完成检测后，报告将显示在这里</view>
+        </view>
+      </view>
+    </scroll-view>
+
+    <!-- Action Buttons -->
+    <view class="bottom-actions">
+      <button class="btn-outline"
+              role="button"
+              aria-label="编辑宠物信息"
+              bindtap="onEdit">编辑信息</button>
+      <button class="btn-primary"
+              role="button"
+              aria-label="预约新的检测"
+              bindtap="onBookTest">预约检测</button>
+    </view>
+  </view>
+</view>

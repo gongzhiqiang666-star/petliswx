@@ -1,0 +1,439 @@
+/* pages/order-detail/order-detail.wxss */
+/* 微信原生简洁风格 */
+
+/* Page Container */
+.page {
+  min-height: 100vh;
+  background-color: #F7F7F7;
+}
+
+/* Loading & Error States */
+.loading-state,
+.error-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 200rpx 32rpx;
+}
+
+.loading-text,
+.error-text {
+  font-size: 28rpx;
+  color: #888888;
+  margin-top: 24rpx;
+  text-align: center;
+  line-height: 1.4;
+}
+
+.error-icon {
+  font-size: 96rpx;
+}
+
+.btn-retry {
+  margin-top: 48rpx;
+}
+
+/* Header Card */
+.header-card {
+  margin: 0 24rpx 24rpx;
+  background: #2563EB;
+  padding: 32rpx;
+  border-radius: 8rpx;
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.1);
+}
+
+.header-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.order-info {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+}
+
+.order-no {
+  font-size: 32rpx;
+  font-weight: 600;
+  color: #fff;
+}
+
+.status-badge {
+  padding: 8rpx 16rpx;
+  border-radius: 20rpx;
+  font-size: 24rpx;
+  color: #fff;
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.total-fee {
+  font-size: 32rpx;
+  font-weight: 600;
+  color: #fff;
+}
+
+/* Content Scroll */
+.content {
+  box-sizing: border-box;
+}
+
+/* Pet Brief Info */
+.pet-brief {
+  margin: 0 24rpx 24rpx;
+  background: #FFFFFF;
+  border-radius: 8rpx;
+  padding: 24rpx;
+  display: flex;
+  align-items: center;
+  gap: 24rpx;
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.04);
+  border: 1rpx solid #F0F0F0;
+}
+
+.pet-avatar {
+  width: 96rpx;
+  height: 96rpx;
+  background: #F0F9FF;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 48rpx;
+}
+
+.pet-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8rpx;
+}
+
+.pet-name {
+  font-size: 32rpx;
+  font-weight: 600;
+  color: #000000;
+  line-height: 1.4;
+}
+
+.pet-detail {
+  font-size: 26rpx;
+  color: #888888;
+  line-height: 1.4;
+}
+
+/* Timeline Card */
+.timeline-card {
+  margin: 0 24rpx 24rpx;
+  background: #FFFFFF;
+  border-radius: 8rpx;
+  padding: 32rpx 24rpx;
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.04);
+  border: 1rpx solid #F0F0F0;
+}
+
+.card-title {
+  display: flex;
+  align-items: center;
+  font-size: 32rpx;
+  font-weight: 600;
+  color: #000000;
+  margin-bottom: 32rpx;
+  line-height: 1.4;
+}
+
+.title-line {
+  width: 6rpx;
+  height: 32rpx;
+  background: #2563EB;
+  margin-right: 16rpx;
+  border-radius: 3rpx;
+}
+
+/* Timeline */
+.timeline {
+  position: relative;
+  padding-left: 48rpx;
+}
+
+.timeline::before {
+  content: '';
+  position: absolute;
+  left: 15rpx;
+  top: 0;
+  bottom: 0;
+  width: 1rpx;
+  background: #E5E5E5;
+}
+
+.timeline-item {
+  position: relative;
+  padding-bottom: 40rpx;
+}
+
+.timeline-item:last-child {
+  padding-bottom: 0;
+}
+
+.timeline-dot {
+  position: absolute;
+  left: -42rpx;
+  top: 4rpx;
+  width: 32rpx;
+  height: 32rpx;
+  border-radius: 50%;
+  background: #FFFFFF;
+  border: 1rpx solid #D1D5DB;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16rpx;
+  color: #9CA3AF;
+  z-index: 1;
+}
+
+.timeline-dot.completed {
+  background: #2563EB;
+  border-color: #2563EB;
+  color: #FFFFFF;
+}
+
+.timeline-dot.current {
+  background: #FFFFFF;
+  border-color: #2563EB;
+}
+
+.timeline-dot.pending {
+  background: #F3F4F6;
+  border-color: #D1D5DB;
+  color: #9CA3AF;
+}
+
+.timeline-content {
+  padding-left: 8rpx;
+}
+
+.timeline-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12rpx;
+}
+
+.timeline-title {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #000000;
+  line-height: 1.4;
+}
+
+.timeline-title.pending-title {
+  color: #CCCCCC;
+}
+
+.timeline-time {
+  font-size: 24rpx;
+  color: #888888;
+  line-height: 1.4;
+}
+
+.timeline-desc {
+  display: flex;
+  align-items: center;
+  font-size: 26rpx;
+  color: #888888;
+  margin-bottom: 8rpx;
+  line-height: 1.4;
+}
+
+.operator-label {
+  color: #888888;
+  margin-right: 8rpx;
+}
+
+.operator-name {
+  color: #000000;
+}
+
+.timeline-status {
+  font-size: 24rpx;
+  color: #2563EB;
+  margin-top: 8rpx;
+  line-height: 1.4;
+}
+
+/* Card */
+.card {
+  margin: 0 24rpx 24rpx;
+  background: #FFFFFF;
+  border-radius: 8rpx;
+  padding: 32rpx;
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.04);
+  border: 1rpx solid #F0F0F0;
+}
+
+/* Test Items */
+.test-items {
+  display: flex;
+  flex-direction: column;
+  gap: 24rpx;
+}
+
+.test-item {
+  padding: 24rpx;
+  background: #f9fafb;
+  border-radius: 12rpx;
+  border: 1rpx solid #e5e7eb;
+}
+
+.test-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16rpx;
+}
+
+.test-name {
+  font-size: 28rpx;
+  font-weight: 500;
+  color: #000000;
+  line-height: 1.4;
+}
+
+.test-price {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #2563EB;
+  line-height: 1.4;
+}
+
+.test-status {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+}
+
+.status-dot {
+  color: #2563EB;
+  font-size: 32rpx;
+}
+
+.status-text {
+  font-size: 26rpx;
+  color: #888888;
+  line-height: 1.4;
+}
+
+.test-desc {
+  font-size: 24rpx;
+  color: #888888;
+  margin-top: 12rpx;
+  line-height: 1.4;
+}
+
+/* Detail Sections */
+.detail-sections {
+  display: flex;
+  flex-direction: column;
+}
+
+.detail-section {
+  padding: 24rpx 0;
+}
+
+.section-title {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #000000;
+  margin-bottom: 16rpx;
+  line-height: 1.4;
+}
+
+.detail-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12rpx 0;
+}
+
+.detail-label {
+  font-size: 26rpx;
+  color: #888888;
+  line-height: 1.4;
+}
+
+.detail-value {
+  font-size: 26rpx;
+  color: #000000;
+  text-align: right;
+  flex: 1;
+  margin-left: 32rpx;
+  line-height: 1.4;
+}
+
+.detail-divider {
+  height: 1rpx;
+  background: #f0f0f0;
+  margin: 8rpx 0;
+}
+
+/* Remark */
+.remark-content {
+  font-size: 28rpx;
+  color: #888888;
+  line-height: 1.6;
+}
+
+/* PDF Action Buttons */
+.test-actions {
+  display: flex;
+  gap: 16rpx;
+  margin-top: 16rpx;
+}
+
+.btn-preview,
+.btn-download {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8rpx;
+  padding: 16rpx 20rpx;
+  border-radius: 8rpx;
+  font-size: 26rpx;
+  font-weight: 500;
+  border: none;
+  transition: all 0.2s;
+}
+
+.btn-preview {
+  background: #2563EB;
+  color: #FFFFFF;
+}
+
+.btn-preview::after {
+  border: none;
+}
+
+.btn-preview:active {
+  opacity: 0.8;
+}
+
+.btn-download {
+  background: #2563EB;
+  color: #FFFFFF;
+}
+
+.btn-download::after {
+  border: none;
+}
+
+.btn-download:active {
+  opacity: 0.8;
+}
+
+.btn-icon {
+  font-size: 28rpx;
+}

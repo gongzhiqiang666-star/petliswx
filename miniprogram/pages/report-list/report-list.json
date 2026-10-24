@@ -1,0 +1,10 @@
+{
+  "usingComponents": {
+    "search-input": "/components/search-input/search-input",
+    "report-modal": "/components/report-modal/report-modal"
+  },
+  "navigationBarTitleText": "检测报告",
+  "navigationBarBackgroundColor": "#ffffff",
+  "navigationBarTextStyle": "black",
+  "backgroundColor": "#f9fafb"
+}

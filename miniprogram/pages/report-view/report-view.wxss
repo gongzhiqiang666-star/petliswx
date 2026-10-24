@@ -1,0 +1,218 @@
+/* pages/report-view/report-view.wxss */
+
+/* Header */
+.header {
+  padding: 96rpx 24rpx 64rpx;
+  position: relative;
+}
+
+.gradient-bg {
+  background: linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%);
+}
+
+.back-btn {
+  position: absolute;
+  top: 40rpx;
+  left: 32rpx;
+  width: 64rpx;
+  height: 64rpx;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.back-icon {
+  width: 32rpx;
+  height: 32rpx;
+}
+
+.header-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.report-type {
+  font-size: 48rpx;
+  color: #fff;
+  font-weight: 600;
+  margin-bottom: 16rpx;
+}
+
+.report-pet {
+  font-size: 28rpx;
+  color: rgba(255, 255, 255, 0.8);
+  margin-bottom: 8rpx;
+}
+
+.report-date {
+  font-size: 28rpx;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+/* Content */
+.content {
+  padding-bottom: 120rpx;
+  height: calc(100vh - 400rpx);
+}
+
+/* Card */
+.card {
+  background: #fff;
+  border-radius: 16rpx;
+  padding: 40rpx;
+  margin: 0 24rpx 24rpx;
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  margin-bottom: 32rpx;
+}
+
+.header-line {
+  width: 6rpx;
+  height: 32rpx;
+  background: #2563EB;
+  border-radius: 3rpx;
+}
+
+.card-title {
+  font-size: 32rpx;
+  color: #111827;
+  font-weight: 600;
+}
+
+/* Report Info */
+.report-info {
+  display: flex;
+  flex-direction: column;
+  gap: 24rpx;
+  font-size: 28rpx;
+}
+
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16rpx 0;
+  border-bottom: 2rpx solid #f3f4f6;
+}
+
+.info-row:last-child {
+  border-bottom: none;
+}
+
+.info-label {
+  color: #6b7280;
+}
+
+.info-value {
+  color: #111827;
+}
+
+.info-mono {
+  font-family: monospace;
+  font-size: 24rpx;
+}
+
+.status-badge {
+  padding: 8rpx 24rpx;
+  border-radius: 12rpx;
+  font-size: 24rpx;
+}
+
+.status-badge.normal {
+  background: #d1fae5;
+  color: #059669;
+}
+
+.status-badge.warning {
+  background: #fed7aa;
+  color: #ea580c;
+}
+
+/* PDF Preview */
+.pdf-preview {
+  border: 4rpx dashed #e5e7eb;
+  border-radius: 16rpx;
+  padding: 64rpx 48rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.pdf-icon {
+  width: 160rpx;
+  height: 160rpx;
+  background: linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%);
+  border-radius: 16rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 32rpx;
+}
+
+.pdf-icon .icon {
+  width: 80rpx;
+  height: 80rpx;
+}
+
+.pdf-filename {
+  font-size: 32rpx;
+  color: #111827;
+  margin-bottom: 8rpx;
+}
+
+.pdf-desc {
+  font-size: 28rpx;
+  color: #6b7280;
+  margin-bottom: 32rpx;
+}
+
+.view-link {
+  color: #2563EB;
+  font-size: 28rpx;
+}
+
+/* Info Card */
+.info-card {
+  background: #eff6ff;
+  border-radius: 16rpx;
+  padding: 32rpx;
+  border: 2rpx solid #bfdbfe;
+}
+
+.info-title {
+  font-size: 28rpx;
+  color: #1e40af;
+  font-weight: 600;
+  margin-bottom: 16rpx;
+}
+
+.info-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8rpx;
+}
+
+.info-item {
+  font-size: 24rpx;
+  color: #1e40af;
+  line-height: 1.6;
+}
+
+/* Bottom Actions */
+
+
+
+
+
+.btn-icon {
+  width: 32rpx;
+  height: 32rpx;
+}

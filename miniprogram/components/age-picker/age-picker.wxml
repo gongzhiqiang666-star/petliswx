@@ -1,0 +1,34 @@
+<!--components/age-picker/age-picker.wxml-->
+<view class="age-picker">
+  <view class="picker-container">
+    <!-- 年份选择器 -->
+    <view class="picker-item">
+      <text class="picker-label">年龄</text>
+      <picker
+        mode="selector"
+        range="{{yearLabels}}"
+        value="{{yearIndex}}"
+        bindchange="onYearChange">
+        <view class="picker-value picker-clickable">
+          <text class="value-text">{{years[yearIndex]}}岁</text>
+          <text class="picker-arrow">▼</text>
+        </view>
+      </picker>
+    </view>
+
+    <!-- 月份选择器 -->
+    <view class="picker-item">
+      <text class="picker-label">月龄</text>
+      <picker
+        mode="selector"
+        range="{{monthLabels}}"
+        value="{{monthIndex}}"
+        bindchange="onMonthChange">
+        <view class="picker-value picker-clickable">
+          <text class="value-text">{{months[monthIndex]}}个月</text>
+          <text class="picker-arrow">▼</text>
+        </view>
+      </picker>
+    </view>
+  </view>
+</view>

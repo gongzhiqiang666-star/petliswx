@@ -1,0 +1,250 @@
+<!--pages/order-detail/order-detail.wxml-->
+<view class="page" role="main" aria-label="订单详情">
+  <!-- Loading State -->
+  <view class="loading-state"
+        role="status"
+        aria-live="polite"
+        aria-label="正在加载订单信息"
+        wx:if="{{loading}}">
+    <view class="loading-text">加载中...</view>
+  </view>
+
+  <!-- Error State -->
+  <view class="error-state"
+        role="alert"
+        aria-label="加载失败"
+        wx:if="{{error}}">
+    <view class="error-icon">
+      <image src="/assets/icons/warning-icon.png" class="icon" mode="aspectFit" lazy-load="{{true}}" aria-hidden="true"></image>
+    </view>
+    <view class="error-text">加载失败</view>
+    <button class="btn-retry"
+            role="button"
+            aria-label="重新加载"
+            bindtap="loadOrderDetail"
+            data-id="{{orderData.orderId}}">重试</button>
+  </view>
+
+  <!-- Content -->
+  <view wx:if="{{!loading && !error}}">
+    <!-- Header Card -->
+    <view class="header-card"
+          role="region"
+          aria-label="订单摘要">
+      <view class="header-top">
+        <view class="order-info">
+          <text class="order-no">{{orderData.userNO}}</text>
+          <view class="status-badge status-{{orderData.sampleStatus}}">{{orderData.sampleStatusDesc}}</view>
+        </view>
+        <text class="total-fee">总费用: ¥{{orderData.testFee}}</text>
+      </view>
+    </view>
+
+    <scroll-view class="content" scroll-y role="main" aria-label="详细信息">
+      <!-- Pet Brief Info -->
+      <view class="pet-brief"
+            role="region"
+            aria-label="宠物信息">
+        <view class="pet-avatar">
+          <image src="/assets/icons/dog-icon.png" class="avatar-icon" mode="aspectFill" lazy-load="{{true}}" aria-hidden="true"></image>
+        </view>
+        <view class="pet-info">
+          <text class="pet-name">{{orderData.animalName}}</text>
+          <text class="pet-detail">{{orderData.animalType}} · {{orderData.genderText}} · {{orderData.age}}</text>
+        </view>
+      </view>
+
+      <!-- Timeline -->
+      <view class="timeline-card"
+            role="region"
+            aria-label="订单进度">
+        <view class="card-title">
+          <view class="title-line"></view>
+          <text>订单进度</text>
+        </view>
+        <view class="timeline"
+              role="list"
+              aria-label="进度步骤">
+          <view class="timeline-item"
+                role="listitem"
+                wx:for="{{timeline}}"
+                wx:key="time">
+            <view class="timeline-dot {{item.completed ? 'completed' : ''}} {{item.current ? 'current' : ''}} {{item.pending ? 'pending' : ''}}"
+                  aria-label="{{item.completed ? '已完成' : item.pending ? '待处理' : '进行中'}}">
+              <text wx:if="{{item.completed}}">✓</text>
+            </view>
+            <view class="timeline-content">
+              <view class="timeline-header">
+                <text class="timeline-title {{item.pending ? 'pending-title' : ''}}">{{item.title}}</text>
+                <text class="timeline-time" wx:if="{{item.time}}">{{item.time}}</text>
+              </view>
+              <view class="timeline-desc" wx:if="{{item.operator}}">
+                <text class="operator-label">操作人：</text>
+                <text class="operator-name">{{item.operator}}</text>
+              </view>
+              <view class="timeline-status" wx:if="{{item.status}}">{{item.status}}</view>
+            </view>
+          </view>
+        </view>
+      </view>
+
+      <!-- Test Items -->
+      <view class="card"
+            role="region"
+            aria-label="检测项目"
+            wx:if="{{orderData.items.length > 0}}">
+        <view class="card-title">
+          <view class="title-line"></view>
+          <text>检测项目 ({{orderData.totalItems}}项)</text>
+        </view>
+        <view class="test-items"
+              role="list">
+          <view class="test-item"
+                role="listitem"
+                aria-label="{{item.name}}，价格¥{{item.price}}，状态{{item.diagnosisStatusLabel}}"
+                wx:for="{{orderData.items}}"
+                wx:key="itemId"
+                wx:for-item="item">
+            <view class="test-header">
+              <text class="test-name">☑ {{item.name}}</text>
+              <text class="test-price">¥{{item.price}}</text>
+            </view>
+            <view class="test-status">
+              <text class="status-dot">•</text>
+              <text class="status-text">{{item.diagnosisStatusLabel}}</text>
+            </view>
+            <text class="test-desc" wx:if="{{item.detailRemark}}">备注: {{item.detailRemark}}</text>
+
+            <!-- PDF预览和下载按钮 - 仅在已完成且PDF已生成时显示 -->
+            <view class="test-actions" wx:if="{{orderData.sampleStatus === 3 && item.securePdfUrl}}">
+              <button class="btn-preview"
+                      role="button"
+                      aria-label="预览{{item.name}}的检测报告"
+                      bindtap="onPreviewPDF"
+                      data-url="{{item.securePdfUrl}}">
+                <image src="/assets/icons/file-icon.png" class="btn-icon" mode="aspectFit" lazy-load="{{true}}" aria-hidden="true"></image>
+                <text>预览报告</text>
+              </button>
+              <button class="btn-download"
+                      role="button"
+                      aria-label="下载{{item.name}}的检测报告"
+                      bindtap="onDownloadPDF"
+                      data-url="{{item.securePdfUrl}}"
+                      data-name="{{item.name}}">
+                <image src="/assets/icons/download-icon.png" class="btn-icon" mode="aspectFit" lazy-load="{{true}}" aria-hidden="true"></image>
+                <text>下载报告</text>
+              </button>
+            </view>
+          </view>
+        </view>
+      </view>
+
+      <!-- Detailed Information -->
+      <view class="card"
+            role="region"
+            aria-label="详细信息">
+        <view class="card-title">
+          <view class="title-line"></view>
+          <text>详细信息</text>
+        </view>
+        <view class="detail-sections">
+          <!-- Pet Details -->
+          <view class="detail-section">
+            <view class="section-title">宠物信息</view>
+            <view class="detail-row">
+              <text class="detail-label">品种</text>
+              <text class="detail-value">{{orderData.animalType}}</text>
+            </view>
+            <view class="detail-row">
+              <text class="detail-label">性别</text>
+              <text class="detail-value">{{orderData.genderText}}</text>
+            </view>
+            <view class="detail-row">
+              <text class="detail-label">年龄</text>
+              <text class="detail-value">{{orderData.age}}</text>
+            </view>
+            <view class="detail-row">
+              <text class="detail-label">体重</text>
+              <text class="detail-value">{{orderData.animalWeight}}kg</text>
+            </view>
+            <view class="detail-row">
+              <text class="detail-label">芯片号</text>
+              <text class="detail-value">{{orderData.chipNO || '未填写'}}</text>
+            </view>
+            <view class="detail-row">
+              <text class="detail-label">生日</text>
+              <text class="detail-value">{{orderData.birthday}}</text>
+            </view>
+          </view>
+
+          <view class="detail-divider"></view>
+
+          <!-- Owner Details -->
+          <view class="detail-section">
+            <view class="section-title">畜主信息</view>
+            <view class="detail-row">
+              <text class="detail-label">畜主姓名</text>
+              <text class="detail-value">{{orderData.masterName}}</text>
+            </view>
+            <view class="detail-row">
+              <text class="detail-label">送检医师</text>
+              <text class="detail-value">{{orderData.doctorName || '未填写'}}</text>
+            </view>
+          </view>
+
+          <view class="detail-divider"></view>
+
+          <!-- Sampling Details -->
+          <view class="detail-section">
+            <view class="section-title">采样信息</view>
+            <view class="detail-row">
+              <text class="detail-label">采样日期</text>
+              <text class="detail-value">{{orderData.collectDt}}</text>
+            </view>
+            <view class="detail-row">
+              <text class="detail-label">采样部位</text>
+              <text class="detail-value">{{orderData.sampleArea || '未填写'}}</text>
+            </view>
+            <view class="detail-row">
+              <text class="detail-label">收到样本日期</text>
+              <text class="detail-value">{{orderData.receiveSampleDt}}</text>
+            </view>
+          </view>
+
+          <view class="detail-divider"></view>
+
+          <!-- Order Details -->
+          <view class="detail-section">
+            <view class="section-title">订单信息</view>
+            <view class="detail-row">
+              <text class="detail-label">订单号</text>
+              <text class="detail-value">{{orderData.userNO}}</text>
+            </view>
+            <view class="detail-row">
+              <text class="detail-label">创建时间</text>
+              <text class="detail-value">{{orderData.createDt}}</text>
+            </view>
+            <view class="detail-row" wx:if="{{orderData.marketingName}}">
+              <text class="detail-label">市场活动</text>
+              <text class="detail-value">{{orderData.marketingName}}</text>
+            </view>
+          </view>
+        </view>
+      </view>
+
+      <!-- Remark -->
+      <view class="card"
+            role="region"
+            aria-label="备注信息"
+            wx:if="{{orderData.remark}}">
+        <view class="card-title">
+          <view class="title-line"></view>
+          <text>备注</text>
+        </view>
+        <view class="remark-content">
+          <text>{{orderData.remark}}</text>
+        </view>
+      </view>
+    </scroll-view>
+  </view>
+</view>

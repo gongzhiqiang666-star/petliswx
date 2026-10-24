@@ -1,0 +1,68 @@
+{
+  "pages": [
+    "pages/home/home",
+    "pages/network-test/network-test",
+    "pages/pets/pets",
+    "pages/orders/orders",
+    "pages/notifications/notifications",
+    "pages/mine/mine",
+    "pages/order-select-pet/order-select-pet",
+    "pages/order-add-pet/order-add-pet",
+    "pages/order-test-items/order-test-items",
+    "pages/order-preview/order-preview",
+    "pages/order-detail/order-detail",
+    "pages/pet-add/pet-add",
+    "pages/breed-select/breed-select",
+    "pages/sample-type-select/sample-type-select",
+    "pages/species-select/species-select",
+    "pages/pet-detail/pet-detail",
+    "pages/pet-health/pet-health",
+    "pages/report-list/report-list",
+    "pages/report-view/report-view",
+    "pages/pdf-view/pdf-view",
+    "pages/icon-download/icon-download",
+    "pages/icon-export/icon-export",
+    "pages/error-page/error-page"
+  ],
+  "window": {
+    "backgroundTextStyle": "light",
+    "navigationBarBackgroundColor": "#ffffff",
+    "navigationBarTextStyle": "black",
+    "backgroundColor": "#f9fafb"
+  },
+  "tabBar": {
+    "color": "#64748B",
+    "selectedColor": "#2563EB",
+    "backgroundColor": "#FFFFFF",
+    "borderStyle": "white",
+    "list": [
+      {
+        "pagePath": "pages/home/home",
+        "text": "首页",
+        "iconPath": "assets/icons/home.png",
+        "selectedIconPath": "assets/icons/home-active.png"
+      },
+      {
+        "pagePath": "pages/pets/pets",
+        "text": "宠物",
+        "iconPath": "assets/icons/pet.png",
+        "selectedIconPath": "assets/icons/pet-active.png"
+      },
+      {
+        "pagePath": "pages/orders/orders",
+        "text": "订单",
+        "iconPath": "assets/icons/order.png",
+        "selectedIconPath": "assets/icons/order-active.png"
+      },
+      {
+        "pagePath": "pages/mine/mine",
+        "text": "我的",
+        "iconPath": "assets/icons/profile.png",
+        "selectedIconPath": "assets/icons/profile-active.png"
+      }
+    ]
+  },
+  "style": "v2",
+  "sitemapLocation": "sitemap.json",
+  "lazyCodeLoading": "requiredComponents"
+}

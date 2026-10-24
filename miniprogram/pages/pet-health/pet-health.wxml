@@ -1,0 +1,133 @@
+<!--pages/pet-health/pet-health.wxml-->
+<view class="page">
+  <!-- Pet Selector -->
+  <view class="pet-selector" bindtap="onSelectPet">
+    <text class="selected-pet">{{selectedPet}}</text>
+    <image src="/assets/icons/arrow-down.png" class="arrow-icon" mode="aspectFit"></image>
+  </view>
+
+  <!-- Tab Navigation -->
+  <view class="tabs">
+    <view class="tab-item {{activeTab === 'vaccines' ? 'active' : ''}}"
+          bindtap="onTabChange" data-tab="vaccines">
+      疫苗记录
+    </view>
+    <view class="tab-item {{activeTab === 'checkups' ? 'active' : ''}}"
+          bindtap="onTabChange" data-tab="checkups">
+      体检记录
+    </view>
+    <view class="tab-item {{activeTab === 'medical' ? 'active' : ''}}"
+          bindtap="onTabChange" data-tab="medical">
+      医疗记录
+    </view>
+  </view>
+
+  <scroll-view class="content" scroll-y>
+    <!-- Vaccines Tab -->
+    <view class="tab-content" wx:if="{{activeTab === 'vaccines'}}">
+      <view class="vaccine-card" wx:for="{{vaccineRecords}}" wx:key="id">
+        <view class="vaccine-header">
+          <view class="vaccine-info">
+            <text class="vaccine-name">{{item.name}}</text>
+            <text class="vaccine-date">{{item.date}} ({{item.dose}})</text>
+          </view>
+          <view class="vaccine-tag {{item.type === 'required' ? 'required' : 'recommended'}}">
+            {{item.type === 'required' ? '必须疫苗' : '推荐疫苗'}}
+          </view>
+        </view>
+
+        <view class="vaccine-details">
+          <view class="vaccine-detail-item">
+            <image src="/assets/icons/icon-monthly.png" class="detail-icon" mode="aspectFit"></image>
+            <text>下次: {{item.nextDate}}</text>
+          </view>
+          <view class="vaccine-detail-item valid">
+            <image src="/assets/icons/check-circle.png" class="detail-icon" mode="aspectFit"></image>
+            <text>有效期至 {{item.validUntil}}</text>
+          </view>
+        </view>
+      </view>
+
+      <view class="add-btn" bindtap="onAddVaccine">
+        <image src="/assets/icons/add-white.png" class="add-icon" mode="aspectFit"></image>
+        <text>添加疫苗记录</text>
+      </view>
+    </view>
+
+    <!-- Checkups Tab -->
+    <view class="tab-content" wx:if="{{activeTab === 'checkups'}}">
+      <view class="timeline">
+        <view class="timeline-item" wx:for="{{checkupRecords}}" wx:key="id" wx:for-index="index">
+          <view class="timeline-dot"></view>
+          <view class="timeline-line" wx:if="{{index < checkupRecords.length - 1}}"></view>
+
+          <view class="timeline-content">
+            <view class="checkup-card">
+              <view class="checkup-header">
+                <text class="checkup-date">{{item.date}}</text>
+                <text class="checkup-doctor">{{item.doctor}}</text>
+              </view>
+
+              <view class="checkup-details">
+                <view class="checkup-detail-item">
+                  <text class="detail-label">体重:</text>
+                  <text class="detail-value">{{item.weight}}</text>
+                  <text class="weight-change" wx:if="{{item.weightChange !== '-'}}">({{item.weightChange}})</text>
+                </view>
+                <view class="checkup-summary">{{item.summary}}</view>
+              </view>
+
+              <view class="checkup-action" bindtap="onViewCheckupDetail" data-id="{{item.id}}">
+                <text>查看详情</text>
+                <text>→</text>
+              </view>
+            </view>
+          </view>
+        </view>
+      </view>
+
+      <view class="add-btn" bindtap="onAddCheckup">
+        <image src="/assets/icons/add-white.png" class="add-icon" mode="aspectFit"></image>
+        <text>添加体检记录</text>
+      </view>
+    </view>
+
+    <!-- Medical Tab -->
+    <view class="tab-content" wx:if="{{activeTab === 'medical'}}">
+      <view class="medical-card" wx:for="{{medicalRecords}}" wx:key="id">
+        <view class="medical-header">
+          <view class="medical-type {{item.type === '就诊' ? 'visit' : 'medicine'}}">
+            {{item.type}}
+          </view>
+          <text class="medical-date">{{item.date}}</text>
+        </view>
+        <text class="medical-diagnosis">{{item.diagnosis}}</text>
+
+        <view class="medical-details">
+          <view class="medical-detail-item">
+            <text class="detail-label">医生: </text>
+            <text class="detail-value">{{item.doctor}}</text>
+          </view>
+          <view class="medical-detail-item">
+            <text class="detail-label">治疗: </text>
+            <text class="detail-value">{{item.treatment}}</text>
+          </view>
+          <view class="medical-detail-item">
+            <text class="detail-label">复查: </text>
+            <text class="detail-value">{{item.followUp}}</text>
+          </view>
+        </view>
+      </view>
+
+      <view class="add-btn" bindtap="onAddMedical">
+        <image src="/assets/icons/add-white.png" class="add-icon" mode="aspectFit"></image>
+        <text>添加医疗记录</text>
+      </view>
+    </view>
+  </scroll-view>
+
+  <!-- Floating Action Button -->
+  <view class="fab" bindtap="onAddRecord">
+    <image src="/assets/icons/add-white.png" class="fab-icon" mode="aspectFit"></image>
+  </view>
+</view>

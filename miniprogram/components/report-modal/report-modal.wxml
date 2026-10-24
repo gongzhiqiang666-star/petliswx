@@ -1,0 +1,98 @@
+<!--components/report-modal/report-modal.wxml-->
+<view class="modal-mask" wx:if="{{visible}}" bindtap="onClose">
+  <view class="modal-container" catchtap="onContentTap">
+    <view class="modal-header">
+      <text class="modal-title">报告详情</text>
+      <image src="/assets/icons/close-icon.png" class="close-icon" mode="aspectFit" bindtap="onClose"></image>
+    </view>
+
+    <scroll-view class="modal-content" scroll-y wx:if="{{report}}">
+      <!-- 宠物信息 -->
+      <view class="section">
+        <view class="section-title">宠物信息</view>
+        <view class="info-grid">
+          <view class="info-item">
+            <text class="info-label">宠物名称</text>
+            <text class="info-value">{{report.pet && report.pet.animalName || '-'}}</text>
+          </view>
+          <view class="info-item">
+            <text class="info-label">物种</text>
+            <text class="info-value">{{report.pet && report.pet.animalNameEn || '-'}}</text>
+          </view>
+          <view class="info-item">
+            <text class="info-label">品种</text>
+            <text class="info-value">{{report.pet && report.pet.varietyCn || '-'}}</text>
+          </view>
+          <view class="info-item">
+            <text class="info-label">性别</text>
+            <text class="info-value">{{report.pet && report.pet.sexName || '-'}}</text>
+          </view>
+          <view class="info-item">
+            <text class="info-label">年龄</text>
+            <text class="info-value">{{report.pet && report.pet.age || '-'}}</text>
+          </view>
+          <view class="info-item">
+            <text class="info-label">芯片号</text>
+            <text class="info-value">{{report.pet && report.pet.chipNo || '-'}}</text>
+          </view>
+        </view>
+      </view>
+
+      <!-- 畜主信息 -->
+      <view class="section">
+        <view class="section-title">畜主信息</view>
+        <view class="info-grid">
+          <view class="info-item">
+            <text class="info-label">畜主姓名</text>
+            <text class="info-value">{{report.masterName || '-'}}</text>
+          </view>
+          <view class="info-item">
+            <text class="info-label">联系电话</text>
+            <text class="info-value">{{report.masterPhone || '-'}}</text>
+          </view>
+          <view class="info-item full-width">
+            <text class="info-label">联系地址</text>
+            <text class="info-value">{{report.masterAddress || '-'}}</text>
+          </view>
+        </view>
+      </view>
+
+      <!-- 订单信息 -->
+      <view class="section">
+        <view class="section-title">订单信息</view>
+        <view class="info-grid">
+          <view class="info-item">
+            <text class="info-label">订单编号</text>
+            <text class="info-value">{{report.orderNo || '-'}}</text>
+          </view>
+          <view class="info-item">
+            <text class="info-label">采样日期</text>
+            <text class="info-value">{{report.samplingDate || '-'}}</text>
+          </view>
+          <view class="info-item">
+            <text class="info-label">检测项目</text>
+            <text class="info-value">{{report.testType && report.testType.testTypeName || '-'}}</text>
+          </view>
+          <view class="info-item">
+            <text class="info-label">状态</text>
+            <text class="info-value status-completed">{{report.statusLabel || '已完成'}}</text>
+          </view>
+        </view>
+      </view>
+    </scroll-view>
+
+    <!-- 操作按钮 -->
+    <view class="modal-footer" wx:if="{{report}}">
+      <view class="action-buttons">
+        <button class="btn-action btn-preview" bindtap="onPreviewReport">
+          <image src="/assets/icons/icon-file.png" class="btn-icon"></image>
+          <text>报告预览</text>
+        </button>
+        <button class="btn-action btn-download" bindtap="onDownloadReport">
+          <image src="/assets/icons/download.png" class="btn-icon"></image>
+          <text>报告下载</text>
+        </button>
+      </view>
+    </view>
+  </view>
+</view>

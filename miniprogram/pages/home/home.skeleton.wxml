@@ -1,0 +1,88 @@
+<!--
+此文件为开发者工具生成，生成时间: 2026/1/1上午9:31:27
+使用方法：
+在 /Users/gong/claudelife/PETLIS/miniprogram/pages/home/home.wxml 引入模板
+
+```
+<import src="home.skeleton.wxml"/>
+<template is="skeleton" wx:if="{{loading}}" />
+```
+
+在 /Users/gong/claudelife/PETLIS/miniprogram/pages/home/home.wxss 中引入样式
+```
+@import "./home.skeleton.wxss";
+```
+
+更多详细信息可以参考文档：https://developers.weixin.qq.com/miniprogram/dev/devtools/skeleton.html
+-->
+<template name="skeleton">
+  <view class="sk-container">
+    <view class="home-page">
+      <view class="hero-section gradient-bg">
+        <view class="decorative-circle circle-1"></view>
+        <view class="decorative-circle circle-2"></view>
+        <view class="decorative-circle circle-3"></view>
+        <view class="hero-content">
+          <view class="hero-text">
+            <text class="hero-title sk-transparent sk-text-8-3333-139 sk-text">关爱宠物健康</text>
+            <text class="hero-subtitle sk-transparent sk-text-18-7500-169 sk-text">科学检测，专业呵护每一天</text>
+          </view>
+        </view>
+      </view>
+      <view class="quick-actions">
+        <view class="quick-actions-card">
+          <view class="action-card action-purple sk-image">
+            <view class="action-bg"></view>
+            <view class="action-content">
+              <view class="action-left">
+                <view class="action-icon-container">
+                  <image class="action-icon sk-image" mode="aspectFit"></image>
+                </view>
+                <text class="action-text sk-transparent sk-text-14-2857-315 sk-text">预约检测</text>
+              </view>
+              <image class="arrow-icon sk-image" mode="aspectFit"></image>
+            </view>
+          </view>
+          <view class="action-card action-violet sk-image">
+            <view class="action-bg"></view>
+            <view class="action-content">
+              <view class="action-left">
+                <view class="action-icon-container">
+                  <image class="action-icon sk-image" mode="aspectFit"></image>
+                </view>
+                <text class="action-text sk-transparent sk-text-14-2857-55 sk-text">宠物建档</text>
+              </view>
+              <image class="arrow-icon sk-image" mode="aspectFit"></image>
+            </view>
+          </view>
+          <view class="action-card action-green sk-image">
+            <view class="action-bg"></view>
+            <view class="action-content">
+              <view class="action-left">
+                <view class="action-icon-container">
+                  <image class="action-icon sk-image" mode="aspectFit"></image>
+                </view>
+                <text class="action-text sk-transparent sk-text-14-2857-575 sk-text">查看报告</text>
+              </view>
+              <image class="arrow-icon sk-image" mode="aspectFit"></image>
+            </view>
+          </view>
+        </view>
+      </view>
+      <view class="recent-activities">
+        <view class="section-header">
+          <text class="section-title sk-transparent sk-text-14-2857-414 sk-text">最近动态</text>
+          <text class="view-all sk-transparent sk-text-14-2857-270 sk-text">查看全部</text>
+        </view>
+        <view class="activities-list">
+          <view class="activity-item" data-item="[object Object]">
+            <view class="activity-icon-container activity-report"></view>
+            <view class="activity-content">
+              <view class="activity-title sk-transparent sk-text-18-7500-562 sk-text">小花的血常规检查报告已出</view>
+            </view>
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+</template>

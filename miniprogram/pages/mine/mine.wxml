@@ -1,0 +1,122 @@
+<!--pages/mine/mine.wxml-->
+<view class="page" role="main" aria-label="我的">
+  <scroll-view class="content" scroll-y>
+    <!-- User Info Card -->
+    <view class="user-card" role="region" aria-label="用户信息">
+      <view class="user-main">
+        <view class="user-avatar-container">
+          <view class="user-avatar">
+            <image src="{{userInfo.avatarUrl || '/assets/icons/profile.png'}}" class="avatar-icon" mode="aspectFill"></image>
+          </view>
+          <view class="avatar-badge"></view>
+        </view>
+        <view class="user-info">
+          <view class="user-name">{{userInfo.nickname || '宠物医生'}}</view>
+          <view class="user-meta">
+            <text class="user-id">ID: {{userInfo.id}}</text>
+            <text class="user-divider" aria-hidden="true">|</text>
+            <text class="user-mobile">{{userInfo.mobile}}</text>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 快捷操作入口 -->
+    <view class="quick-entry"
+          role="button"
+          aria-label="消息通知，{{unreadCount > 0 ? unreadCount + '条未读消息' : '暂无未读消息'}}"
+          bindtap="onQuickAction"
+          data-action="notifications">
+      <view class="quick-entry-left">
+        <view class="quick-entry-icon-wrapper">
+          <image src="/assets/icons/notification.png" class="quick-entry-icon" mode="aspectFit" aria-hidden="true"></image>
+          <view class="quick-badge" wx:if="{{unreadCount > 0}}" aria-label="{{unreadCount}}条未读">{{unreadCount > 99 ? '99+' : unreadCount}}</view>
+        </view>
+        <view class="quick-entry-info">
+          <text class="quick-entry-title">消息通知</text>
+          <text class="quick-entry-desc">查看订单状态更新通知</text>
+        </view>
+      </view>
+      <text class="quick-entry-arrow" aria-hidden="true">›</text>
+    </view>
+
+    <!-- 医院信息卡片 -->
+    <view class="section hospital-section" role="region" aria-label="医院信息">
+      <view class="hospital-card" bindtap="onHospitalTap">
+        <view class="hospital-main">
+          <view class="hospital-icon-wrapper">
+            <image src="/assets/icons/support.png" class="hospital-icon" mode="aspectFit" aria-hidden="true"></image>
+          </view>
+          <view class="hospital-info">
+            <view class="hospital-name">{{hospitalInfo.hospitalName || '未知医院'}}</view>
+            <view class="hospital-meta">
+              <text class="hospital-place">{{hospitalInfo.place}}</text>
+            </view>
+          </view>
+          <view class="hospital-arrow">
+            <text class="arrow-icon" aria-hidden="true">›</text>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 设置和其他功能 -->
+    <view class="section settings-section" role="list" aria-label="设置列表">
+      <view class="setting-item"
+            role="listitem"
+            bindtap="onSettingTap"
+            data-setting="profile">
+        <view class="setting-left">
+          <view class="setting-icon-wrapper setting-icon-blue">
+            <image src="/assets/icons/user.png" class="setting-icon" mode="aspectFit" aria-hidden="true"></image>
+          </view>
+          <text class="setting-label">个人资料</text>
+        </view>
+        <text class="setting-arrow" aria-hidden="true">›</text>
+      </view>
+
+      <view class="setting-item"
+            role="listitem"
+            bindtap="onSettingTap"
+            data-setting="help">
+        <view class="setting-left">
+          <view class="setting-icon-wrapper setting-icon-green">
+            <image src="/assets/icons/help.png" class="setting-icon" mode="aspectFit" aria-hidden="true"></image>
+          </view>
+          <text class="setting-label">帮助与反馈</text>
+        </view>
+        <text class="setting-arrow" aria-hidden="true">›</text>
+      </view>
+
+      <view class="setting-item"
+            role="listitem"
+            bindtap="onSettingTap"
+            data-setting="about">
+        <view class="setting-left">
+          <view class="setting-icon-wrapper setting-icon-purple">
+            <image src="/assets/icons/about.png" class="setting-icon" mode="aspectFit" aria-hidden="true"></image>
+          </view>
+          <text class="setting-label">关于我们</text>
+        </view>
+        <text class="setting-arrow" aria-hidden="true">›</text>
+      </view>
+    </view>
+
+    <!-- 退出登录按钮 -->
+    <view class="logout-section">
+      <view class="logout-btn"
+            role="button"
+            aria-label="退出登录"
+            bindtap="onLogout">
+        <image src="/assets/icons/logout.png" class="logout-icon" mode="aspectFit" aria-hidden="true"></image>
+        <text class="logout-text">退出登录</text>
+      </view>
+    </view>
+
+    <!-- Version Info -->
+    <view class="version-info" role="contentinfo">
+      <view class="version-text">宠物检测管理系统</view>
+      <view class="version-number">v1.0.0</view>
+    </view>
+  </scroll-view>
+</view>

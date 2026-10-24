@@ -1,0 +1,46 @@
+/* 分页组件样式 */
+/* 经典商务蓝风格 */
+
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24rpx 0;
+  gap: 24rpx;
+}
+
+.page-btn {
+  min-width: 140rpx;
+  padding: 16rpx 32rpx;
+  background: linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%);
+  color: #FFFFFF;
+  border: none;
+  border-radius: 12rpx;
+  font-size: 28rpx;
+  font-weight: 500;
+  box-shadow: 0 4rpx 12rpx rgba(37, 99, 235, 0.15);
+  transition: all 0.3s;
+}
+
+.page-btn::after {
+  border: none;
+}
+
+.page-btn:active {
+  opacity: 0.8;
+  transform: scale(0.98);
+}
+
+.page-btn.disabled {
+  background: #F1F5F9;
+  color: #94A3B8;
+  box-shadow: none;
+}
+
+.page-info {
+  font-size: 26rpx;
+  color: #64748B;
+  min-width: 120rpx;
+  text-align: center;
+  font-weight: 500;
+}

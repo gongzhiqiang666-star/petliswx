@@ -1,0 +1,174 @@
+<!--pages/order-add-pet/order-add-pet.wxml-->
+<view class="page" role="form" aria-label="预约信息填写">
+  <scroll-view class="content" scroll-y>
+    <!-- 宠物信息补充 -->
+    <view class="card">
+      <view class="card-header">
+        <view class="header-line"></view>
+        <text class="card-title">宠物信息</text>
+      </view>
+
+      <view class="form-group">
+        <view class="form-label">
+          年龄 <text class="required">*</text>
+        </view>
+        <age-picker
+          value="{{animalInfo.age}}"
+          bindchange="onAgeChange"
+          aria-label="选择宠物年龄"
+          aria-required="true"
+        />
+        <text class="form-error" wx:if="{{formErrors.age}}">
+          {{formErrors.age}}
+        </text>
+      </view>
+
+      <view class="form-group">
+        <view class="form-label">体重</view>
+        <input class="form-input"
+               placeholder="请输入体重(如:5kg，选填)"
+               value="{{animalInfo.animalWeight}}"
+               bindinput="onWeightInput"
+               aria-label="宠物体重" />
+      </view>
+    </view>
+
+    <!-- 采样信息 -->
+    <view class="card">
+      <view class="card-header">
+        <view class="header-line"></view>
+        <text class="card-title">采样信息</text>
+      </view>
+
+      <view class="form-group">
+        <view class="form-label">
+          样本类型 <text class="required">*</text>
+        </view>
+        <view class="form-picker"
+              role="button"
+              aria-label="选择样本类型"
+              aria-required="true"
+              bindtap="onSelectSampleType">
+          <view class="picker-value">
+            {{selectedSampleTypeName || '请选择样本类型'}}
+          </view>
+          <image src="/assets/icons/arrow-down.png" class="picker-arrow" mode="aspectFit"></image>
+        </view>
+        <text class="form-error" wx:if="{{formErrors.sampleType}}">
+          {{formErrors.sampleType}}
+        </text>
+      </view>
+
+      <view class="form-group">
+        <view class="form-label">
+          采样部位 <text class="required">*</text>
+        </view>
+        <input class="form-input"
+               placeholder="请输入采样部位"
+               value="{{sampleInfo.sampleArea}}"
+               bindinput="onSampleAreaInput"
+               aria-label="采样部位"
+               aria-required="true" />
+        <text class="form-error" wx:if="{{formErrors.sampleArea}}">
+          {{formErrors.sampleArea}}
+        </text>
+      </view>
+
+      <view class="form-group">
+        <view class="form-label">
+          采样日期 <text class="required">*</text>
+        </view>
+        <picker class="form-picker"
+                mode="date"
+                value="{{sampleInfo.collectDt}}"
+                bindchange="onCollectDateChange"
+                aria-label="选择采样日期"
+                aria-required="true">
+          <view class="picker-value">
+            {{sampleInfo.collectDt || '请选择采样日期'}}
+          </view>
+        </picker>
+        <text class="form-error" wx:if="{{formErrors.collectDt}}">
+          {{formErrors.collectDt}}
+        </text>
+      </view>
+    </view>
+
+    <!-- 送检信息 -->
+    <view class="card">
+      <view class="card-header">
+        <view class="header-line"></view>
+        <text class="card-title">送检信息</text>
+      </view>
+
+      <view class="form-group">
+        <view class="form-label">
+          畜主中文名 <text class="required">*</text>
+        </view>
+        <input class="form-input"
+               placeholder="畜主中文名"
+               value="{{deliveryInfo.masterName}}"
+               bindinput="onMasterNameInput"
+               aria-label="畜主中文名"
+               aria-required="true" />
+        <text class="form-error" wx:if="{{formErrors.masterName}}">
+          {{formErrors.masterName}}
+        </text>
+      </view>
+
+      <view class="form-group">
+        <view class="form-label">
+          畜主英文名 <text class="required">*</text>
+        </view>
+        <input class="form-input"
+               placeholder="畜主英文名（国际订单使用）"
+               value="{{deliveryInfo.masterNameEn}}"
+               bindinput="onMasterNameEnInput"
+               aria-label="畜主英文名"
+               aria-required="true" />
+        <text class="form-error" wx:if="{{formErrors.masterNameEn}}">
+          {{formErrors.masterNameEn}}
+        </text>
+      </view>
+
+      <view class="form-group">
+        <view class="form-label">
+          送检医师 <text class="required">*</text>
+        </view>
+        <input class="form-input"
+               placeholder="请输入送检医师姓名"
+               value="{{deliveryInfo.doctorName}}"
+               bindinput="onDoctorNameInput"
+               aria-label="送检医师姓名"
+               aria-required="true" />
+        <text class="form-error" wx:if="{{formErrors.doctorName}}">
+          {{formErrors.doctorName}}
+        </text>
+      </view>
+    </view>
+
+    <!-- 其他信息 -->
+    <view class="card">
+      <view class="card-header">
+        <view class="header-line"></view>
+        <text class="card-title">其他信息</text>
+      </view>
+
+      <view class="form-group">
+        <view class="form-label">备注</view>
+        <textarea class="form-textarea"
+                  placeholder="请输入备注信息（选填）"
+                  value="{{otherInfo.remark}}"
+                  bindinput="onRemarkInput"
+                  maxlength="200"
+                  aria-label="备注信息"></textarea>
+        <view class="char-count">{{otherInfo.remark.length}}/200</view>
+      </view>
+    </view>
+  </scroll-view>
+
+  <!-- Bottom Actions -->
+  <view class="bottom-actions">
+    <button class="btn-primary" bindtap="onSelectTestItems" aria-label="选择检测项目">选择检测项目</button>
+  </view>
+</view>

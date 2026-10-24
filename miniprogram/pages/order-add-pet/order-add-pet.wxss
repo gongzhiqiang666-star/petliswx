@@ -1,0 +1,133 @@
+/* pages/order-add-pet/order-add-pet.wxss */
+/* 微信原生简洁风格 */
+
+.content {
+  flex: 1;
+  padding-bottom: 120rpx;
+}
+
+.card {
+  margin: 0 24rpx 24rpx;
+  background: #ffffff;
+  border-radius: 8rpx;
+  padding: 24rpx;
+  border-top: 1rpx solid #E5E5E5;
+  border-bottom: 1rpx solid #E5E5E5;
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 24rpx;
+}
+
+.header-line {
+  width: 6rpx;
+  height: 32rpx;
+  background: #2563EB;
+  margin-right: 16rpx;
+  border-radius: 3rpx;
+}
+
+.card-title {
+  font-size: 32rpx;
+  font-weight: 600;
+  color: #000000;
+  line-height: 1.4;
+}
+
+.form-group {
+  margin-bottom: 24rpx;
+}
+
+.form-label {
+  font-size: 28rpx;
+  color: #000000;
+  margin-bottom: 16rpx;
+  line-height: 1.4;
+  font-weight: 500;
+}
+
+.required {
+  color: #FA5151;
+  margin-left: 4rpx;
+}
+
+.form-input {
+  width: 100%;
+  height: 88rpx;
+  padding: 0 24rpx;
+  font-size: 30rpx;
+  border: 1rpx solid #E5E5E5;
+  border-radius: 8rpx;
+  box-sizing: border-box;
+  background: #ffffff;
+  color: #000000;
+}
+
+.form-input::placeholder {
+  color: #CCCCCC;
+}
+
+.form-picker {
+  width: 100%;
+  height: 88rpx;
+  padding: 0 24rpx;
+  font-size: 30rpx;
+  border: 1rpx solid #E5E5E5;
+  border-radius: 8rpx;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #ffffff;
+}
+
+.form-picker .picker-value {
+  flex: 1;
+  font-size: 30rpx;
+  color: #000000;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.form-picker .picker-arrow {
+  width: 32rpx;
+  height: 32rpx;
+  flex-shrink: 0;
+  margin-left: 16rpx;
+}
+
+.form-textarea {
+  width: 100%;
+  min-height: 160rpx;
+  padding: 16rpx 24rpx;
+  font-size: 30rpx;
+  border: 1rpx solid #E5E5E5;
+  border-radius: 8rpx;
+  box-sizing: border-box;
+  background: #ffffff;
+  color: #000000;
+  line-height: 1.5;
+}
+
+.form-textarea::placeholder {
+  color: #CCCCCC;
+}
+
+.char-count {
+  text-align: right;
+  font-size: 24rpx;
+  color: #888888;
+  margin-top: 8rpx;
+}
+
+/* 表单错误提示 */
+.form-error {
+  display: block;
+  margin-top: 12rpx;
+  font-size: 24rpx;
+  color: #FA5151;
+  line-height: 1.4;
+}

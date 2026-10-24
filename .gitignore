@@ -1,0 +1,34 @@
+# Local secrets and private settings
+.env
+.env.*
+!.env.example
+**/application-local.yml
+**/application-local.properties
+**/project.private.config.json
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+*.keystore
+# Build / runtime
+node_modules/
+miniprogram_npm/
+target/
+dist/
+build/
+uploads/
+logs/
+*.log
+coverage/
+# Local backups and OS files
+.DS_Store
+._*
+*.backup*
+*.before-swiss
+*.bak
+*.tmp
+*.sql.gz
+*.dump
+.idea/
+.vscode/

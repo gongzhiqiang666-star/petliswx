@@ -1,0 +1,134 @@
+<!--pages/home/home.wxml-->
+<view class="home-page" role="main" aria-label="首页">
+  <!-- Hero Section -->
+  <view class="hero-section" role="banner" aria-label="关爱宠物健康">
+    <!-- Decorative Background Elements -->
+    <view class="hero-bg" aria-hidden="true">
+      <view class="bg-circle bg-circle-1"></view>
+      <view class="bg-circle bg-circle-2"></view>
+      <view class="bg-circle bg-circle-3"></view>
+    </view>
+
+    <!-- Hero Content -->
+    <view class="hero-content">
+      <view class="hero-text">
+        <text class="hero-title">关爱宠物健康</text>
+        <text class="hero-subtitle">科学检测 · 专业呵护每一天</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- Quick Actions Card -->
+  <view class="quick-actions-wrapper" role="region" aria-label="快速操作">
+    <view class="quick-actions-card">
+
+      <!-- 宠物建档 -->
+      <view class="action-item action-item-violet"
+            role="button"
+            aria-label="宠物建档，创建宠物健康档案"
+            bindtap="onPetAdd">
+        <view class="action-decorative" aria-hidden="true"></view>
+        <view class="action-content">
+          <view class="action-icon-box">
+            <image src="/assets/icons/pet.png"
+                   class="action-icon"
+                   mode="aspectFit"
+                   lazy-load="{{true}}"
+                   aria-hidden="true"></image>
+          </view>
+          <view class="action-info">
+            <text class="action-label">宠物建档</text>
+            <text class="action-desc">创建宠物健康档案</text>
+          </view>
+        </view>
+        <view class="action-arrow" aria-hidden="true">
+          <text class="arrow-icon">›</text>
+        </view>
+      </view>
+
+      <!-- 预约检测 -->
+      <view class="action-item action-item-primary"
+            role="button"
+            aria-label="预约检测，在线预约送检服务"
+            bindtap="onOrderSelect">
+        <view class="action-decorative" aria-hidden="true"></view>
+        <view class="action-content">
+          <view class="action-icon-box">
+            <image src="/assets/icons/calendar.png"
+                   class="action-icon"
+                   mode="aspectFit"
+                   lazy-load="{{true}}"
+                   aria-hidden="true"></image>
+          </view>
+          <view class="action-info">
+            <text class="action-label">预约检测</text>
+            <text class="action-desc">在线预约送检服务</text>
+          </view>
+        </view>
+        <view class="action-arrow" aria-hidden="true">
+          <text class="arrow-icon">›</text>
+        </view>
+      </view>
+
+      <!-- 查看报告 -->
+      <view class="action-item action-item-success"
+            role="button"
+            aria-label="查看报告，检测报告在线查询"
+            bindtap="onReportList">
+        <view class="action-decorative" aria-hidden="true"></view>
+        <view class="action-content">
+          <view class="action-icon-box">
+            <image src="/assets/icons/sparkles.png"
+                   class="action-icon"
+                   mode="aspectFit"
+                   lazy-load="{{true}}"
+                   aria-hidden="true"></image>
+          </view>
+          <view class="action-info">
+            <text class="action-label">查看报告</text>
+            <text class="action-desc">检测报告在线查询</text>
+          </view>
+        </view>
+        <view class="action-arrow" aria-hidden="true">
+          <text class="arrow-icon">›</text>
+        </view>
+      </view>
+
+    </view>
+  </view>
+
+  <!-- Notifications Section -->
+  <view class="notifications-section">
+    <view class="section-header">
+      <view class="section-title-box">
+        <text class="section-title">消息通知</text>
+        <view class="title-badge" wx:if="{{notificationCount > 0}}">{{notificationCount}}</view>
+      </view>
+      <text class="view-all-link" bindtap="onViewAll">查看全部</text>
+    </view>
+
+    <!-- Notifications List -->
+    <view class="notifications-list" wx:if="{{!isEmpty}}">
+      <view class="notification-card" wx:for="{{recentActivities}}" wx:key="id" bindtap="onActivityTap" data-item="{{item}}">
+        <view class="notification-icon-box">
+          <view class="notification-icon-bg">
+            <image src="/assets/icons/activity.png" class="notification-icon" mode="aspectFit"/>
+          </view>
+        </view>
+        <view class="notification-content">
+          <text class="notification-text">{{item.description}}</text>
+          <text class="notification-time">{{item.time}}</text>
+        </view>
+        <view class="notification-indicator"></view>
+      </view>
+    </view>
+
+    <!-- Empty State -->
+    <view class="empty-container" wx:if="{{isEmpty}}">
+      <view class="empty-illustration">
+        <image src="/assets/icons/empty-search.png" class="empty-image" mode="aspectFit"></image>
+      </view>
+      <text class="empty-message">暂无通知消息</text>
+    </view>
+  </view>
+</view>

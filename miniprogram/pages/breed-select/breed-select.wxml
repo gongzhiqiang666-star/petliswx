@@ -1,0 +1,79 @@
+<!--pages/breed-select/breed-select.wxml-->
+<view class="page">
+  <!-- 搜索栏 -->
+  <view class="search-bar">
+    <image src="/assets/icons/icon-search.png" class="search-icon" mode="aspectFit"></image>
+    <input class="search-input"
+           placeholder="搜索品种（中文或英文）"
+           value="{{searchQuery}}"
+           bindinput="onSearchInput" />
+  </view>
+
+  <!-- 列表容器 -->
+  <view class="list-container">
+    <!-- 品种列表 -->
+    <scroll-view class="breed-list"
+                scroll-y
+                bindscrolltolower="onScrollToLower"
+                scroll-into-view="{{scrollToId}}"
+                scroll-with-animation>
+
+      <!-- 分组显示 -->
+      <block wx:for="{{groupedBreeds}}" wx:key="letter">
+        <!-- 分组标题 -->
+        <view class="group-header" id="group-{{item.letter}}">
+          {{item.letter}}
+        </view>
+
+        <!-- 该分组下的品种 -->
+        <view class="breed-item"
+              wx:for="{{item.items}}"
+              wx:for-item="breed"
+              wx:key="iid"
+              bindtap="onSelectBreed"
+              data-breed="{{breed}}">
+          <view class="breed-info">
+            <text class="breed-name-cn">{{breed.varietyCn}}</text>
+            <text class="breed-name-en">{{breed.varietyEn}}</text>
+          </view>
+          <view class="breed-check" wx:if="{{selectedId === breed.iid}}">
+            <image src="/assets/icons/check-circle.png" class="check-icon" mode="aspectFit"></image>
+          </view>
+        </view>
+      </block>
+
+      <!-- 加载更多提示 -->
+      <view class="load-more" wx:if="{{hasMore && !searchQuery}}">
+        <text class="load-text">下拉加载更多...</text>
+      </view>
+
+      <!-- 已经全部加载 -->
+      <view class="load-more" wx:if="{{!hasMore && allBreeds.length > 0 && !searchQuery}}">
+        <text class="load-text">已加载全部品种</text>
+      </view>
+
+      <!-- 空状态 -->
+      <view class="empty-state" wx:if="{{groupedBreeds.length === 0 && !loading}}">
+        <image src="/assets/icons/empty-search.png" class="empty-icon" mode="aspectFit"></image>
+        <text class="empty-text">未找到相关品种</text>
+        <text class="empty-hint">请尝试其他关键词</text>
+      </view>
+
+      <!-- 加载状态 -->
+      <view class="loading-state" wx:if="{{loading}}">
+        <text>加载中...</text>
+      </view>
+    </scroll-view>
+
+    <!-- 右侧字母索引 -->
+    <view class="index-bar" wx:if="{{!searchQuery && indexLetters.length > 0}}">
+      <view class="index-item {{currentLetter === item ? 'active' : ''}}"
+            wx:for="{{indexLetters}}"
+            wx:key="*this"
+            bindtap="onIndexTap"
+            data-letter="{{item}}">
+        {{item}}
+      </view>
+    </view>
+  </view>
+</view>

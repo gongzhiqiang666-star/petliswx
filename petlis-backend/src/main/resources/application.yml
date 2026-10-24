@@ -1,0 +1,99 @@
+spring:
+  application:
+    name: petlis-backend
+  profiles:
+    active: dev
+  main:
+    allow-bean-definition-overriding: true
+
+  # Jackson配置
+  jackson:
+    time-zone: GMT+8
+    date-format: yyyy-MM-dd HH:mm:ss
+    default-property-inclusion: non_null
+    serialization:
+      write-dates-as-timestamps: false
+
+  # 文件上传配置
+  servlet:
+    multipart:
+      max-file-size: 2MB
+      max-request-size: 2MB
+      enabled: true
+
+  # JPA配置
+  jpa:
+    hibernate:
+      ddl-auto: none  # 不自动创建表,使用已有数据库
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQLDialect
+        format_sql: true
+        use_sql_comments: true
+        # 使用显式命名策略，不自动转换列名
+        implicit_naming_strategy: org.hibernate.boot.model.naming.ImplicitNamingStrategyJpaCompliantImpl
+        physical_naming_strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
+    open-in-view: false
+
+  # Flyway配置
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    baseline-version: 0
+    locations: classpath:db/migration
+    table: flyway_schema_history
+    encoding: UTF-8
+    validate-on-migrate: true
+
+# Server配置
+server:
+  port: 8082
+  servlet:
+    context-path: /api
+    encoding:
+      charset: UTF-8
+      enabled: true
+      force: true
+  domain: https://laboklin.cn
+
+# 应用配置
+app:
+  name: PETLIS Backend
+  version: 1.0.0
+  description: 宠物实验室信息系统后端API服务
+
+  # JWT配置
+  jwt:
+    secret: ${JWT_SECRET}
+    expiration: 604800000  # 7天(毫秒)
+    header: Authorization
+    prefix: Bearer
+
+  # 微信配置
+  wechat:
+    appid: wx30c14324c89e9151
+    secret: ${WECHAT_SECRET:}
+    url: https://api.weixin.qq.com/sns/jscode2session
+
+  # 文件存储配置
+  file:
+    upload-path: /data/petlis/uploads
+    max-size: 2097152  # 2MB
+    access-url: http://localhost:8080/api/files
+
+  # PDF报告配置
+  pdf:
+    base-url: https://laboklin.cn
+    storage-path: /public/Content/FilePdf
+
+# 日志配置
+logging:
+  level:
+    root: INFO
+    com.petlis: DEBUG
+    org.springframework.web: INFO
+    org.hibernate.SQL: INFO
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+  pattern:
+    console: '%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n'

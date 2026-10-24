@@ -1,0 +1,10 @@
+{
+  "usingComponents": {
+    "search-input": "/components/search-input/search-input",
+    "pet-card": "/components/pet-card/pet-card"
+  },
+  "navigationBarTitleText": "预约检测",
+  "navigationBarBackgroundColor": "#ffffff",
+  "navigationBarTextStyle": "black",
+  "backgroundColor": "#f9fafb"
+}

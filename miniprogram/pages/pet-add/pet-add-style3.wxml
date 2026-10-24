@@ -1,0 +1,183 @@
+<!--pages/pet-add/pet-add.wxml-->
+<!-- 宠物建档 - Flat Design Bold 扁平几何风格 -->
+<view class="flat-page">
+  <!-- 几何头部 -->
+  <view class="flat-header">
+    <view class="header-block">
+      <text class="flat-title">宠物档案</text>
+      <view class="title-accent"></view>
+    </view>
+    <text class="flat-desc">快速建档 · 3步完成</text>
+  </view>
+
+  <!-- 表单内容 -->
+  <scroll-view class="flat-scroll" scroll-y enhanced show-scrollbar="{{false}}">
+    <!-- 扁平区块 - 基本信息 -->
+    <view class="flat-block">
+      <view class="block-header">
+        <view class="block-number">01</view>
+        <text class="block-title">基本信息</text>
+      </view>
+
+      <view class="flat-field">
+        <text class="flat-label">宠物中文名</text>
+        <input
+          class="flat-input"
+          placeholder="旺旺"
+          value="{{formData.animalName}}"
+          bindinput="onInputChange"
+          data-field="animalName"
+        />
+      </view>
+
+      <view class="flat-field">
+        <text class="flat-label">英文名</text>
+        <input
+          class="flat-input"
+          placeholder="Wangwang"
+          value="{{formData.animalNameEn}}"
+          bindinput="onInputChange"
+          data-field="animalNameEn"
+        />
+      </view>
+
+      <view class="flat-field">
+        <text class="flat-label">物种</text>
+        <view class="flat-trigger" bindtap="showSpeciesSelector">
+          <text class="trigger-text {{selectedAnimalName ? '' : 'trigger-placeholder'}}">
+            {{selectedAnimalName || '选择物种'}}
+          </text>
+          <view class="trigger-arrow"></view>
+        </view>
+      </view>
+
+      <view class="flat-field">
+        <text class="flat-label">品种</text>
+        <view class="flat-trigger" bindtap="onSelectBreed">
+          <text class="trigger-text {{selectedBreed ? '' : 'trigger-placeholder'}}">
+            {{selectedBreed ? selectedBreed.varietyCn : '选择品种'}}
+          </text>
+          <view class="trigger-arrow"></view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 扁平区块 - 特征信息 -->
+    <view class="flat-block block-secondary">
+      <view class="block-header">
+        <view class="block-number num-secondary">02</view>
+        <text class="block-title">特征信息</text>
+      </view>
+
+      <view class="flat-field">
+        <text class="flat-label">性别</text>
+        <view class="flat-toggles">
+          <view
+            class="flat-toggle {{formData.dictSexId === 1 ? 'toggle-on' : ''}}"
+            bindtap="onGenderChange"
+            data-id="1"
+          >
+            <text class="toggle-label">公</text>
+          </view>
+          <view
+            class="flat-toggle {{formData.dictSexId === 2 ? 'toggle-on' : ''}}"
+            bindtap="onGenderChange"
+            data-id="2"
+          >
+            <text class="toggle-label">母</text>
+          </view>
+        </view>
+      </view>
+
+      <view class="flat-field">
+        <text class="flat-label">出生日期</text>
+        <picker mode="date" value="{{formData.birthday}}" bindchange="onBirthdayChange">
+          <view class="flat-trigger">
+            <text class="trigger-text {{formData.birthday ? '' : 'trigger-placeholder'}}">
+              {{formData.birthday || '选择日期'}}
+            </text>
+            <view class="trigger-arrow"></view>
+          </view>
+        </picker>
+      </view>
+
+      <view class="flat-field">
+        <text class="flat-label">年龄</text>
+        <input
+          class="flat-input input-flat-disabled"
+          placeholder="自动"
+          value="{{formData.age}}"
+          disabled
+        />
+      </view>
+
+      <view class="flat-field">
+        <text class="flat-label">芯片号</text>
+        <input
+          class="flat-input"
+          placeholder="选填"
+          value="{{formData.chipNo}}"
+          bindinput="onInputChange"
+          data-field="chipNo"
+        />
+      </view>
+    </view>
+
+    <!-- 扁平区块 - 主人信息 -->
+    <view class="flat-block block-accent">
+      <view class="block-header">
+        <view class="block-number num-accent">03</view>
+        <text class="block-title">主人信息</text>
+      </view>
+
+      <view class="flat-field">
+        <text class="flat-label">姓名</text>
+        <input
+          class="flat-input"
+          placeholder="姓名"
+          value="{{formData.ownerName}}"
+          bindinput="onInputChange"
+          data-field="ownerName"
+        />
+      </view>
+
+      <view class="flat-field">
+        <text class="flat-label">拼音</text>
+        <input
+          class="flat-input input-flat-disabled"
+          placeholder="自动"
+          value="{{formData.ownerNameEn}}"
+          disabled
+        />
+      </view>
+    </view>
+
+    <!-- 底部占位 -->
+    <view class="flat-spacer"></view>
+  </scroll-view>
+
+  <!-- 扁平底部栏 -->
+  <view class="flat-footer">
+    <button class="flat-btn btn-cancel" bindtap="onBack">
+      <text class="btn-label">取消</text>
+    </button>
+    <button class="flat-btn btn-confirm {{isSubmitting ? 'btn-busy' : ''}}" bindtap="onSave">
+      <text class="btn-label">{{isSubmitting ? '保存中...' : '保存档案'}}</text>
+    </button>
+  </view>
+
+  <!-- 物种选择器弹窗 -->
+  <popup-selector
+    visible="{{showSpeciesSelector}}"
+    title="选择物种"
+    items="{{speciesList}}"
+    selectedId="{{formData.infoAnimalId}}"
+    itemIdKey="infoAnimalId"
+    itemNameKey="animalName"
+    itemNameEnKey="animalNameEn"
+    searchPlaceholder="搜索物种名称"
+    emptyText="暂无物种数据"
+    bindselect="onSpeciesSelect"
+    bindclose="hideSpeciesSelector"
+  />
+</view>

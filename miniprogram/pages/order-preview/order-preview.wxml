@@ -1,0 +1,123 @@
+<!--pages/order-preview/order-preview.wxml-->
+<view class="page">
+  <scroll-view class="content" scroll-y>
+    <!-- Pet Info -->
+    <view class="card">
+      <view class="card-header">
+        <view class="header-line"></view>
+        <text class="card-title">宠物信息</text>
+      </view>
+      <view class="info-grid">
+        <view class="info-item info-full">
+          <text class="info-label">宠物名字：</text>
+          <text class="info-value">{{formData.petInfo.animalName}}</text>
+        </view>
+        <view class="info-item info-full">
+          <text class="info-label">英文名：</text>
+          <text class="info-value">{{formData.petInfo.animalNameEn}}</text>
+        </view>
+        <view class="info-item">
+          <text class="info-label">物种：</text>
+          <text class="info-value {{formData.petInfo.infoAnimalName ? '' : 'empty'}}">{{formData.petInfo.infoAnimalName || '未填写'}}</text>
+        </view>
+        <view class="info-item">
+          <text class="info-label">品种：</text>
+          <text class="info-value {{formData.petInfo.infoVarietyName ? '' : 'empty'}}">{{formData.petInfo.infoVarietyName || '未填写'}}</text>
+        </view>
+        <view class="info-item">
+          <text class="info-label">性别：</text>
+          <text class="info-value">{{formData.petInfo.genderText}}</text>
+        </view>
+        <view class="info-item">
+          <text class="info-label">年龄：</text>
+          <text class="info-value {{formData.animalInfo.ageDisplay !== '未填写' ? '' : 'empty'}}">{{formData.animalInfo.ageDisplay}}</text>
+        </view>
+        <view class="info-item">
+          <text class="info-label">体重：</text>
+          <text class="info-value {{formData.animalInfo.weightDisplay !== '未填写' ? '' : 'empty'}}">{{formData.animalInfo.weightDisplay}}</text>
+        </view>
+        <view class="info-item info-full">
+          <text class="info-label">芯片号：</text>
+          <text class="info-value {{formData.petInfo.chipNo ? '' : 'empty'}}">{{formData.petInfo.chipNo || '未填写'}}</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- Sample Info -->
+    <view class="card">
+      <view class="card-header">
+        <view class="header-line"></view>
+        <text class="card-title">采样信息</text>
+      </view>
+      <view class="info-row-list">
+        <view class="info-row">
+          <text class="row-label">采样类型：</text>
+          <text class="row-value {{formData.sampleInfo.sampleTypeName ? '' : 'empty'}}">{{formData.sampleInfo.sampleTypeName || '未填写'}}</text>
+        </view>
+        <view class="info-row">
+          <text class="row-label">采样部位：</text>
+          <text class="row-value {{formData.sampleInfo.sampleArea ? '' : 'empty'}}">{{formData.sampleInfo.sampleArea || '未填写'}}</text>
+        </view>
+        <view class="info-row">
+          <text class="row-label">采样日期：</text>
+          <text class="row-value {{formData.sampleInfo.collectDt ? '' : 'empty'}}">{{formData.sampleInfo.collectDt || '未填写'}}</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- Delivery Info -->
+    <view class="card">
+      <view class="card-header">
+        <view class="header-line"></view>
+        <text class="card-title">送检信息</text>
+      </view>
+      <view class="info-row-list">
+        <view class="info-row">
+          <text class="row-label">畜主姓名：</text>
+          <text class="row-value {{formData.deliveryInfo.masterName ? '' : 'empty'}}">{{formData.deliveryInfo.masterName || '未填写'}} ({{formData.deliveryInfo.masterNameEn || '未填写'}})</text>
+        </view>
+        <view class="info-row">
+          <text class="row-label">送检医师：</text>
+          <text class="row-value {{formData.deliveryInfo.doctorName ? '' : 'empty'}}">{{formData.deliveryInfo.doctorName || '未填写'}}</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- Test Items -->
+    <view class="card">
+      <view class="card-header">
+        <view class="header-line"></view>
+        <text class="card-title">检测项目</text>
+      </view>
+      <view class="test-items">
+        <view class="test-item"
+              wx:for="{{formData.selectedTestItems}}"
+              wx:key="infoTestTypeId">
+          <view class="test-name">{{item.testName}}</view>
+          <view class="test-price">¥{{item.price}}</view>
+        </view>
+      </view>
+      <view class="total-price">
+        <text class="total-label">总计：</text>
+        <text class="total-amount">¥{{totalPrice}}</text>
+      </view>
+    </view>
+
+    <!-- Remark -->
+    <view class="card" wx:if="{{formData.otherInfo.remark}}">
+      <view class="card-header">
+        <view class="header-line"></view>
+        <text class="card-title">备注</text>
+      </view>
+      <view class="remark-text">{{formData.otherInfo.remark}}</view>
+    </view>
+  </scroll-view>
+
+  <!-- Bottom Actions -->
+  <view class="bottom-actions">
+    <button class="btn-outline" bindtap="onBack">返回修改</button>
+    <button class="btn-primary" bindtap="onSubmit" disabled="{{submitting}}">
+      {{submitting ? '提交中...' : '提交预约'}}
+    </button>
+  </view>
+</view>

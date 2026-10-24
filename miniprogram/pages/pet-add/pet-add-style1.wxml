@@ -1,0 +1,172 @@
+<!--pages/pet-add/pet-add.wxml-->
+<!-- 宠物建档 - Soft UI Evolution 现代柔和卡片 -->
+<view class="pet-add-page">
+  <!-- 柔和头部 -->
+  <view class="page-header">
+    <view class="header-icon">🐾</view>
+    <text class="page-title">宠物档案</text>
+    <text class="page-desc">创建爱宠的专属档案</text>
+  </view>
+
+  <!-- 表单内容 -->
+  <scroll-view class="form-scroll" scroll-y enhanced show-scrollbar="{{false}}">
+    <!-- 软卡片组 -->
+    <view class="soft-card">
+      <view class="card-label">基本信息</view>
+
+      <view class="input-group">
+        <text class="input-label">宠物中文名</text>
+        <input
+          class="soft-input"
+          placeholder="例如：旺旺"
+          value="{{formData.animalName}}"
+          bindinput="onInputChange"
+          data-field="animalName"
+        />
+      </view>
+
+      <view class="input-group">
+        <text class="input-label">英文名</text>
+        <input
+          class="soft-input"
+          placeholder="例如：Wangwang"
+          value="{{formData.animalNameEn}}"
+          bindinput="onInputChange"
+          data-field="animalNameEn"
+        />
+      </view>
+
+      <view class="input-group">
+        <text class="input-label">物种</text>
+        <view class="soft-selector" bindtap="showSpeciesSelector">
+          <text class="selector-value {{selectedAnimalName ? '' : 'placeholder'}}">
+            {{selectedAnimalName || '选择物种'}}
+          </text>
+          <text class="chevron">›</text>
+        </view>
+      </view>
+
+      <view class="input-group">
+        <text class="input-label">品种</text>
+        <view class="soft-selector" bindtap="onSelectBreed">
+          <text class="selector-value {{selectedBreed ? '' : 'placeholder'}}">
+            {{selectedBreed ? selectedBreed.varietyCn : '选择品种'}}
+          </text>
+          <text class="chevron">›</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 特征卡片 -->
+    <view class="soft-card">
+      <view class="card-label">特征信息</view>
+
+      <view class="input-group">
+        <text class="input-label">性别</text>
+        <view class="soft-tabs">
+          <view
+            class="soft-tab {{formData.dictSexId === 1 ? 'tab-active' : ''}}"
+            bindtap="onGenderChange"
+            data-id="1"
+          >
+            <text class="tab-text">♂ 公</text>
+          </view>
+          <view
+            class="soft-tab {{formData.dictSexId === 2 ? 'tab-active' : ''}}"
+            bindtap="onGenderChange"
+            data-id="2"
+          >
+            <text class="tab-text">♀ 母</text>
+          </view>
+        </view>
+      </view>
+
+      <view class="input-group">
+        <text class="input-label">出生日期</text>
+        <picker mode="date" value="{{formData.birthday}}" bindchange="onBirthdayChange">
+          <view class="soft-selector">
+            <text class="selector-value {{formData.birthday ? '' : 'placeholder'}}">
+              {{formData.birthday || '选择日期'}}
+            </text>
+            <text class="chevron">›</text>
+          </view>
+        </picker>
+      </view>
+
+      <view class="input-group">
+        <text class="input-label">年龄</text>
+        <input
+          class="soft-input input-disabled"
+          placeholder="自动计算"
+          value="{{formData.age}}"
+          disabled
+        />
+      </view>
+
+      <view class="input-group">
+        <text class="input-label">芯片号</text>
+        <input
+          class="soft-input"
+          placeholder="选填"
+          value="{{formData.chipNo}}"
+          bindinput="onInputChange"
+          data-field="chipNo"
+        />
+      </view>
+    </view>
+
+    <!-- 主人卡片 -->
+    <view class="soft-card">
+      <view class="card-label">主人信息</view>
+
+      <view class="input-group">
+        <text class="input-label">姓名</text>
+        <input
+          class="soft-input"
+          placeholder="请输入姓名"
+          value="{{formData.ownerName}}"
+          bindinput="onInputChange"
+          data-field="ownerName"
+        />
+      </view>
+
+      <view class="input-group">
+        <text class="input-label">拼音</text>
+        <input
+          class="soft-input input-disabled"
+          placeholder="自动生成"
+          value="{{formData.ownerNameEn}}"
+          disabled
+        />
+      </view>
+    </view>
+
+    <!-- 底部占位 -->
+    <view class="bottom-spacer"></view>
+  </scroll-view>
+
+  <!-- 底部按钮 -->
+  <view class="bottom-bar">
+    <button class="bar-btn btn-secondary" bindtap="onBack">
+      <text class="btn-text">取消</text>
+    </button>
+    <button class="bar-btn btn-primary {{isSubmitting ? 'btn-loading' : ''}}" bindtap="onSave">
+      <text class="btn-text">{{isSubmitting ? '保存中...' : '保存档案'}}</text>
+    </button>
+  </view>
+
+  <!-- 物种选择器弹窗 -->
+  <popup-selector
+    visible="{{showSpeciesSelector}}"
+    title="选择物种"
+    items="{{speciesList}}"
+    selectedId="{{formData.infoAnimalId}}"
+    itemIdKey="infoAnimalId"
+    itemNameKey="animalName"
+    itemNameEnKey="animalNameEn"
+    searchPlaceholder="搜索物种名称"
+    emptyText="暂无物种数据"
+    bindselect="onSpeciesSelect"
+    bindclose="hideSpeciesSelector"
+  />
+</view>

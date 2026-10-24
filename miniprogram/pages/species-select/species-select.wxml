@@ -1,0 +1,84 @@
+<!--pages/species-select/species-select.wxml-->
+<view class="page">
+  <view class="page-content">
+    <!-- 搜索框 -->
+    <view class="search-bar">
+      <image src="/assets/icons/icon-search.png" class="search-icon" mode="aspectFit"></image>
+      <input class="search-input"
+             placeholder="搜索物种名称"
+             value="{{searchKeyword}}"
+             bindinput="onSearch" />
+    </view>
+
+    <!-- 物种列表容器 -->
+    <view class="list-container">
+      <!-- 物种列表 -->
+      <scroll-view
+        class="species-list"
+        scroll-y
+        bindscrolltolower="onScrollToLower"
+        scroll-into-view="{{scrollToId}}"
+        scroll-with-animation>
+
+        <!-- 分组显示 -->
+        <block wx:for="{{groupedSpecies}}" wx:key="letter">
+          <!-- 分组标题 -->
+          <view class="group-header" id="group-{{item.letter}}">
+            {{item.letter}}
+          </view>
+
+          <!-- 该分组下的物种 -->
+          <view
+            class="species-item"
+            wx:for="{{item.items}}"
+            wx:for-item="species"
+            wx:key="infoAnimalId"
+            bindtap="onSelectSpecies"
+            data-species="{{species}}"
+          >
+            <view class="species-info">
+              <view class="species-name">{{species.animalName}}</view>
+              <view class="species-name-en">{{species.animalNameEn}}</view>
+            </view>
+            <view class="species-check" wx:if="{{selectedId === species.infoAnimalId}}">
+              <image src="/assets/icons/check-circle.png" class="check-icon" mode="aspectFit"></image>
+            </view>
+          </view>
+        </block>
+
+        <!-- 加载更多提示 -->
+        <view class="load-more" wx:if="{{hasMore && !searchKeyword}}">
+          <text class="load-text">下拉加载更多...</text>
+        </view>
+
+        <!-- 已经全部加载 -->
+        <view class="load-more" wx:if="{{!hasMore && allSpecies.length > 0 && !searchKeyword}}">
+          <text class="load-text">已加载全部物种</text>
+        </view>
+
+        <!-- 空状态 -->
+        <view class="empty-state" wx:if="{{groupedSpecies.length === 0 && !loading}}">
+          <view class="empty-icon">🔍</view>
+          <view class="empty-text">未找到匹配的物种</view>
+        </view>
+
+        <!-- 加载状态 -->
+        <view class="loading-state" wx:if="{{loading}}">
+          <text>加载中...</text>
+        </view>
+      </scroll-view>
+
+      <!-- 右侧字母索引 -->
+      <view class="index-bar" wx:if="{{!searchKeyword && indexLetters.length > 0}}">
+        <view
+          class="index-item {{currentLetter === item ? 'active' : ''}}"
+          wx:for="{{indexLetters}}"
+          wx:key="*this"
+          bindtap="onIndexTap"
+          data-letter="{{item}}">
+          {{item}}
+        </view>
+      </view>
+    </view>
+  </view>
+</view>

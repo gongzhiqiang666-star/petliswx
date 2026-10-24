@@ -1,0 +1,5 @@
+/* pages/pdf-view/pdf-view.wxss */
+web-view {
+  width: 100%;
+  height: 100vh;
+}

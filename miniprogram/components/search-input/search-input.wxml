@@ -1,0 +1,25 @@
+<!--搜索输入组件-->
+<view class="search-input-wrapper">
+  <image src="/assets/icons/icon-search.png"
+         class="search-icon"
+         mode="aspectFit"
+         lazy-load="{{true}}"
+         aria-hidden="true"></image>
+  <input
+    class="search-input"
+    placeholder="{{placeholder}}"
+    value="{{value}}"
+    bindinput="onInput"
+    aria-label="{{placeholder}}"
+  />
+  <image
+    wx:if="{{value}}"
+    src="/assets/icons/close-icon.png"
+    class="clear-icon"
+    mode="aspectFit"
+    lazy-load="{{true}}"
+    bindtap="onClear"
+    role="button"
+    aria-label="清除搜索"
+    aria-hidden="true"></image>
+</view>

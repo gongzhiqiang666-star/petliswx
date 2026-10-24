@@ -1,0 +1,149 @@
+<!--pages/report-list/report-list.wxml-->
+<view class="page" role="main" aria-label="检测报告列表">
+  <view class="page-content">
+    <!-- Search Bar -->
+    <view class="search-bar" role="search" aria-label="搜索报告">
+      <search-input placeholder="搜索报告（宠物名/检测项目）"
+                    value="{{searchKeyword}}"
+                    bindinput="onSearchInput" />
+    </view>
+
+    <!-- Report List -->
+    <scroll-view class="report-list"
+                 scroll-y
+                 bindscrolltolower="onScrollToLower"
+                 lower-threshold="{{100}}"
+                 role="main"
+                 aria-label="报告列表">
+      <!-- Initial Loading State -->
+      <view class="loading-state"
+            role="status"
+            aria-live="polite"
+            aria-label="正在加载报告"
+            wx:if="{{loading && currentPage === 1}}">
+        <text>加载中...</text>
+      </view>
+
+      <!-- Loading More State -->
+      <view class="loading-more"
+            role="status"
+            aria-live="polite"
+            aria-label="正在加载更多"
+            wx:if="{{loadingMore}}">
+        <text>加载更多...</text>
+      </view>
+
+      <!-- Report Cards -->
+      <view wx:if="{{!loading || currentPage > 1}}">
+        <view class="report-card"
+              role="listitem"
+              aria-label="{{item.animalName}}的检测报告，{{item.testTypeName}}"
+              wx:for="{{filteredReports}}"
+              wx:key="reportId"
+              bindtap="onViewReport"
+              data-id="{{item.reportId}}">
+          <view class="report-header">
+            <view class="report-title">
+              {{item.animalName || '未知宠物'}}
+            </view>
+            <view class="status-badge status-completed">
+              已完成
+            </view>
+          </view>
+
+          <view class="report-info">
+            <view class="info-row">
+              <text class="info-label">检测项目:</text>
+              <text class="info-value">{{item.testTypeName || '-'}}</text>
+            </view>
+            <view class="info-row">
+              <text class="info-label">采样日期:</text>
+              <text class="info-value">{{item.samplingDate || '-'}}</text>
+            </view>
+            <view class="info-row" wx:if="{{item.doctorName}}">
+              <text class="info-label">送检医师:</text>
+              <text class="info-value">{{item.doctorName}}</text>
+            </view>
+            <view class="info-row">
+              <text class="info-label">报告日期:</text>
+              <text class="info-value">{{item.reportDate || '-'}}</text>
+            </view>
+          </view>
+
+          <view class="report-footer">
+            <text class="view-hint">点击查看详情</text>
+            <image src="/assets/icons/arrow-right.png"
+                   class="arrow-icon"
+                   mode="aspectFit"
+                   lazy-load="{{true}}"
+                   aria-hidden="true"></image>
+          </view>
+
+          <!-- PDF预览和下载按钮 - 仅在已完成且PDF已生成时显示 -->
+          <view class="report-actions" wx:if="{{item.securePdfUrl}}">
+            <button class="btn-preview"
+                    role="button"
+                    aria-label="预览{{item.testTypeName}}检测报告"
+                    bindtap="onPreviewPDF"
+                    data-url="{{item.securePdfUrl}}"
+                    catchtap="true">
+              <image src="/assets/icons/file-icon.png"
+                     class="btn-icon"
+                     mode="aspectFit"
+                     lazy-load="{{true}}"
+                     aria-hidden="true"></image>
+              <text>预览报告</text>
+            </button>
+            <button class="btn-download"
+                    role="button"
+                    aria-label="下载{{item.testTypeName}}检测报告"
+                    bindtap="onDownloadPDF"
+                    data-url="{{item.securePdfUrl}}"
+                    data-name="{{item.testTypeName}}"
+                    catchtap="true">
+              <image src="/assets/icons/download-icon.png"
+                     class="btn-icon"
+                     mode="aspectFit"
+                     lazy-load="{{true}}"
+                     aria-hidden="true"></image>
+              <text>下载报告</text>
+            </button>
+          </view>
+        </view>
+
+        <!-- No More Data -->
+        <view class="no-more"
+              role="status"
+              aria-label="没有更多数据"
+              wx:if="{{!hasMore && filteredReports.length > 0}}">
+          <text>没有更多数据了</text>
+        </view>
+
+        <!-- Empty State -->
+        <view class="empty-state"
+              role="region"
+              aria-label="{{searchKeyword ? '未找到匹配的报告' : '暂无检测报告'}}"
+              wx:if="{{filteredReports.length === 0 && !loading && currentPage === 1}}">
+          <view class="empty-icon">
+            <image src="/assets/icons/empty-file.png"
+                   class="icon"
+                   mode="aspectFit"
+                   lazy-load="{{true}}"
+                   aria-hidden="true"></image>
+          </view>
+          <view class="empty-text">{{searchKeyword ? '未找到匹配的报告' : '暂无检测报告'}}</view>
+          <button class="btn-primary"
+                  role="button"
+                  aria-label="去预约检测"
+                  bindtap="onNewAppointment"
+                  wx:if="{{!searchKeyword}}">去预约</button>
+        </view>
+      </view>
+    </scroll-view>
+  </view>
+
+  <!-- Report Detail Modal -->
+  <report-modal visible="{{showModal}}"
+                report="{{selectedReport}}"
+                bindclose="onCloseModal" />
+</view>

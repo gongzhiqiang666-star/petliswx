@@ -1,0 +1,236 @@
+/* pages/pet-add/pet-add.wxss */
+/* 微信原生简洁风格 */
+
+/* ============================================
+   页面容器
+   ============================================ */
+.page {
+  min-height: 100vh;
+  background: #F7F7F7;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ============================================
+   页面主体
+   ============================================ */
+.page-body {
+  flex: 1;
+  height: 0;
+  padding-top: 24rpx;
+}
+
+/* ============================================
+   表单区块
+   ============================================ */
+.form-group {
+  background: #ffffff;
+  margin-bottom: 24rpx;
+  border-top: 1rpx solid #E5E5E5;
+  border-bottom: 1rpx solid #E5E5E5;
+}
+
+.group-title {
+  padding: 24rpx 32rpx 16rpx;
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #000000;
+  line-height: 1.4;
+}
+
+/* ============================================
+   表单项
+   ============================================ */
+.form-item {
+  padding: 24rpx 32rpx;
+  border-bottom: 1rpx solid #F0F0F0;
+  position: relative;
+}
+
+.form-item:last-child {
+  border-bottom: none;
+}
+
+/* 表单标签 */
+.form-label {
+  font-size: 28rpx;
+  color: #000000;
+  line-height: 1.4;
+  margin-bottom: 16rpx;
+  font-weight: 500;
+}
+
+.required {
+  color: #FA5151;
+  margin-left: 4rpx;
+}
+
+/* 表单输入框 */
+.form-input {
+  width: 100%;
+  height: 88rpx;
+  padding: 0 0;
+  font-size: 30rpx;
+  color: #000000;
+  background: transparent;
+  border: none;
+  box-sizing: border-box;
+  line-height: 88rpx;
+}
+
+.form-input::placeholder {
+  color: #CCCCCC;
+  font-weight: 400;
+}
+
+/* 表单值（选择器） */
+.form-value {
+  min-height: 88rpx;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  transition: background-color 0.2s;
+}
+
+.form-value:active {
+  background-color: #F7F7F7;
+}
+
+.value-text {
+  flex: 1;
+  font-size: 30rpx;
+  color: #000000;
+  line-height: 1.4;
+}
+
+.value-placeholder {
+  color: #CCCCCC;
+}
+
+.value-arrow {
+  font-size: 48rpx;
+  color: #CCCCCC;
+  font-weight: 300;
+  line-height: 1;
+  margin-left: 16rpx;
+}
+
+.form-value-disabled {
+  background-color: #F7F7F7;
+}
+
+.form-value-disabled .value-text {
+  color: #CCCCCC;
+}
+
+/* ============================================
+   单选按钮组（使用微信原生 radio）
+   ============================================ */
+.form-radio-group {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 48rpx;
+  margin-top: 16rpx;
+}
+
+.form-radio-item {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  cursor: pointer;
+}
+
+/* 原生 radio 组件样式 */
+radio {
+  transform: scale(1);
+}
+
+.radio-label {
+  font-size: 30rpx;
+  color: #000000;
+  line-height: 1.4;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+/* ============================================
+   错误提示
+   ============================================ */
+.form-error {
+  display: block;
+  margin-top: 12rpx;
+  font-size: 24rpx;
+  color: #FA5151;
+  line-height: 1.4;
+}
+
+/* ============================================
+   底部占位
+   ============================================ */
+.page-spacer {
+  height: 120rpx;
+}
+
+/* ============================================
+   底部按钮栏
+   ============================================ */
+.page-footer {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: #ffffff;
+  padding: 24rpx 32rpx;
+  padding-bottom: calc(24rpx + constant(safe-area-inset-bottom));
+  padding-bottom: calc(24rpx + env(safe-area-inset-bottom));
+  border-top: 1rpx solid #E5E5E5;
+  display: flex;
+  gap: 24rpx;
+  z-index: 100;
+  box-shadow: 0 -2rpx 8rpx rgba(0, 0, 0, 0.05);
+}
+
+.page-btn {
+  flex: 1;
+  height: 96rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8rpx;
+  font-size: 32rpx;
+  font-weight: 500;
+  border: none;
+  transition: all 0.2s;
+  padding: 0;
+}
+
+.page-btn::after {
+  border: none;
+}
+
+/* 次要按钮 */
+.page-btn-secondary {
+  background: #F7F7F7;
+  color: #000000;
+}
+
+.page-btn-secondary:active {
+  background: #E8E8E8;
+}
+
+/* 主要按钮 */
+.page-btn-primary {
+  background: #2563EB;
+  color: #ffffff;
+}
+
+.page-btn-primary:active {
+  background: #1D4ED8;
+}
+
+/* 禁用按钮 */
+.page-btn-disabled {
+  opacity: 0.6;
+  pointer-events: none;
+}

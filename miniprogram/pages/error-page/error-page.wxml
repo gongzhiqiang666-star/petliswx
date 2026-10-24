@@ -1,0 +1,73 @@
+<!--pages/error-page/error-page.wxml-->
+<view class="page">
+  <view class="error-container">
+    <!-- 错误图标 -->
+    <view class="error-icon-wrapper">
+      <text class="error-icon">{{errorData.icon || '❓'}}</text>
+    </view>
+
+    <!-- 错误标题 -->
+    <view class="error-title">{{errorData.title || '发生错误'}}</view>
+
+    <!-- 错误描述 -->
+    <view class="error-message">{{errorData.message || '未知错误'}}</view>
+
+    <!-- 错误建议 -->
+    <view class="error-suggestion" wx:if="{{errorData.suggest}}">
+      <text class="suggestion-text">{{errorData.suggest}}</text>
+    </view>
+
+    <!-- 错误详情（展开） -->
+    <view class="error-details" wx:if="{{showDetails}}">
+      <view class="detail-row">
+        <text class="detail-label">错误类型：</text>
+        <text class="detail-value">{{errorData.errorType}}</text>
+      </view>
+      <view class="detail-row" wx:if="{{errorData.customMessage}}">
+        <text class="detail-label">详细信息：</text>
+        <text class="detail-value">{{errorData.customMessage}}</text>
+      </view>
+      <view class="detail-row">
+        <text class="detail-label">时间：</text>
+        <text class="detail-value">{{errorTime}}</text>
+      </view>
+    </view>
+
+    <!-- 切换详情按钮 -->
+    <view class="toggle-details" bindtap="onToggleDetails">
+      <text class="toggle-text">{{showDetails ? '隐藏' : '查看'}}详情</text>
+      <image class="toggle-arrow {{showDetails ? 'rotate' : ''}}"
+             src="/assets/icons/arrow-down.png"
+             mode="aspectFit"></image>
+    </view>
+
+    <!-- 操作按钮 -->
+    <view class="action-buttons">
+      <!-- 主操作按钮 -->
+      <button class="btn-primary"
+              bindtap="onPrimaryAction">
+        {{errorData.action || '重新加载'}}
+      </button>
+
+      <!-- 次要操作按钮 -->
+      <button class="btn-secondary"
+              bindtap="onSecondaryAction"
+              wx:if="{{errorData.showSecondary}}">
+        返回首页
+      </button>
+
+      <!-- 联系客服按钮 -->
+      <button class="btn-contact"
+              bindtap="onContactSupport"
+              open-type="contact"
+              session-from="error-page">
+        联系客服
+      </button>
+    </view>
+
+    <!-- 底部提示 -->
+    <view class="footer-tip">
+      <text class="tip-text">如问题持续，请联系客服</text>
+    </view>
+  </view>
+</view>

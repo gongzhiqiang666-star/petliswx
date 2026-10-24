@@ -1,0 +1,72 @@
+# Server配置
+server:
+  port: 8082
+
+spring:
+  # 数据源配置
+  datasource:
+    url: ${DB_URL:jdbc:mysql://localhost:3306/laboklin?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true}
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      minimum-idle: 2
+      maximum-pool-size: 10
+      idle-timeout: 600000
+      max-lifetime: 1800000
+      connection-timeout: 30000
+      connection-test-query: SELECT 1
+
+  # JPA配置
+  jpa:
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
+# 日志配置
+logging:
+  level:
+    root: INFO
+    com.petlis: DEBUG
+    org.springframework.web: DEBUG
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+    org.springframework.security: DEBUG
+  file:
+    name: logs/petlis-backend-dev.log
+    max-size: 100MB
+    max-history: 30
+
+# Swagger配置
+springdoc:
+  api-docs:
+    enabled: true
+    path: /api-docs
+  swagger-ui:
+    enabled: true
+    path: /swagger-ui.html
+    tags-sorter: alpha
+    operations-sorter: alpha
+  show-actuator: true
+
+# 文件上传路径(开发环境)
+app:
+  file:
+    upload-path: ./uploads
+
+# 微信支付配置（开发环境）
+wechat:
+  appid: wx30c14324c89e9151
+  appsecret: ${WECHAT_SECRET:}
+  notification:
+    template-id: ""
+    enabled: false
+  pay:
+    app-id: wx30c14324c89e9151
+    mch-id: 1234567890
+    api-key: ${WECHAT_PAY_API_KEY:}
+    notify-url: http://localhost:8082/api/payment/notify
+    trade-type: JSAPI
+    # 开发环境Mock模式开关（true=模拟支付，不调用真实微信API）
+    mock-enabled: true

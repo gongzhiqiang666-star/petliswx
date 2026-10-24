@@ -1,0 +1,93 @@
+<!--pages/pets/pets.wxml-->
+<view class="page" role="main" aria-label="宠物列表">
+  <!-- Search Bar -->
+  <view class="search-bar" role="search" aria-label="搜索宠物">
+    <image src="/assets/icons/icon-search.png" class="search-icon" mode="aspectFit" lazy-load="{{true}}" aria-hidden="true"></image>
+    <input class="search-input"
+           aria-label="搜索宠物姓名或主人姓名"
+           placeholder="搜索宠物姓名、主人姓名"
+           value="{{searchQuery}}"
+           bindinput="onSearchInput" />
+    <image src="/assets/icons/close-icon.png" class="clear-icon {{searchQuery ? 'show' : ''}}"
+           mode="aspectFit" lazy-load="{{true}}" aria-hidden="true" bindtap="onClearSearch"></image>
+  </view>
+
+  <!-- Pet List -->
+  <scroll-view class="pet-list" scroll-y bindscrolltolower="onReachBottom" role="list" aria-label="宠物列表">
+    <view class="pet-card"
+          role="listitem"
+          aria-label="{{item.animalName}}，{{item.breed}}，{{item.age}}岁，主人{{item.ownerName}}"
+          wx:for="{{filteredPets}}"
+          wx:key="id"
+          bindtap="onViewDetail"
+          data-id="{{item.id}}">
+      <view class="pet-main">
+        <view class="pet-info">
+          <view class="pet-name-row">
+            <text class="pet-name">{{item.animalName}}</text>
+            <view class="gender-badge {{item.dictSexId === 1 ? 'male' : 'female'}}">
+              {{item.dictSexId === 1 ? '♂' : '♀'}}
+            </view>
+          </view>
+          <view class="pet-details">
+            <view class="detail-item">{{item.breed}}</view>
+            <view class="detail-item">年龄：{{item.age}}</view>
+            <view class="detail-item">主人：{{item.ownerName}}</view>
+          </view>
+        </view>
+        <view class="edit-btn"
+              role="button"
+              aria-label="编辑{{item.animalName}}的信息"
+              catchtap="onEditPet"
+              data-id="{{item.id}}">
+          <text>编辑</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- Empty State -->
+    <view class="empty-state"
+          role="region"
+          aria-label="暂无宠物"
+          wx:if="{{filteredPets.length === 0 && !loading}}">
+      <view class="empty-icon">
+        <image src="/assets/icons/empty-pet.png" class="icon" mode="aspectFit" lazy-load="{{true}}" aria-hidden="true"></image>
+      </view>
+      <view class="empty-text">还没有添加宠物</view>
+      <view class="empty-hint">点击下方按钮添加您的第一只宠物</view>
+      <button class="btn-primary"
+              role="button"
+              aria-label="添加新宠物"
+              bindtap="onAddPet">+ 添加宠物</button>
+    </view>
+
+    <!-- Loading More Indicator -->
+    <view class="loading-more"
+          role="status"
+          aria-live="polite"
+          aria-label="正在加载更多宠物"
+          wx:if="{{isLoadingMore}}">
+      <view class="loading-spinner"></view>
+      <text class="loading-text">加载中...</text>
+    </view>
+
+    <!-- No More Indicator -->
+    <view class="no-more"
+          role="status"
+          aria-label="已加载全部宠物"
+          wx:if="{{!hasMore && filteredPets.length > 0 && !isLoadingMore}}">
+      <text class="no-more-text">没有更多了</text>
+    </view>
+  </scroll-view>
+
+  <!-- Bottom Action Button -->
+  <view class="bottom-action">
+    <view class="add-pet-btn"
+          role="button"
+          aria-label="添加新宠物"
+          bindtap="onAddPet">
+      <image src="/assets/icons/add-icon.png" class="plus-icon" mode="aspectFit" lazy-load="{{true}}" aria-hidden="true"></image>
+      <text>添加新宠物</text>
+    </view>
+  </view>
+</view>

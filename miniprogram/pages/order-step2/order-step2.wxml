@@ -1,0 +1,94 @@
+<!--pages/order-step2/order-step2.wxml-->
+<view class="page">
+  <!-- Progress Bar -->
+  <view class="progress-bar">
+    <view class="progress-fill">
+      <view class="progress-segment active"></view>
+      <view class="progress-segment active"></view>
+    </view>
+    <view class="progress-labels">
+      <text class="progress-label active">基本信息</text>
+      <text class="progress-label active">选择项目</text>
+    </view>
+  </view>
+
+  <!-- Search Bar -->
+  <view class="search-bar">
+    <image src="/assets/icons/icon-search.png" class="search-icon" mode="aspectFit"></image>
+    <input class="search-input"
+           placeholder="搜索检测项目"
+           value="{{searchQuery}}"
+           bindinput="onSearchInput" />
+    <image src="/assets/icons/clear.png"
+           class="clear-icon {{searchQuery ? 'show' : ''}}"
+           mode="aspectFit"
+           bindtap="onClearSearch"></image>
+  </view>
+
+  <!-- Category Tabs -->
+  <scroll-view class="category-scroll" scroll-x>
+    <view class="category-list">
+      <view class="category-item {{selectedCategory === item ? 'active' : ''}}"
+            wx:for="{{categories}}"
+            wx:key="*this"
+            bindtap="onCategoryChange"
+            data-category="{{item}}">
+        {{item}}
+      </view>
+    </view>
+  </scroll-view>
+
+  <!-- Test Items List -->
+  <scroll-view class="test-list" scroll-y>
+    <view class="test-card {{selectedTests.includes(item.InfoTestTypeId) ? 'selected' : ''}}"
+          wx:for="{{filteredTests}}"
+          wx:key="InfoTestTypeId"
+          bindtap="onToggleTest"
+          data-id="{{item.InfoTestTypeId}}">
+      <view class="checkbox">
+        <view class="checkbox-inner" wx:if="{{selectedTests.includes(item.InfoTestTypeId)}}">
+          <image src="/assets/icons/check-circle.png" class="check-icon" mode="aspectFit"></image>
+        </view>
+      </view>
+
+      <view class="test-content">
+        <view class="test-header-row">
+          <view class="test-header-left">
+            <text class="test-name">{{item.name}}</text>
+            <view class="hot-tag" wx:if="{{item.isHot}}">热门</view>
+          </view>
+          <view class="test-price-section">
+            <text class="test-price">¥{{item.price}}</text>
+            <text class="test-original" wx:if="{{item.price < item.originalPrice}}">¥{{item.originalPrice}}</text>
+          </view>
+        </view>
+        <text class="test-meta">{{item.category}} · {{item.duration}}</text>
+        <text class="test-desc">{{item.description}}</text>
+        <view class="warning-tag" wx:if="{{item.requiresChipAndBirthday}}">
+          ⚠️ 需要芯片号、出生日期和快递单号
+        </view>
+      </view>
+    </view>
+
+    <!-- Empty State -->
+    <view class="empty-state" wx:if="{{filteredTests.length === 0}}">
+      <image src="/assets/icons/error.png" class="empty-icon" mode="aspectFit"></image>
+      <text class="empty-text">未找到相关检测项目</text>
+      <text class="empty-hint">尝试使用其他关键词搜索</text>
+    </view>
+  </scroll-view>
+
+  <!-- Bottom Fixed Bar -->
+  <view class="bottom-bar" wx:if="{{selectedTests.length > 0}}">
+    <view class="selected-info">
+      <view class="selected-count">
+        已选 <text class="count">{{selectedTests.length}}</text> 项
+      </view>
+      <view class="price-section">
+        <text class="original-price">¥{{calculateOriginalTotal()}}</text>
+        <text class="final-price">¥{{calculateTotal()}}</text>
+      </view>
+    </view>
+    <button class="submit-btn" bindtap="onSubmit">提交预约</button>
+  </view>
+</view>

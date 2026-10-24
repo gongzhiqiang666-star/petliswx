@@ -1,0 +1,217 @@
+<!--pages/pet-add/pet-add.wxml-->
+<!-- 宠物建档 - 微信原生简洁风格 -->
+<view class="page" role="form" aria-label="宠物档案表单">
+  <!-- 表单内容 -->
+  <scroll-view class="page-body" scroll-y enhanced show-scrollbar="{{false}}">
+    <!-- 基本信息区块 -->
+    <view class="form-group">
+      <view class="group-title">基本信息</view>
+
+      <!-- 宠物中文名 -->
+      <view class="form-item">
+        <view class="form-label">
+          宠物中文名
+          <text class="required">*</text>
+        </view>
+        <input
+          class="form-input"
+          placeholder="请输入宠物中文名"
+          value="{{formData.animalName}}"
+          bindinput="onInputChange"
+          data-field="animalName"
+          aria-label="宠物中文名"
+          aria-required="true"
+        />
+        <text class="form-error" wx:if="{{formErrors.animalName}}">
+          {{formErrors.animalName}}
+        </text>
+      </view>
+
+      <!-- 英文名 -->
+      <view class="form-item">
+        <view class="form-label">
+          英文名
+          <text class="required">*</text>
+        </view>
+        <input
+          class="form-input"
+          placeholder="请输入英文名"
+          value="{{formData.animalNameEn}}"
+          bindinput="onInputChange"
+          data-field="animalNameEn"
+          aria-label="宠物英文名"
+          aria-required="true"
+        />
+        <text class="form-error" wx:if="{{formErrors.animalNameEn}}">
+          {{formErrors.animalNameEn}}
+        </text>
+      </view>
+
+      <!-- 物种 -->
+      <view class="form-item">
+        <view class="form-label">
+          物种
+          <text class="required">*</text>
+        </view>
+        <view class="form-value" bindtap="showSpeciesSelector" role="button" aria-label="选择物种" aria-required="true">
+          <text class="value-text {{selectedAnimalName ? '' : 'value-placeholder'}}">
+            {{selectedAnimalName || '请选择物种'}}
+          </text>
+          <text class="value-arrow">›</text>
+        </view>
+        <text class="form-error" wx:if="{{formErrors.infoAnimalId}}">
+          {{formErrors.infoAnimalId}}
+        </text>
+      </view>
+
+      <!-- 品种 -->
+      <view class="form-item">
+        <view class="form-label">品种</view>
+        <view class="form-value" bindtap="onSelectBreed" role="button" aria-label="选择品种">
+          <text class="value-text {{selectedBreed ? '' : 'value-placeholder'}}">
+            {{selectedBreed ? selectedBreed.varietyCn : '请选择品种'}}
+          </text>
+          <text class="value-arrow">›</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 特征信息区块 -->
+    <view class="form-group">
+      <view class="group-title">特征信息</view>
+
+      <!-- 性别 -->
+      <view class="form-item">
+        <view class="form-label">
+          性别
+          <text class="required">*</text>
+        </view>
+        <radio-group class="form-radio-group" bindchange="onGenderChange">
+          <label
+            class="form-radio-item"
+            wx:for="{{genderOptions}}"
+            wx:key="id"
+            wx:for-item="item"
+          >
+            <radio
+              value="{{item.id}}"
+              checked="{{formData.dictSexId === item.id}}"
+              color="#2563EB"
+            />
+            <text class="radio-label">{{item.name}}</text>
+          </label>
+        </radio-group>
+        <text class="form-error" wx:if="{{formErrors.dictSexId}}">
+          {{formErrors.dictSexId}}
+        </text>
+      </view>
+
+      <!-- 出生日期 -->
+      <view class="form-item">
+        <view class="form-label">
+          出生日期
+          <text class="required">*</text>
+        </view>
+        <picker mode="date" value="{{formData.birthday}}" bindchange="onBirthdayChange" aria-label="选择出生日期" aria-required="true">
+          <view class="form-value">
+            <text class="value-text {{formData.birthday ? '' : 'value-placeholder'}}">
+              {{formData.birthday || '请选择日期'}}
+            </text>
+            <text class="value-arrow">›</text>
+          </view>
+        </picker>
+        <text class="form-error" wx:if="{{formErrors.birthday}}">
+          {{formErrors.birthday}}
+        </text>
+      </view>
+
+      <!-- 年龄 -->
+      <view class="form-item">
+        <view class="form-label">年龄</view>
+        <view class="form-value form-value-disabled">
+          <text class="value-text">{{formData.age || '自动计算'}}</text>
+        </view>
+      </view>
+
+      <!-- 芯片号 -->
+      <view class="form-item">
+        <view class="form-label">芯片号</view>
+        <input
+          class="form-input"
+          placeholder="选填"
+          value="{{formData.chipNo}}"
+          bindinput="onInputChange"
+          data-field="chipNo"
+          aria-label="芯片号"
+        />
+      </view>
+    </view>
+
+    <!-- 主人信息区块 -->
+    <view class="form-group">
+      <view class="group-title">主人信息</view>
+
+      <!-- 姓名 -->
+      <view class="form-item">
+        <view class="form-label">
+          姓名
+          <text class="required">*</text>
+        </view>
+        <input
+          class="form-input"
+          placeholder="请输入主人姓名"
+          value="{{formData.ownerName}}"
+          bindinput="onInputChange"
+          data-field="ownerName"
+          aria-label="主人姓名"
+          aria-required="true"
+        />
+        <text class="form-error" wx:if="{{formErrors.ownerName}}">
+          {{formErrors.ownerName}}
+        </text>
+      </view>
+
+      <!-- 拼音 -->
+      <view class="form-item">
+        <view class="form-label">
+          拼音
+          <text class="required">*</text>
+        </view>
+        <view class="form-value form-value-disabled">
+          <text class="value-text">{{formData.ownerNameEn || '自动计算'}}</text>
+        </view>
+        <text class="form-error" wx:if="{{formErrors.ownerNameEn}}">
+          {{formErrors.ownerNameEn}}
+        </text>
+      </view>
+    </view>
+
+    <!-- 底部占位 -->
+    <view class="page-spacer"></view>
+  </scroll-view>
+
+  <!-- 底部按钮栏 -->
+  <view class="page-footer">
+    <button class="page-btn page-btn-secondary" bindtap="onBack">
+      取消
+    </button>
+    <button class="page-btn page-btn-primary {{isSubmitting ? 'page-btn-disabled' : ''}}" bindtap="onSave">
+      {{isSubmitting ? '保存中...' : '保存'}}
+    </button>
+  </view>
+
+  <!-- 物种选择器弹窗 -->
+  <popup-selector
+    visible="{{showSpeciesSelector}}"
+    title="选择物种"
+    items="{{speciesList}}"
+    selectedId="{{formData.infoAnimalId}}"
+    itemIdKey="infoAnimalId"
+    itemNameKey="animalName"
+    itemNameEnKey="animalNameEn"
+    searchPlaceholder="搜索物种名称"
+    emptyText="暂无物种数据"
+    bindselect="onSpeciesSelect"
+    bindclose="hideSpeciesSelector"
+  />
+</view>

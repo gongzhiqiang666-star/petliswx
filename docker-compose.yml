@@ -1,0 +1,77 @@
+version: '3.8'
+
+services:
+  # MySQL数据库
+  mysql:
+    image: mysql:8.0
+    container_name: petlis-mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD}
+      MYSQL_DATABASE: laboklin
+      TZ: Asia/Shanghai
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./docker/mysql/conf.d:/etc/mysql/conf.d
+      - ./docker/mysql/init:/docker-entrypoint-initdb.d
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --default-authentication-plugin=mysql_native_password
+    networks:
+      - petlis-network
+
+  # PETLIS后端应用
+  petlis-backend:
+    build:
+      context: ./petlis-backend
+      dockerfile: Dockerfile
+    container_name: petlis-backend
+    restart: always
+    depends_on:
+      - mysql
+    environment:
+      # 数据库配置
+      DB_USERNAME: root
+      DB_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD}
+      # JWT配置
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET}
+      JWT_EXPIRATION: 604800000
+      # 微信配置
+      WECHAT_APPID: your-wechat-appid
+      WECHAT_SECRET: ${WECHAT_SECRET:}
+      # 微信支付配置
+      WECHAT_PAY_APPID: your-wechat-pay-appid
+      WECHAT_PAY_MCH_ID: your-wechat-pay-mch-id
+      WECHAT_PAY_API_KEY: ${WECHAT_PAY_API_KEY:}
+      WECHAT_PAY_NOTIFY_URL: https://your-domain.com/api/payment/callback
+      # Spring配置
+      SPRING_PROFILES_ACTIVE: prod
+      TZ: Asia/Shanghai
+    ports:
+      - "8080:8080"
+    volumes:
+      - app-logs:/var/log/petlis-backend
+      - app-uploads:/data/petlis/uploads
+    networks:
+      - petlis-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/api/actuator/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 60s
+
+volumes:
+  mysql-data:
+    driver: local
+  app-logs:
+    driver: local
+  app-uploads:
+    driver: local
+
+networks:
+  petlis-network:
+    driver: bridge

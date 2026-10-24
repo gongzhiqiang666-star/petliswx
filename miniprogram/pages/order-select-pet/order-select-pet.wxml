@@ -1,0 +1,64 @@
+<!--pages/order-select-pet/order-select-pet.wxml-->
+<view class="page" role="main" aria-label="选择宠物">
+  <view class="page-content">
+    <!-- 页面头部 -->
+    <view class="page-header" role="heading">
+      <view class="header-title">选择宠物</view>
+      <view class="header-desc">请选择要预约检测的宠物，或添加新宠物</view>
+    </view>
+
+    <!-- 搜索框 -->
+    <view class="search-section" role="search">
+      <search-input
+        placeholder="搜索宠物姓名、主人姓名"
+        bind:search="onSearch"
+        aria-label="搜索宠物"
+      />
+    </view>
+
+    <!-- 宠物列表 -->
+    <view class="pet-list" role="list">
+      <!-- 有宠物数据时 -->
+      <block wx:if="{{filteredPets.length > 0}}">
+        <pet-card
+          wx:for="{{filteredPets}}"
+          wx:key="id"
+          pet="{{item}}"
+          selected="{{selectedPetId === item.id}}"
+          bind:tap="onSelectPet"
+          data-id="{{item.id}}"
+          role="listitem"
+          aria-label="{{item.animalName}}"
+          aria-selected="{{selectedPetId === item.id}}"
+        />
+      </block>
+
+      <!-- 空状态 -->
+      <view class="empty-state" wx:if="{{filteredPets.length === 0 && !loading}}" role="status">
+        <image src="/assets/icons/empty-search.png" class="empty-icon" mode="aspectFit"></image>
+        <view class="empty-text">未找到匹配的宠物</view>
+        <button class="btn-clear" bindtap="onClearSearch" aria-label="清空搜索条件">清空搜索</button>
+      </view>
+
+      <!-- 加载状态 -->
+      <view class="loading-state" wx:if="{{loading}}" role="status" aria-label="正在加载">
+        <text>加载中...</text>
+      </view>
+    </view>
+
+    <!-- 添加新宠物按钮 -->
+    <view class="add-pet-btn"
+          role="button"
+          aria-label="添加新宠物"
+          bindtap="onAddPet">
+      <image src="/assets/icons/add-icon.png" class="plus-icon" mode="aspectFit"></image>
+      <text>添加新宠物</text>
+    </view>
+  </view>
+
+  <!-- 底部按钮 -->
+  <view class="bottom-action" wx:if="{{selectedPetId}}" role="form">
+    <view class="action-tip">已选择宠物，点击继续填写预约信息</view>
+    <button class="btn-primary" bindtap="onConfirm" data-id="{{selectedPetId}}" aria-label="下一步，填写预约信息">下一步</button>
+  </view>
+</view>

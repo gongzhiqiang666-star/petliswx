@@ -1,0 +1,140 @@
+<!--pages/order-test-items/order-test-items.wxml-->
+<view class="page" role="main" aria-label="选择检测项目">
+  <!-- Search Bar -->
+  <view class="search-bar" role="search">
+    <image src="/assets/icons/icon-search.png" class="search-icon" mode="aspectFit" aria-hidden="true"></image>
+    <input class="search-input"
+           placeholder="输入检测项目名称或拼音"
+           value="{{searchQuery}}"
+           bindinput="onSearchInput"
+           aria-label="搜索检测项目" />
+    <image src="/assets/icons/close-icon.png"
+           class="clear-icon {{searchQuery ? 'show' : ''}}"
+           mode="aspectFit"
+           bindtap="onClearSearch"
+           role="button"
+           aria-label="清空搜索"></image>
+  </view>
+
+  <!-- Search Hint -->
+  <view class="search-hint" role="status" wx:if="{{searchMode}}">
+    <text class="hint-text">提示：支持输入项目名称搜索</text>
+  </view>
+
+  <!-- Test Items List -->
+  <scroll-view class="items-list"
+              scroll-y
+              bindscrolltolower="onScrollToLower"
+              role="list"
+              aria-label="检测项目列表">
+    <view class="item-card {{item.selected ? 'selected' : ''}}"
+          wx:for="{{filteredItems}}"
+          wx:key="infoTestTypeId"
+          role="listitem"
+          aria-label="{{item.testName}}，价格¥{{item.price}}，{{item.selected ? '已选择' : '未选择'}}"
+          aria-selected="{{item.selected}}"
+          bindtap="onToggleItem"
+          data-id="{{item.infoTestTypeId}}">
+      <view class="item-checkbox {{item.selected ? 'checked' : ''}}"
+            role="checkbox"
+            aria-checked="{{item.selected}}">
+        <view class="checkbox-inner" wx:if="{{item.selected}}">✓</view>
+      </view>
+      <view class="item-main">
+        <view class="item-name">{{item.testName}}</view>
+        <view class="item-price">¥{{item.price}}</view>
+      </view>
+    </view>
+
+    <!-- Loading More Indicator -->
+    <view class="loading-more" wx:if="{{isLoadingMore}}" role="status" aria-label="正在加载更多">
+      <text class="loading-text">加载中...</text>
+    </view>
+
+    <!-- No More Data Indicator -->
+    <view class="no-more" wx:if="{{!hasMore && filteredItems.length > 0}}" role="status">
+      <text class="no-more-text">没有更多了</text>
+    </view>
+
+    <!-- Empty State -->
+    <view class="empty-state" wx:if="{{filteredItems.length === 0 && !loading}}" role="status">
+      <image src="/assets/icons/empty-search.png" class="empty-icon" mode="aspectFit" aria-hidden="true"></image>
+      <view class="empty-text">未找到相关检测项目</view>
+    </view>
+  </scroll-view>
+
+  <!-- Bottom Summary Bar -->
+  <view class="footer" role="form" aria-label="已选择{{selectedCount}}个项目">
+    <view class="summary-info"
+          role="button"
+          aria-label="查看已选项目，共{{selectedCount}}项，总价¥{{totalPrice}}"
+          bindtap="onShowSelectedDrawer">
+      <view class="summary-count">
+        <text class="count-number">{{selectedCount}}</text>
+        <text class="count-unit">项</text>
+      </view>
+      <view class="summary-divider"></view>
+      <view class="summary-price-wrapper">
+        <text class="price-value">¥{{totalPrice}}</text>
+      </view>
+    </view>
+    <button class="btn-next {{selectedCount > 0 ? 'active' : ''}}"
+            bindtap="onNext"
+            aria-label="{{selectedCount > 0 ? '下一步' : '请先选择检测项目'}}">
+      {{selectedCount > 0 ? '下一步' : '请选择'}}
+    </button>
+  </view>
+
+  <!-- Selected Items Drawer -->
+  <view class="drawer-mask {{showDrawer ? 'show' : ''}}"
+        role="presentation"
+        bindtap="onHideDrawer"></view>
+  <view class="drawer {{showDrawer ? 'show' : ''}}"
+        role="dialog"
+        aria-label="已选项目列表">
+    <view class="drawer-header">
+      <view class="drawer-title">
+        <text class="title-text">已选项目</text>
+        <text class="title-count">({{selectedCount}})</text>
+      </view>
+      <view class="drawer-close"
+            role="button"
+            aria-label="关闭已选项目列表"
+            bindtap="onHideDrawer">✕</view>
+    </view>
+
+    <scroll-view class="drawer-content" scroll-y role="list">
+      <view class="selected-item"
+            role="listitem"
+            wx:for="{{selectedItemsList}}"
+            wx:key="infoTestTypeId">
+        <view class="selected-item-info">
+          <view class="selected-item-name">{{item.testName}}</view>
+          <view class="selected-item-price">¥{{item.price}}</view>
+        </view>
+        <view class="selected-item-remove"
+              role="button"
+              aria-label="移除{{item.testName}}"
+              catchtap="onRemoveItem"
+              data-id="{{item.infoTestTypeId}}">
+          <image src="/assets/icons/close-icon.png" class="remove-icon" mode="aspectFit"></image>
+        </view>
+      </view>
+
+      <view class="drawer-empty" wx:if="{{selectedItemsList.length === 0}}" role="status">
+        <image src="/assets/icons/empty-list.png" class="empty-icon" mode="aspectFit" aria-hidden="true"></image>
+        <view class="empty-text">还没有选择任何项目</view>
+      </view>
+    </scroll-view>
+
+    <view class="drawer-footer">
+      <view class="drawer-total">
+        <text class="total-label">合计</text>
+        <text class="total-price">¥{{totalPrice}}</text>
+      </view>
+      <button class="drawer-btn-confirm"
+              bindtap="onConfirmDrawer"
+              aria-label="确定选择">确定</button>
+    </view>
+  </view>
+</view>

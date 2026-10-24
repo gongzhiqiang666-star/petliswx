@@ -1,0 +1,16 @@
+<!--宠物卡片组件-->
+<view class="pet-card {{selected ? 'selected' : ''}}" bindtap="onTap">
+  <view class="pet-avatar">{{pet.animalName ? pet.animalName[0] : '🐱'}}</view>
+  <view class="pet-info">
+    <view class="pet-name">{{pet.animalName || '未命名'}}</view>
+    <view class="pet-breed">{{pet.infoVarietyName || '未知品种'}}</view>
+    <view class="pet-meta">
+      <text class="pet-age">{{age}}</text>
+      <text class="pet-sex">{{pet.dictSexName || '未知'}}</text>
+    </view>
+  </view>
+  <view class="pet-owner" wx:if="{{pet.masterName}}">主人: {{pet.masterName}}</view>
+  <view class="pet-check" wx:if="{{selected}}">
+    <image src="/assets/icons/check-circle.png" class="check-icon" mode="aspectFit"></image>
+  </view>
+</view>

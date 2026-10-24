@@ -1,0 +1,18 @@
+<!--分页组件-->
+<view class="pagination" wx:if="{{totalPages > 1}}">
+  <button
+    class="page-btn prev-btn {{current <= 1 ? 'disabled' : ''}}"
+    disabled="{{current <= 1}}"
+    bindtap="onPrev"
+  >
+    上一页
+  </button>
+  <view class="page-info">{{current}} / {{totalPages}}</view>
+  <button
+    class="page-btn next-btn {{current >= totalPages ? 'disabled' : ''}}"
+    disabled="{{current >= totalPages}}"
+    bindtap="onNext"
+  >
+    下一页
+  </button>
+</view>

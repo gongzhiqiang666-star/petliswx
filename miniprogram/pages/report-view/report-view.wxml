@@ -1,0 +1,79 @@
+<!--pages/report-view/report-view.wxml-->
+<view class="page">
+  <scroll-view class="content" scroll-y>
+    <!-- Report Info Card -->
+    <view class="card">
+      <view class="card-header">
+        <view class="header-line"></view>
+        <text class="card-title">报告信息</text>
+      </view>
+
+      <view class="report-info">
+        <view class="info-row">
+          <text class="info-label">报告编号</text>
+          <text class="info-value info-mono">{{report.id}}</text>
+        </view>
+        <view class="info-row">
+          <text class="info-label">宠物名称</text>
+          <text class="info-value">{{report.petName}}</text>
+        </view>
+        <view class="info-row">
+          <text class="info-label">检测日期</text>
+          <text class="info-value">{{report.testDate}}</text>
+        </view>
+        <view class="info-row">
+          <text class="info-label">报告日期</text>
+          <text class="info-value">{{report.reportDate}}</text>
+        </view>
+        <view class="info-row">
+          <text class="info-label">检测结果</text>
+          <view class="status-badge {{report.status === 'normal' ? 'normal' : 'warning'}}">
+            {{report.status === 'normal' ? '正常' : '需注意'}}
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- PDF Preview Card -->
+    <view class="card">
+      <view class="card-header">
+        <view class="header-line"></view>
+        <text class="card-title">PDF报告</text>
+      </view>
+
+      <view class="pdf-preview">
+        <view class="pdf-icon">
+          <image src="/assets/icons/icon-file.png" class="icon" mode="aspectFit"></image>
+        </view>
+        <text class="pdf-filename">{{report.fileName}}</text>
+        <text class="pdf-desc">PDF格式 · 详细检测报告</text>
+
+        <view class="view-link" bindtap="onViewPDF">
+          <text>点击查看完整报告 →</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- Instructions Card -->
+    <view class="info-card">
+      <view class="info-title">📋 使用说明</view>
+      <view class="info-list">
+        <view class="info-item">• 点击下方"查看PDF"按钮在新窗口中打开报告</view>
+        <view class="info-item">• 点击"下载报告"按钮保存PDF到本地</view>
+        <view class="info-item">• 如有疑问，请联系客服或咨询医生</view>
+      </view>
+    </view>
+  </scroll-view>
+
+  <!-- Action Buttons -->
+  <view class="bottom-actions">
+    <button class="btn-outline" bindtap="onDownload">
+      <image src="/assets/icons/download.png" class="btn-icon" mode="aspectFit"></image>
+      下载报告
+    </button>
+    <button class="btn-primary" bindtap="onViewPDF">
+      <image src="/assets/icons/icon-file.png" class="btn-icon" mode="aspectFit"></image>
+      查看PDF
+    </button>
+  </view>
+</view>

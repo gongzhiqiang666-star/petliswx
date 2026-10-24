@@ -1,0 +1,2 @@
+<!--pages/pdf-view/pdf-view.wxml-->
+<web-view src="{{pdfUrl}}"></web-view>

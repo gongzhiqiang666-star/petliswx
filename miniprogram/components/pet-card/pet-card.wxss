@@ -1,0 +1,97 @@
+/* 宠物卡片组件样式 */
+/* 经典商务蓝风格 */
+
+.pet-card {
+  position: relative;
+  display: flex;
+  align-items: center;
+  background-color: #FFFFFF;
+  border-radius: 16rpx;
+  padding: 24rpx;
+  margin-bottom: 16rpx;
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.04);
+  border: 2rpx solid transparent;
+  transition: all 0.3s ease;
+}
+
+.pet-card:active {
+  background-color: #F8FAFC;
+  transform: scale(0.99);
+}
+
+.pet-card.selected {
+  background: linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%);
+  border: 2rpx solid #2563EB;
+  box-shadow: 0 4rpx 16rpx rgba(37, 99, 235, 0.15);
+}
+
+.pet-avatar {
+  width: 96rpx;
+  height: 96rpx;
+  background: linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 48rpx;
+  margin-right: 20rpx;
+  box-shadow: 0 4rpx 12rpx rgba(37, 99, 235, 0.2);
+}
+
+.pet-info {
+  flex: 1;
+  min-width: 0; /* 防止文本溢出 */
+}
+
+.pet-name {
+  font-size: 32rpx;
+  font-weight: 600;
+  color: #1E293B;
+  margin-bottom: 8rpx;
+}
+
+.pet-breed {
+  font-size: 26rpx;
+  color: #64748B;
+  margin-bottom: 6rpx;
+}
+
+.pet-meta {
+  display: flex;
+  gap: 16rpx;
+  font-size: 24rpx;
+  color: #94A3B8;
+}
+
+.pet-owner {
+  font-size: 24rpx;
+  color: #64748B;
+  margin-left: 16rpx;
+}
+
+.pet-check {
+  position: absolute;
+  top: 50%;
+  right: 24rpx;
+  transform: translateY(-50%);
+}
+
+.check-icon {
+  width: 48rpx;
+  height: 48rpx;
+  animation: checkIn 0.3s ease-out;
+}
+
+@keyframes checkIn {
+  0% {
+    opacity: 0;
+    transform: scale(0);
+  }
+  50% {
+    transform: scale(1.2);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
