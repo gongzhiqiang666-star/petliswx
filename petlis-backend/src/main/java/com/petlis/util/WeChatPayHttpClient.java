@@ -85,8 +85,9 @@ public class WeChatPayHttpClient {
         StringBuilder xml = new StringBuilder();
         xml.append("<xml>");
         for (Map.Entry<String, String> entry : params.entrySet()) {
+            if(!entry.getKey().matches("[A-Za-z_][A-Za-z0-9_]*"))throw new IllegalArgumentException("Invalid XML field");
             xml.append("<").append(entry.getKey()).append(">")
-               .append("<![CDATA[").append(entry.getValue()).append("]]>")
+               .append("<![CDATA[").append(entry.getValue()==null?"":entry.getValue().replace("]]>","]]]]><![CDATA[>")).append("]]>")
                .append("</").append(entry.getKey()).append(">");
         }
         xml.append("</xml>");
@@ -97,18 +98,28 @@ public class WeChatPayHttpClient {
      * XML转Map
      */
     public Map<String, String> xmlToMap(String xml) {
-        // 简化实现，实际项目中应该使用XML解析库
-        Map<String, String> map = new java.util.HashMap<>();
-        
-        // 提取XML标签内容
-        String regex = "<([^>]+)><!\\[CDATA\\[(.*?)\\]\\]></\\1>";
-        java.util.regex.Pattern pattern = java.util.regex.Pattern.compile(regex);
-        java.util.regex.Matcher matcher = pattern.matcher(xml);
-        
-        while (matcher.find()) {
-            map.put(matcher.group(1), matcher.group(2));
+        try {
+            javax.xml.parsers.DocumentBuilderFactory factory = javax.xml.parsers.DocumentBuilderFactory.newInstance();
+            factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+            factory.setFeature("http://xml.org/sax/features/external-general-entities", false);
+            factory.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
+            factory.setXIncludeAware(false);
+            factory.setExpandEntityReferences(false);
+            org.w3c.dom.Document doc = factory.newDocumentBuilder().parse(
+                    new org.xml.sax.InputSource(new java.io.StringReader(xml)));
+            if (!"xml".equals(doc.getDocumentElement().getTagName())) throw new IllegalArgumentException("Invalid root");
+            Map<String, String> result = new java.util.HashMap<>();
+            org.w3c.dom.NodeList nodes = doc.getDocumentElement().getChildNodes();
+            for (int i = 0; i < nodes.getLength(); i++) {
+                org.w3c.dom.Node node = nodes.item(i);
+                if (node.getNodeType() != org.w3c.dom.Node.ELEMENT_NODE) continue;
+                if (result.putIfAbsent(node.getNodeName(), node.getTextContent()) != null) {
+                    throw new IllegalArgumentException("Duplicate XML field");
+                }
+            }
+            return result;
+        } catch (Exception e) {
+            throw new IllegalArgumentException("支付 XML 无效", e);
         }
-        
-        return map;
     }
 }

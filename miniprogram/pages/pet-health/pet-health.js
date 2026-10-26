@@ -3,6 +3,7 @@ Page({
   data: {
     activeTab: 'vaccines',
     selectedPet: '小花',
+    loadError: '',
     vaccineRecords: [
       {
         id: 1,
@@ -83,6 +84,10 @@ Page({
   onLoad(options) {
     const petId = options.petId;
     // 可以根据petId加载数据
+  },
+
+  retryLoad() {
+    this.setData({ loadError: '' });
   },
 
   onBack() {

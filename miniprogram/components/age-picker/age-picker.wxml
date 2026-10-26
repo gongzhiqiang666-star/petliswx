@@ -3,7 +3,7 @@
   <view class="picker-container">
     <!-- 年份选择器 -->
     <view class="picker-item">
-      <text class="picker-label">年龄</text>
+      <text class="picker-label">年份</text>
       <picker
         mode="selector"
         range="{{yearLabels}}"
@@ -11,7 +11,7 @@
         bindchange="onYearChange">
         <view class="picker-value picker-clickable">
           <text class="value-text">{{years[yearIndex]}}岁</text>
-          <text class="picker-arrow">▼</text>
+          <image src="/assets/icons/brand-chevron-down.png" class="picker-arrow" mode="aspectFit" />
         </view>
       </picker>
     </view>
@@ -26,7 +26,7 @@
         bindchange="onMonthChange">
         <view class="picker-value picker-clickable">
           <text class="value-text">{{months[monthIndex]}}个月</text>
-          <text class="picker-arrow">▼</text>
+          <image src="/assets/icons/brand-chevron-down.png" class="picker-arrow" mode="aspectFit" />
         </view>
       </picker>
     </view>

@@ -1,3 +1,4 @@
+@import "../../styles/petlis-3-overrides.wxss";
 /* pages/breed-select/breed-select.wxss */
 
 /* 搜索栏 */
@@ -131,7 +132,7 @@
 }
 
 .index-item.active {
-  background: #2563EB;
+  background: #0D6E6E;
   color: #fff;
   font-weight: 600;
   transform: scale(1.2);

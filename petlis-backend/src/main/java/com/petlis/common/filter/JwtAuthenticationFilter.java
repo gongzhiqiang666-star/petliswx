@@ -32,6 +32,7 @@ import java.util.Collections;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtUtil jwtUtil;
+    private final com.petlis.service.impl.SessionService sessionService;
 
     private static final String HEADER_NAME = "Authorization";
     private static final String TOKEN_PREFIX = "Bearer ";
@@ -47,7 +48,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             // 从请求头中获取token
             String token = extractToken(request);
 
-            if (StringUtils.hasText(token) && jwtUtil.validateToken(token)) {
+            if (StringUtils.hasText(token) && sessionService.valid(token)) {
                 // 解析token获取用户信息
                 Integer userId = jwtUtil.getUserIdFromToken(token);
                 String openid = jwtUtil.getOpenidFromToken(token);
@@ -60,7 +61,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                         new UsernamePasswordAuthenticationToken(
                                 userPrincipal,
                                 null,
-                                Collections.singletonList(new SimpleGrantedAuthority("ROLE_USER"))
+                                Collections.singletonList(new SimpleGrantedAuthority(jwtUtil.isReviewerToken(token) ? "ROLE_REVIEWER" : "ROLE_USER"))
                         );
 
                 // 设置详情

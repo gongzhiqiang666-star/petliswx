@@ -60,9 +60,11 @@ Page({
     try {
       const result = await api.orders.getDetail(orderId);
 
+      this._rawOrder=result;
       // 处理返回的数据
       const orderData = {
         orderId: result.orderId || result.orderId,
+        reviewReason:result.reviewReason || '',canResubmit:!!result.canResubmit,reviewHistory:result.reviewHistory || [],
         userNO: result.userNO || '',
         sampleStatus: result.sampleStatus || 0,
         sampleStatusDesc: result.sampleStatusDesc || this.getStatusLabel(result.sampleStatus),
@@ -283,8 +285,19 @@ Page({
   /**
    * 获取状态标签
    */
+  async editAndResubmit(){
+    const o=this._rawOrder;if(!o || !o.canResubmit)return;
+    let speciesName='';try{const species=await api.dictionary.getAnimals();const selected=species.find(x=>x.infoAnimalId===o.infoAnimalId);speciesName=selected?selected.animalName:''}catch(e){}
+    const date=value=>value?String(value).slice(0,10):'';
+    const form={petId:'order-'+o.orderId,resubmitOrderId:o.orderId,laboratoryId:o.laboratoryId,laboratoryName:o.laboratoryName,userCouponId:o.userCouponId,
+      petInfo:{animalName:o.animalName,animalNameEn:o.animalNameEn,infoAnimalId:o.infoAnimalId,infoAnimalName:speciesName,infoVarietyId:o.animalTypeId,infoVarietyName:o.animalType,infoVarietyNameEn:o.animalTypeEn,dictSexId:o.dictSexId,chipNO:o.chipNO,birthday:date(o.birthday)},
+      sampleInfo:{infoSampleTypeId:o.infoSampleTypeId,sampleArea:o.sampleArea,collectDt:date(o.collectDt),sampleTypeName:''},deliveryInfo:{masterName:o.masterName,masterNameEn:o.masterNameEn,doctorName:o.doctorName},otherInfo:{remark:o.remark || ''},animalInfo:{age:o.age,animalWeight:o.animalWeight || ''},
+      selectedTestItems:(o.items || []).map(x=>({infoTestTypeId:x.infoTestTypeId,testName:x.testTypeName,price:x.testPrice}))};
+    wx.setStorageSync('order_form',form);wx.navigateTo({url:'/pages/order-add-pet/order-add-pet?draft=1&petId='+form.petId});
+  },
   getStatusLabel(status) {
     const labels = {
+      '-3': '待支付',
       '-2': '草稿',
       '0': '待审核',
       '1': '审核不通过',
@@ -373,7 +386,7 @@ Page({
    * 重新预约
    */
   onRebook() {
-    wx.navigateTo({
+    wx.switchTab({
       url: '/pages/order-select-pet/order-select-pet'
     });
   },
@@ -402,62 +415,8 @@ Page({
   /**
    * 下载PDF报告
    */
-  onDownloadPDF(e) {
-    const pdfUrl = e.currentTarget.dataset.url;
-    const reportName = e.currentTarget.dataset.name || '检测报告';
-
-    if (!pdfUrl) {
-      wx.showToast({
-        title: 'PDF地址不存在',
-        icon: 'none'
-      });
-      return;
-    }
-
-    console.log('[OrderDetail] 下载PDF:', pdfUrl);
-
-    wx.showLoading({
-      title: '下载中...',
-      mask: true
-    });
-
-    // 下载PDF文件
-    wx.downloadFile({
-      url: pdfUrl,
-      success: (res) => {
-        wx.hideLoading();
-        if (res.statusCode === 200) {
-          // 打开PDF文档
-          wx.openDocument({
-            filePath: res.tempFilePath,
-            fileType: 'pdf',
-            showMenu: true,
-            success: () => {
-              console.log('[OrderDetail] PDF打开成功');
-            },
-            fail: (err) => {
-              console.error('[OrderDetail] PDF打开失败:', err);
-              wx.showToast({
-                title: '打开失败',
-                icon: 'none'
-              });
-            }
-          });
-        } else {
-          wx.showToast({
-            title: '下载失败',
-            icon: 'none'
-          });
-        }
-      },
-      fail: (err) => {
-        wx.hideLoading();
-        console.error('[OrderDetail] PDF下载失败:', err);
-        wx.showToast({
-          title: '下载失败',
-          icon: 'none'
-        });
-      }
-    });
+  async onDownloadPDF(e) {
+    wx.showLoading({title:'下载中...',mask:true});
+    try{await require('../../utils/reports').openReportFromURL(e.currentTarget.dataset.url)}catch(error){wx.showToast({title:error.message || '下载失败，请重试',icon:'none'})}finally{wx.hideLoading()}
   }
 });

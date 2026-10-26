@@ -44,14 +44,8 @@ public class WebConfig implements WebMvcConfigurer {
                 .addResourceLocations("classpath:/META-INF/resources/webjars/springdoc-openapi-ui/")
                 .resourceChain(false);
 
-        // 文件上传资源 - 支持相对路径和绝对路径
-        registry.addResourceHandler("/uploads/**")
-                .addResourceLocations("file:./uploads/", "file:/data/petlis/uploads/")
-                .resourceChain(false);
+        // Uploaded files are served only by explicit controllers; qualifications require reviewer permission.
 
-        registry.addResourceHandler("/files/**")
-                .addResourceLocations("file:./uploads/", "file:/data/petlis/uploads/")
-                .resourceChain(false);
     }
 
     /**

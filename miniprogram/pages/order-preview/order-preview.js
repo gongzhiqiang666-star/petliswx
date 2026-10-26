@@ -1,13 +1,16 @@
 // pages/order-preview/order-preview.js
+const request = require('../../utils/request');
 const api = require('../../api/index.js');
 const app = getApp();
 const logger = require('../../utils/logger.js');
 const notificationConfig = require('../../config/notification.js');
+const ageCalculator = require('../../utils/age-calculator.js');
 
 Page({
   data: {
     formData: {},
-    totalPrice: 0,
+    subscriptionTemplates:[],subscribe:false,
+    totalPrice: 0, coupons: [], couponIndex:0, quote:null, quoteError:'', quoting:false,
     submitting: false
   },
 
@@ -70,7 +73,7 @@ Page({
 
       // 处理animalInfo中的年龄和体重
       if (formData.animalInfo) {
-        formData.animalInfo.ageDisplay = this.formatFieldValue(formData.animalInfo.age);
+        formData.animalInfo.ageDisplay = ageCalculator.formatAgeDisplay(formData.animalInfo.age) || '未填写';
         formData.animalInfo.weightDisplay = this.formatFieldValue(formData.animalInfo.animalWeight);
       } else {
         // 如果没有animalInfo，创建一个空对象
@@ -84,6 +87,8 @@ Page({
         formData,
         totalPrice: totalPrice.toFixed(2)
       });
+      this.loadCoupons();
+      request.get('/inbox/templates').then(r=>this.setData({subscriptionTemplates:r.filter(x=>['order','report'].includes(x.eventType)).slice(0,3)})).catch(()=>{});
     } catch (error) {
       logger.error('OrderPreview', '加载数据失败', error);
       wx.showToast({
@@ -93,6 +98,21 @@ Page({
     }
   },
 
+  subscribeChange(e){this.setData({subscribe:e.detail.value.length>0})},
+  async saveDraft(){if(this._savingDraft)return;this._savingDraft=true;try{this.setData({formData:await require('../../utils/drafts').save(this.data.formData)});wx.showToast({title:'草稿已保存'})}catch(e){wx.showToast({title:e.message,icon:'none'})}finally{this._savingDraft=false}},
+  async loadCoupons(){
+    try{const coupons=await request.get('/coupons',{category:'available'});this.setData({coupons:[{id:null,name:'不使用优惠券'},...coupons]});await this.requote(null)}catch(e){this.setData({quoteError:e.message})}
+  },
+  async couponChange(e){const index=Number(e.detail.value);this.setData({couponIndex:index});await this.requote(this.data.coupons[index].id)},
+  async requote(userCouponId){
+    const requestId=(this._quoteRequestId || 0)+1;this._quoteRequestId=requestId;
+    this.setData({quoting:true,quote:null,quoteError:''});const form=this.data.formData;
+    try{
+      const quote=await request.post('/coupons/quote',{laboratoryId:form.laboratoryId,testTypeIds:form.selectedTestItems.map(x=>x.infoTestTypeId),userCouponId});
+      if(requestId!==this._quoteRequestId)return;
+      form.userCouponId=userCouponId;form.selectedTestItems=form.selectedTestItems.map(x=>({...x,price:quote.prices[x.infoTestTypeId]}));wx.setStorageSync('order_form',form);this.setData({quote,formData:form,totalPrice:Number(quote.payableAmount).toFixed(2)});
+    }catch(e){if(requestId===this._quoteRequestId)this.setData({quoteError:e.message})}finally{if(requestId===this._quoteRequestId)this.setData({quoting:false})}
+  },
   /**
    * 格式化字段值，空值显示"未填写"
    * @param {String} value - 字段值
@@ -176,7 +196,7 @@ Page({
       );
 
       if (hasRabies) {
-        if (!formData.petInfo.chipNo) {
+        if (!formData.petInfo.chipNO) {
           wx.showToast({
             title: '狂犬检测必须填写芯片号',
             icon: 'none'
@@ -222,7 +242,12 @@ Page({
       }
 
       // 步骤2: 构造订单数据
+      if(!this.data.quote || this.data.quoting)throw new Error('请先完成价格核对');
       const orderData = {
+        draftId:formData._draftId,
+        draftVersion:formData._draftVersion,
+        laboratoryId:formData.laboratoryId,
+        userCouponId:formData.userCouponId,
         ...formData.petInfo,
         ...formData.sampleInfo,
         ...formData.deliveryInfo,
@@ -233,7 +258,7 @@ Page({
         animalTypeId: formData.petInfo.infoVarietyId,
         animalType: formData.petInfo.infoVarietyName,
         animalTypeEn: formData.petInfo.infoVarietyNameEn,
-        remark: formData.otherInfo.remark || '',
+        remark: (formData.otherInfo || {}).remark || '',
         // sampleStatus 由后端设置为 0（待审核）
         diagnosisDetails: formData.selectedTestItems.map(item => ({
           infoTestTypeId: item.infoTestTypeId
@@ -249,84 +274,29 @@ Page({
         orderData.collectDt = this.convertDateToTimestamp(orderData.collectDt);
       }
 
-      // 步骤2.5: 请求订阅消息（如果启用）
-      let notificationSubscribed = false;
-      if (notificationConfig.ENABLED && notificationConfig.TEMPLATE_ID !== 'YOUR_TEMPLATE_ID_HERE') {
-        try {
-          logger.log('OrderPreview', '请求订阅消息授权', { templateId: notificationConfig.TEMPLATE_ID });
-          const subscribeResult = await this.requestMessageSubscription();
-
-          if (subscribeResult) {
-            notificationSubscribed = true;
-            logger.log('OrderPreview', '用户同意订阅消息');
-          } else {
-            logger.log('OrderPreview', '用户拒绝订阅消息或授权失败');
-          }
-        } catch (error) {
-          logger.error('OrderPreview', '订阅消息请求失败', error);
-          // 订阅失败不影响订单提交流程
-        }
-      } else {
-        logger.log('OrderPreview', '订阅消息未启用或模板ID未配置');
-      }
-
       // 步骤3: 创建订单
       logger.log('OrderPreview', '开始创建订单');
-      const orderResult = await api.orders.create(orderData);
+      if(this.data.subscribe && this.data.subscriptionTemplates.length){try{await wx.requestSubscribeMessage({tmplIds:[...new Set(this.data.subscriptionTemplates.map(x=>x.templateId))]})}catch(e){/* A declined subscription never blocks submitting an order. */}}
+      const orderResult = formData.resubmitOrderId ? (await request.post('/orders/'+formData.resubmitOrderId+'/resubmit',orderData),{orderId:formData.resubmitOrderId,needPayment:false}) : await api.orders.create(orderData);
       const orderResponse = orderResult.data || orderResult;
       const orderId = orderResponse.orderId;  // 提取订单ID
       logger.log('OrderPreview', '订单创建成功', { orderId, needPayment: orderResponse.needPayment });
 
       const reportNO = orderData.reportNO || '生成中...';
 
-      // 步骤4: 如果不是月结客户，需要微信支付
-      if (!billingInfo.isMonthlyCustomer) {
-        logger.log('OrderPreview', '非月结客户，发起微信支付');
-
-        // 检查是否为测试环境（开发版或体验版）
-        const accountInfo = wx.getAccountInfoSync();
-        const envVersion = accountInfo.miniProgram.envVersion; // develop, trial, release
-        const isTestEnv = (envVersion === 'develop' || envVersion === 'trial');
-
-        if (isTestEnv) {
-          // 测试环境：模拟支付成功，更新订单状态
-          logger.log('OrderPreview', '检测到测试环境，跳过支付，更新订单状态为待审核');
-          try {
-            await api.orders.updateStatus(orderId, 0); // 0 = 待审核
-            wx.showToast({
-              title: '测试环境：已跳过支付',
-              icon: 'none',
-              duration: 2000
-            });
-          } catch (error) {
-            logger.error('OrderPreview', '更新订单状态失败', error);
-          }
-        } else {
-          // 生产环境：调用微信支付
-          const paymentResult = await this.invokeWeChatPayment(orderId, this.data.totalPrice);
-
-          if (!paymentResult) {
-            // 支付失败或取消
-            this.setData({ submitting: false });
-            return;
-          }
-
-          logger.log('OrderPreview', '微信支付成功');
-        }
-      }
-
+      // 提交后等待审核；支付入口仅在服务端确认审核通过后显示。
       // 步骤5: 显示成功提示
       wx.showModal({
-        title: '预约创建成功',
-        content: `订单号：${orderId}\n德国报告编号：${reportNO}`,
+        title: '送检申请已提交',
+        content: `订单号：${orderId}\n审核通过后，现结客户可支付，月结客户按协议挂账。`,
         showCancel: false,
         confirmText: '查看订单',
         success: () => {
           // 清理本地存储
           wx.removeStorageSync('order_form');
 
-          // 跳转到订单列表
-          wx.switchTab({
+          // 跳转到订单列表（订单页为非 Tab 页面，替换当前预览页）
+          wx.redirectTo({
             url: '/pages/orders/orders'
           });
         }

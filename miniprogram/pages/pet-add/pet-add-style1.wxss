@@ -1,3 +1,4 @@
+@import "../../styles/petlis-3-overrides.wxss";
 /* pages/pet-add/pet-add.wxss */
 /* Soft UI Evolution - 现代柔和卡片风格 */
 
@@ -20,7 +21,8 @@
 }
 
 .header-icon {
-  font-size: 72rpx;
+  width: 72rpx;
+  height: 72rpx;
   margin-bottom: 16rpx;
   opacity: 0.9;
 }
@@ -176,11 +178,11 @@
 }
 
 .chevron {
-  font-size: 32rpx;
-  color: #c7c9cc;
-  font-weight: 300;
+  width: 28rpx;
+  height: 28rpx;
   flex-shrink: 0;
   margin-left: 12rpx;
+  opacity: 0.5;
 }
 
 /* ============================================

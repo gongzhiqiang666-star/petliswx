@@ -1,0 +1,21 @@
+<view class="page">
+  <view wx:if="{{submitted}}" class="success petlis-list-card"><view class="title">资料已提交</view><view>审核通过后即可使用账号登录。若需补充资料，请联系实验室审核人员。</view><button class="petlis-btn petlis-btn-primary" bindtap="login">返回登录</button></view>
+  <view wx:else>
+    <view class="card petlis-list-card">
+      <view class="group-title">基本资料</view>
+      <view class="form-item"><view class="form-label">用户名</view><input class="petlis-input" data-field="username" bindinput="field" placeholder="4–32位字母或数字" maxlength="32"/></view>
+      <view class="form-item"><view class="form-label">医生姓名</view><input class="petlis-input" data-field="nickname" bindinput="field" placeholder="请输入医生姓名" maxlength="50"/></view>
+      <view class="form-item"><view class="form-label">职称</view><input class="petlis-input" data-field="title" bindinput="field" placeholder="请输入职称" maxlength="100"/></view>
+      <view class="form-item"><view class="form-label">所属医院</view><view class="search-row"><input class="petlis-input search-field" data-field="search" bindinput="field" placeholder="输入医院名称搜索" maxlength="100"/><button class="petlis-btn petlis-btn-outline search-trigger" bindtap="searchHospitals">搜索</button></view></view>
+      <view class="form-item"><picker range="{{hospitals}}" range-key="hospitalName" bindchange="hospital"><view class="nav petlis-input"><text class="nav-label">{{hospital?hospital.hospitalName:'请选择医院'}}</text><image class="nav-chevron" src="/assets/icons/brand-chevron-down.png" mode="aspectFit" /></view></picker><view wx:if="{{!hospitals.length}}" class="field-error">未找到医院，请调整搜索词或联系实验室维护。</view></view>
+      <view class="form-item"><view class="form-label">手机号</view><input class="petlis-input" data-field="mobile" bindinput="field" placeholder="请输入手机号" type="number" maxlength="11"/></view>
+      <view class="form-item"><view class="form-label">短信验证码</view><view class="row"><input class="petlis-input" data-field="code" bindinput="field" placeholder="6位验证码" type="number" maxlength="6"/><button class="petlis-btn petlis-btn-outline" disabled="{{busy || countdown>0 || !smsConfigured}}" bindtap="sms">{{countdown>0?countdown+'秒后重发':'获取验证码'}}</button></view></view>
+      <view class="form-item"><view class="form-label">密码</view><input class="petlis-input" data-field="password" bindinput="field" placeholder="至少8位字母和数字" password maxlength="72"/></view>
+      <view class="form-item"><view class="form-label">确认密码</view><input class="petlis-input" data-field="confirmPassword" bindinput="field" placeholder="再次输入密码" password maxlength="72"/></view>
+      <view wx:if="{{!smsConfigured}}" class="hint">短信注册暂未开放，可使用已有账号登录。</view>
+    </view>
+    <view class="card petlis-list-card"><view class="group-title">医生资质</view><view class="hint">PDF、JPG 或 PNG，每份不超过2MB，最多5份。</view><view wx:for="{{files}}" wx:key="url" class="file">{{item.name}}<button class="petlis-btn petlis-btn-outline" data-index="{{index}}" disabled="{{busy}}" bindtap="remove">移除</button></view><button class="petlis-btn petlis-btn-outline" bindtap="upload" disabled="{{busy || files.length>=5}}">从聊天文件选择资质</button></view>
+    <view wx:if="{{error}}" class="error">{{error}}</view>
+    <view class="bottom-actions"><button class="petlis-btn petlis-btn-outline" bindtap="login">已有账号，去登录</button><button class="petlis-btn petlis-btn-primary" loading="{{busy}}" disabled="{{busy || !smsConfigured}}" bindtap="submit">提交审核</button></view>
+  </view>
+</view>

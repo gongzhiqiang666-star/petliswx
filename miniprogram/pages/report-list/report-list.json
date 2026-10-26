@@ -1,10 +1,1 @@
-{
-  "usingComponents": {
-    "search-input": "/components/search-input/search-input",
-    "report-modal": "/components/report-modal/report-modal"
-  },
-  "navigationBarTitleText": "检测报告",
-  "navigationBarBackgroundColor": "#ffffff",
-  "navigationBarTextStyle": "black",
-  "backgroundColor": "#f9fafb"
-}
+{"usingComponents":{"search-input":"/components/search-input/search-input"},"navigationBarTitleText":"检测报告","navigationBarBackgroundColor":"#fafafa","navigationBarTextStyle":"black","backgroundColor":"#fafafa","enablePullDownRefresh":true}

@@ -15,10 +15,10 @@
         aria-label="加载失败"
         wx:if="{{error}}">
     <view class="error-icon">
-      <image src="/assets/icons/warning-icon.png" class="icon" mode="aspectFit" lazy-load="{{true}}" aria-hidden="true"></image>
+      <image src="/assets/icons/brand-empty.png" class="icon" mode="aspectFit" lazy-load="{{true}}" aria-hidden="true"></image>
     </view>
     <view class="error-text">加载失败</view>
-    <button class="btn-retry"
+    <button class="btn-retry petlis-btn petlis-btn-outline"
             role="button"
             aria-label="重新加载"
             bindtap="loadOrderDetail"
@@ -28,7 +28,7 @@
   <!-- Content -->
   <view wx:if="{{!loading && !error}}">
     <!-- Header Card -->
-    <view class="header-card"
+    <view class="header-card petlis-card"
           role="region"
           aria-label="订单摘要">
       <view class="header-top">
@@ -40,13 +40,15 @@
       </view>
     </view>
 
-    <scroll-view class="content" scroll-y role="main" aria-label="详细信息">
+    <view wx:if="{{orderData.reviewReason}}" style="padding:24rpx;background:#fff4e8;color:#70451f">审核意见：{{orderData.reviewReason}}</view>
+  <view wx:if="{{orderData.reviewHistory.length}}" style="padding:24rpx"><view>审核记录</view><view wx:for="{{orderData.reviewHistory}}" wx:key="id" style="margin-top:16rpx">{{item.message}} · {{item.createdAt}}</view></view>
+  <scroll-view class="content {{orderData.canResubmit ? 'has-bottom-action' : ''}}" scroll-y role="main" aria-label="详细信息">
       <!-- Pet Brief Info -->
-      <view class="pet-brief"
+      <view class="pet-brief petlis-card"
             role="region"
             aria-label="宠物信息">
         <view class="pet-avatar">
-          <image src="/assets/icons/dog-icon.png" class="avatar-icon" mode="aspectFill" lazy-load="{{true}}" aria-hidden="true"></image>
+          <image src="/assets/icons/brand-archive.png" class="avatar-icon" mode="aspectFill" lazy-load="{{true}}" aria-hidden="true"></image>
         </view>
         <view class="pet-info">
           <text class="pet-name">{{orderData.animalName}}</text>
@@ -55,7 +57,7 @@
       </view>
 
       <!-- Timeline -->
-      <view class="timeline-card"
+      <view class="timeline-card petlis-card"
             role="region"
             aria-label="订单进度">
         <view class="card-title">
@@ -71,7 +73,7 @@
                 wx:key="time">
             <view class="timeline-dot {{item.completed ? 'completed' : ''}} {{item.current ? 'current' : ''}} {{item.pending ? 'pending' : ''}}"
                   aria-label="{{item.completed ? '已完成' : item.pending ? '待处理' : '进行中'}}">
-              <text wx:if="{{item.completed}}">✓</text>
+              <image class="timeline-check" src="/assets/icons/brand-check.png" mode="aspectFit" wx:if="{{item.completed}}" aria-hidden="true"></image>
             </view>
             <view class="timeline-content">
               <view class="timeline-header">
@@ -89,7 +91,7 @@
       </view>
 
       <!-- Test Items -->
-      <view class="card"
+      <view class="card petlis-card"
             role="region"
             aria-label="检测项目"
             wx:if="{{orderData.items.length > 0}}">
@@ -99,39 +101,42 @@
         </view>
         <view class="test-items"
               role="list">
-          <view class="test-item"
+          <view class="test-item petlis-list-card"
                 role="listitem"
                 aria-label="{{item.name}}，价格¥{{item.price}}，状态{{item.diagnosisStatusLabel}}"
                 wx:for="{{orderData.items}}"
                 wx:key="itemId"
                 wx:for-item="item">
             <view class="test-header">
-              <text class="test-name">☑ {{item.name}}</text>
+              <view class="test-name-wrap">
+                <image class="test-item-icon" src="/assets/icons/brand-check.png" mode="aspectFit" aria-hidden="true"></image>
+                <text class="test-name">{{item.name}}</text>
+              </view>
               <text class="test-price">¥{{item.price}}</text>
             </view>
             <view class="test-status">
-              <text class="status-dot">•</text>
+              <view class="status-dot"></view>
               <text class="status-text">{{item.diagnosisStatusLabel}}</text>
             </view>
             <text class="test-desc" wx:if="{{item.detailRemark}}">备注: {{item.detailRemark}}</text>
 
             <!-- PDF预览和下载按钮 - 仅在已完成且PDF已生成时显示 -->
             <view class="test-actions" wx:if="{{orderData.sampleStatus === 3 && item.securePdfUrl}}">
-              <button class="btn-preview"
+              <button class="btn-preview petlis-btn petlis-btn-primary"
                       role="button"
                       aria-label="预览{{item.name}}的检测报告"
                       bindtap="onPreviewPDF"
                       data-url="{{item.securePdfUrl}}">
-                <image src="/assets/icons/file-icon.png" class="btn-icon" mode="aspectFit" lazy-load="{{true}}" aria-hidden="true"></image>
+                <image src="/assets/icons/brand-file.png" class="btn-icon" mode="aspectFit" lazy-load="{{true}}" aria-hidden="true"></image>
                 <text>预览报告</text>
               </button>
-              <button class="btn-download"
+              <button class="btn-download petlis-btn petlis-btn-primary"
                       role="button"
                       aria-label="下载{{item.name}}的检测报告"
                       bindtap="onDownloadPDF"
                       data-url="{{item.securePdfUrl}}"
                       data-name="{{item.name}}">
-                <image src="/assets/icons/download-icon.png" class="btn-icon" mode="aspectFit" lazy-load="{{true}}" aria-hidden="true"></image>
+                <image src="/assets/icons/brand-download.png" class="btn-icon" mode="aspectFit" lazy-load="{{true}}" aria-hidden="true"></image>
                 <text>下载报告</text>
               </button>
             </view>
@@ -140,7 +145,7 @@
       </view>
 
       <!-- Detailed Information -->
-      <view class="card"
+      <view class="card petlis-card"
             role="region"
             aria-label="详细信息">
         <view class="card-title">
@@ -233,7 +238,7 @@
       </view>
 
       <!-- Remark -->
-      <view class="card"
+      <view class="card petlis-card"
             role="region"
             aria-label="备注信息"
             wx:if="{{orderData.remark}}">
@@ -246,5 +251,8 @@
         </view>
       </view>
     </scroll-view>
+    <view class="bottom-actions" wx:if="{{orderData.canResubmit}}">
+      <button class="petlis-btn petlis-btn-primary resubmit-btn" bindtap="editAndResubmit">修改资料并重新提交</button>
+    </view>
   </view>
 </view>

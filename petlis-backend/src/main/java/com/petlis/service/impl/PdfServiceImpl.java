@@ -1,9 +1,12 @@
 package com.petlis.service.impl;
 
+import com.petlis.common.exception.BusinessException;
 import com.petlis.common.security.SecurityUtils;
 import com.petlis.entity.business.DiagnosisDetail;
 import com.petlis.entity.business.ListDiagnosisProject;
+import com.petlis.entity.dict.InfoHospital;
 import com.petlis.repository.DiagnosisDetailRepository;
+import com.petlis.repository.InfoHospitalRepository;
 import com.petlis.repository.ListDiagnosisProjectRepository;
 import com.petlis.service.PdfService;
 import lombok.RequiredArgsConstructor;
@@ -31,6 +34,7 @@ public class PdfServiceImpl implements PdfService {
 
     private final DiagnosisDetailRepository detailRepository;
     private final ListDiagnosisProjectRepository projectRepository;
+    private final InfoHospitalRepository hospitalRepository;
 
     /**
      * PDF文件存储路径（从配置文件读取）
@@ -89,6 +93,7 @@ public class PdfServiceImpl implements PdfService {
                     currentHospitalId, project.getInfoHospitalId());
             throw new SecurityException("无权访问此报告");
         }
+        assertPaymentAllowed(project);
 
         log.info("权限验证通过, 开始读取PDF文件: {}", pdfHttpUrl);
 
@@ -136,14 +141,9 @@ public class PdfServiceImpl implements PdfService {
         if (!project.getInfoHospitalId().equals(currentHospitalId)) {
             throw new SecurityException("无权访问此报告");
         }
+        assertPaymentAllowed(project);
 
-        // 2. 从请求头中获取token
-        String token = extractToken(request);
-
-        // 3. 生成带token的预览URL
-        String previewUrl = buildPdfPreviewUrl(detailId, token);
-
-        log.info("PDF预览URL生成成功: {}", previewUrl);
+        String previewUrl = String.format("%s%s/pdf/view/%d",serverDomain,contextPath,detailId);
         return previewUrl;
     }
 
@@ -153,6 +153,15 @@ public class PdfServiceImpl implements PdfService {
     private Integer getCurrentHospitalId(HttpServletRequest request) {
         // 从SecurityContextHolder获取当前用户的医院ID
         return SecurityUtils.getCurrentHospitalId();
+    }
+
+    private void assertPaymentAllowed(ListDiagnosisProject project) {
+        InfoHospital hospital = hospitalRepository.findById(project.getInfoHospitalId())
+                .orElseThrow(() -> new BusinessException("订单所属医院不存在"));
+        if (!Integer.valueOf(1).equals(hospital.getPayType())
+                && !Integer.valueOf(1).equals(project.getIsPayMoney())) {
+            throw new BusinessException("订单未支付，报告暂未开放，请完成支付后查看");
+        }
     }
 
     /**
@@ -178,14 +187,15 @@ public class PdfServiceImpl implements PdfService {
      * 构建PDF文件的物理路径
      */
     private String buildPdfFilePath(String pdfHttpUrl) {
-        // pdfHttpUrl格式: /Content/FilePdf/12345_6789/xxx.pdf
-        // 物理路径格式: /public/Content/FilePdf/12345_6789/xxx.pdf
-
-        if (pdfHttpUrl.startsWith("/")) {
-            return pdfStoragePath + pdfHttpUrl;
-        } else {
-            return pdfStoragePath + "/" + pdfHttpUrl;
-        }
+        Path root=Paths.get(pdfStoragePath).toAbsolutePath().normalize();
+        String relative=pdfHttpUrl.replace('\\','/');
+        if(relative.startsWith("/Content/FilePdf/"))relative=relative.substring("/Content/FilePdf/".length());
+        else if(relative.startsWith("Content/FilePdf/"))relative=relative.substring("Content/FilePdf/".length());
+        if(relative.startsWith("/") || relative.contains(":") || !relative.toLowerCase(java.util.Locale.ROOT).endsWith(".pdf"))throw new SecurityException("报告路径无效");
+        Path candidate=root.resolve(relative).normalize();
+        if(!candidate.startsWith(root))throw new SecurityException("报告路径超出允许目录");
+        try{if(Files.exists(candidate) && !candidate.toRealPath().startsWith(root.toRealPath()))throw new SecurityException("报告路径超出允许目录");}catch(IOException e){throw new IllegalArgumentException("报告文件不可用");}
+        return candidate.toString();
     }
 
     /**

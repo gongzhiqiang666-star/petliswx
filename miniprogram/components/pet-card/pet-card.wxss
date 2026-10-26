@@ -20,22 +20,28 @@
 }
 
 .pet-card.selected {
-  background: linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%);
-  border: 2rpx solid #2563EB;
-  box-shadow: 0 4rpx 16rpx rgba(37, 99, 235, 0.15);
+  background: linear-gradient(135deg, #EAF4F1 0%, #D5EAE4 100%);
+  border: 2rpx solid #0D6E6E;
+  box-shadow: 0 4rpx 16rpx rgba(13, 110, 110, 0.15);
 }
 
 .pet-avatar {
   width: 96rpx;
   height: 96rpx;
-  background: linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%);
+  background: linear-gradient(135deg, #0D6E6E 0%, #0A5A5A 100%);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 48rpx;
   margin-right: 20rpx;
-  box-shadow: 0 4rpx 12rpx rgba(37, 99, 235, 0.2);
+  box-shadow: 0 4rpx 12rpx rgba(13, 110, 110, 0.2);
+}
+
+.pet-avatar-icon {
+  width: 48rpx;
+  height: 48rpx;
+  filter: brightness(0) invert(1);
 }
 
 .pet-info {

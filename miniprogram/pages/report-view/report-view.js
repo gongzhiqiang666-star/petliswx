@@ -35,9 +35,37 @@ Page({
 
       const report = await api.reports.getDetail(reportId);
 
-
+      const formatDate = value => {
+        if (!value) return '';
+        const date = new Date(value);
+        // 旧库用 1900-01-01 表示未填写，不作为真实日期展示
+        if (isNaN(date.getTime()) || date.getFullYear() <= 1901) return '';
+        const pad = n => String(n).padStart(2, '0');
+        return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+      };
+      const stripHtml = value => String(value || '')
+        .replace(/<[^>]*>/g, ' ')
+        .replace(/&nbsp;/gi, ' ')
+        .replace(/&amp;/gi, '&')
+        .replace(/&lt;/gi, '<')
+        .replace(/&gt;/gi, '>')
+        .replace(/&quot;/gi, '"')
+        .replace(/&#39;/g, "'")
+        .replace(/\s+/g, ' ')
+        .trim();
+      // 接口字段（ReportVO）与页面展示字段的视图映射
+      const view = {
+        ...report,
+        id: report.reportNO || report.genterNO || String(report.reportId || ''),
+        petName: report.animalName || '',
+        testDate: formatDate(report.collectDt),
+        reportDate: formatDate(report.sendReportDt) || formatDate(report.createTime),
+        fileName: `报告_${report.genterNO || report.reportId || ''}.pdf`,
+        statusText: report.statusText || (Number(report.diagnosisStatus) ? '已完成' : '检测中'),
+        reportSummary: stripHtml(report.reportResult) || stripHtml(report.mailReport) || '详见 PDF 报告'
+      };
       this.setData({
-        report,
+        report: view,
         loading: false,
         error: false
       });
@@ -59,18 +87,17 @@ Page({
     }
   },
 
-  onDownload() {
-    wx.showToast({
-      title: '下载功能开发中',
-      icon: 'none'
-    });
+  async onDownload() {
+    if(this.data.report && this.data.report.paymentRestricted){wx.showToast({title:'订单未支付，报告暂未开放',icon:'none'});return}
+    wx.showLoading({title:'下载中...',mask:true});
+    try{await require('../../utils/reports').openReportById(this.data.reportId)}catch(e){wx.showToast({title:e.message || '报告暂不可用',icon:'none'})}finally{wx.hideLoading()}
   },
-
-  onViewPDF() {
-    wx.showToast({
-      title: 'PDF预览功能开发中',
-      icon: 'none'
-    });
+  onViewPDF(){
+    if(this.data.report && this.data.report.paymentRestricted){wx.showToast({title:'订单未支付，报告暂未开放',icon:'none'});return}
+    wx.navigateTo({url:'/pages/pdf-view/pdf-view?id='+this.data.reportId})
+  },
+  onPayOrder(){
+    if(this.data.report && this.data.report.orderId)wx.navigateTo({url:'/pages/order-detail/order-detail?id='+this.data.report.orderId})
   },
 
   onRetry() {

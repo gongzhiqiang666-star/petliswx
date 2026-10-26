@@ -1,3 +1,4 @@
+@import "../../styles/petlis-3-overrides.wxss";
 /* pages/pet-add/pet-add.wxss */
 /* Organic Biophilic - 自然有机风格 */
 
@@ -132,8 +133,12 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 32rpx;
   flex-shrink: 0;
+}
+
+.organic-icon image {
+  width: 30rpx;
+  height: 30rpx;
 }
 
 .organic-title {
@@ -230,11 +235,11 @@
 }
 
 .btn-arrow {
-  font-size: 28rpx;
-  color: #6EE7B7;
-  font-weight: 600;
+  width: 28rpx;
+  height: 28rpx;
   flex-shrink: 0;
   margin-left: 12rpx;
+  opacity: 0.65;
 }
 
 /* ============================================

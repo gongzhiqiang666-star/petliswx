@@ -25,6 +25,8 @@ public interface OrderService {
      */
     Integer createOrder(OrderCreateRequest request);
 
+    void resubmit(Integer orderId, OrderCreateRequest request);
+
     /**
      * 添加检测项目到申请单
      *

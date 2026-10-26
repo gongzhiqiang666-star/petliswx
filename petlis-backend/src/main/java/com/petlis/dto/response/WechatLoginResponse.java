@@ -22,6 +22,8 @@ public class WechatLoginResponse {
     @Schema(description = "访问令牌")
     private String token;
 
+    private boolean reviewer;
+
     @Schema(description = "用户ID")
     private Integer userId;
 

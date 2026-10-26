@@ -108,7 +108,7 @@ public class WeChatPayUtil {
      * 生成订单号（格式：PAY+时间戳+随机数）
      */
     public static String generatePaymentNo() {
-        return "PAY" + System.currentTimeMillis() + (int)(Math.random() * 10000);
+        return "PAY" + java.util.UUID.randomUUID().toString().replace("-", "");
     }
 
     /**
@@ -118,7 +118,7 @@ public class WeChatPayUtil {
         if (yuan == null) {
             return 0;
         }
-        return (int) (yuan * 100);
+        return java.math.BigDecimal.valueOf(yuan).movePointRight(2).intValueExact();
     }
 
     /**

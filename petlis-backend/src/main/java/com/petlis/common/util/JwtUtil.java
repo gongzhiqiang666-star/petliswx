@@ -37,6 +37,22 @@ public class JwtUtil {
      * @return JWT token
      */
     public String generateToken(Integer userId, String openid, Integer hospitalId, Integer cityId) {
+        return generateToken(userId, openid, hospitalId, cityId, 0);
+    }
+
+    public String generateToken(Integer userId, String openid, Integer hospitalId, Integer cityId, int credentialVersion) {
+        return generateSessionToken(userId, openid, hospitalId, cityId, credentialVersion, "doctor");
+    }
+
+    public String generateReviewerToken(Integer userId, int version) {
+        return generateSessionToken(userId, null, null, null, version, "reviewer");
+    }
+
+    public boolean isReviewerToken(String token) {
+        return "reviewer".equals(parseToken(token).get("role", String.class));
+    }
+
+    private String generateSessionToken(Integer userId, String openid, Integer hospitalId, Integer cityId, int credentialVersion, String role) {
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + expiration);
 
@@ -45,6 +61,8 @@ public class JwtUtil {
                 .claim("openid", openid)
                 .claim("hospitalId", hospitalId)
                 .claim("cityId", cityId)
+                .claim("credentialVersion", credentialVersion)
+                .claim("role", role)
                 .issuedAt(now)
                 .expiration(expiryDate)
                 .signWith(getSigningKey())
@@ -93,6 +111,11 @@ public class JwtUtil {
     public Integer getCityIdFromToken(String token) {
         Claims claims = parseToken(token);
         return claims.get("cityId", Integer.class);
+    }
+
+    public int getCredentialVersion(String token) {
+        Number value = parseToken(token).get("credentialVersion", Number.class);
+        return value == null ? 0 : value.intValue();
     }
 
     /**

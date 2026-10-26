@@ -35,12 +35,15 @@ import java.util.*;
 @Service
 @RequiredArgsConstructor
 public class PaymentServiceImpl implements PaymentService {
+ private final BusinessNotifications notifications;
+
 
     private final WeChatPaymentRepository weChatPaymentRepository;
     private final ListDiagnosisProjectRepository projectRepository;
     private final UserRepository userRepository;
     private final WeChatPayConfig weChatPayConfig;
     private final WeChatPayHttpClient weChatPayHttpClient;
+    private final CouponService couponService;
 
     @Override
     @Transactional(rollbackOn = Exception.class)
@@ -56,13 +59,30 @@ public class PaymentServiceImpl implements PaymentService {
                 .orElseThrow(() -> new BusinessException("用户不存在"));
 
         // 3. 查询业务订单
-        ListDiagnosisProject order = projectRepository.findById(request.getOrderId())
+        ListDiagnosisProject order = projectRepository.findLockedById(request.getOrderId())
                 .orElseThrow(() -> new BusinessException("订单不存在"));
 
-        // 4. 计算支付金额
-        BigDecimal amount = (request.getAmount() != null && request.getAmount().compareTo(BigDecimal.ZERO) > 0)
-                ? request.getAmount()
-                : BigDecimal.valueOf(order.getTestFee());
+        if (!Objects.equals(order.getInfoHospitalId(), SecurityUtils.getCurrentHospitalId())
+                || !Objects.equals(order.getCreateSampleId(), userId)) {
+            throw new BusinessException(403, "无权支付此申请单");
+        }
+        if (Integer.valueOf(1).equals(order.getIsPayMoney())) throw new BusinessException("订单已支付");
+        if (!OrderStatusEnum.PENDING_PAYMENT.getCode().equals(order.getSampleStatus())) {
+            throw new BusinessException("请等待审核通过后支付");
+        }
+        if (user.getOpenid() == null || user.getOpenid().isBlank()) throw new BusinessException("请先绑定微信");
+        // 金额和 OpenID 均以服务端为准，忽略前端传入的金额与身份。
+        BigDecimal amount = BigDecimal.valueOf(order.getTestFee() == null ? 0 : order.getTestFee())
+                .setScale(2, java.math.RoundingMode.UNNECESSARY);
+        if (amount.signum() <= 0) throw new BusinessException("订单金额无效");
+        var pending=weChatPaymentRepository.findByOrderIdAndStatus(order.getListDiagnosisProjectId(),0);
+        if(pending.isPresent()){
+            WeChatPayment previous=pending.get();
+            if(!Objects.equals(previous.getUserId(),userId) || previous.getAmount().compareTo(amount)!=0)throw new BusinessException("原支付金额已变化，请先关闭原支付记录");
+            if(previous.getPrepayId()==null || previous.getPrepayId().isBlank() || previous.getCreateAt()==null || previous.getCreateAt().before(new Date(System.currentTimeMillis()-110*60*1000L)))throw new BusinessException("支付记录已过期，请关闭原支付后重试");
+            return resumePayment(previous);
+        }
+        if(!Boolean.TRUE.equals(weChatPayConfig.getMockEnabled()) && (weChatPayConfig.getApiKey()==null || weChatPayConfig.getApiKey().isBlank() || "1234567890".equals(weChatPayConfig.getMchId())))throw new BusinessException("微信支付尚未配置，请联系管理员");
 
         // 5. 生成支付订单号
         String paymentNo = WeChatPayUtil.generatePaymentNo();
@@ -74,7 +94,7 @@ public class PaymentServiceImpl implements PaymentService {
         payment.setUserId(user.getId()); // 从token获取的用户ID
         payment.setHospitalId(order.getInfoHospitalId()); // 从订单获取医院ID
         payment.setAmount(amount);
-        payment.setTotalFee(WeChatPayUtil.yuanToFen(amount.doubleValue()));
+        payment.setTotalFee(amount.movePointRight(2).intValueExact());
         payment.setStatus(0); // 未支付
         payment.setPayType("JSAPI");
         payment.setTradeType("JSAPI");
@@ -107,7 +127,7 @@ public class PaymentServiceImpl implements PaymentService {
             params.put("spbill_create_ip", "127.0.0.1"); // TODO: 实际应该获取真实IP
             params.put("notify_url", weChatPayConfig.getNotifyUrl());
             params.put("trade_type", "JSAPI");
-            params.put("openid", request.getOpenid());
+            params.put("openid", user.getOpenid());
 
             // 生成签名
             String sign = WeChatPayUtil.generateMD5Sign(params, weChatPayConfig.getApiKey());
@@ -115,14 +135,14 @@ public class PaymentServiceImpl implements PaymentService {
 
             // 转换为XML
             String xmlRequest = weChatPayHttpClient.mapToXml(params);
-            log.info("微信统一下单请求: {}", xmlRequest);
+            log.debug("调用微信统一下单，支付单号: {}", paymentNo);
 
             // 发送请求
             String xmlResponse = weChatPayHttpClient.postXml(
                 "https://api.mch.weixin.qq.com/pay/unifiedorder",
                 xmlRequest
             );
-            log.info("微信统一下单响应: {}", xmlResponse);
+            log.debug("微信统一下单响应已收到");
 
             // 解析响应
             Map<String, String> responseMap = weChatPayHttpClient.xmlToMap(xmlResponse);
@@ -197,54 +217,35 @@ public class PaymentServiceImpl implements PaymentService {
     public boolean handlePaymentCallback(String paymentNo, String transactionId) {
         log.info("处理支付回调, 支付订单号: {}, 微信交易号: {}", paymentNo, transactionId);
 
-        try {
-            // 1. 查询支付记录
-            WeChatPayment payment = weChatPaymentRepository.findByPaymentNo(paymentNo)
-                    .orElseThrow(() -> new BusinessException("支付订单不存在"));
-
-            // 2. 检查是否已处理
-            if (payment.getStatus() == 1) {
-                log.warn("支付订单已处理, 支付订单号: {}", paymentNo);
-                return true;
-            }
-
-            // 3. 更新支付状态
-            payment.setStatus(1); // 已支付
-            payment.setTransactionId(transactionId);
-            payment.setTradeState("SUCCESS");
-            payment.setPaidAt(new Date());
-            payment.setNotifyTime(new Date());
-
-            weChatPaymentRepository.save(payment);
-
-            // 4. 更新业务订单的支付状态
-            ListDiagnosisProject order = projectRepository.findById(payment.getOrderId())
-                    .orElse(null);
-            if (order != null) {
-                order.setIsPayMoney(1); // 已支付
-
-                // 如果订单当前是待支付状态，支付成功后流转到待审核状态
-                if (order.getSampleStatus().equals(OrderStatusEnum.PENDING_PAYMENT.getCode())) {
-                    order.setSampleStatus(OrderStatusEnum.PENDING_REVIEW.getCode());
-                    log.info("支付成功，订单状态从待支付更新为待审核, orderId: {}", payment.getOrderId());
-                }
-
-                projectRepository.save(order);
-            }
-
-            log.info("支付回调处理成功, 支付订单号: {}", paymentNo);
+        WeChatPayment payment = weChatPaymentRepository.findLockedByPaymentNo(paymentNo)
+                .orElseThrow(() -> new BusinessException("支付订单不存在"));
+        if (Integer.valueOf(1).equals(payment.getStatus())) {
+            if (!Objects.equals(payment.getTransactionId(), transactionId)) throw new BusinessException("交易号不一致");
             return true;
-        } catch (Exception e) {
-            log.error("处理支付回调失败", e);
-            return false;
         }
+        if (!Integer.valueOf(0).equals(payment.getStatus())) throw new BusinessException("支付订单已关闭");
+        ListDiagnosisProject order = projectRepository.findLockedById(payment.getOrderId())
+                .orElseThrow(() -> new BusinessException("业务订单不存在"));
+        if (!OrderStatusEnum.PENDING_PAYMENT.getCode().equals(order.getSampleStatus())) {
+            throw new BusinessException("订单不处于审核通过待支付状态");
+        }
+        payment.setStatus(1);
+        payment.setTransactionId(transactionId);
+        payment.setTradeState("SUCCESS");
+        payment.setPaidAt(new Date());
+        payment.setNotifyTime(new Date());
+        order.setIsPayMoney(1);
+        order.setSampleStatus(OrderStatusEnum.WAITING_REPORT.getCode());
+        notifications.order(order.getListDiagnosisProjectId(),order.getCreateSampleId(),OrderStatusEnum.WAITING_REPORT.getCode());
+        weChatPaymentRepository.save(payment);
+        projectRepository.save(order);
+        couponService.consume(payment.getOrderId());
+        return true;
     }
 
     @Override
     public Integer getPaymentStatus(String paymentNo) {
-        return weChatPaymentRepository.findByPaymentNo(paymentNo)
-                .map(WeChatPayment::getStatus)
-                .orElse(null);
+        return ownedPayment(paymentNo).getStatus();
     }
 
     @Override
@@ -252,19 +253,39 @@ public class PaymentServiceImpl implements PaymentService {
     public void closePayment(String paymentNo) {
         log.info("关闭支付订单, 支付订单号: {}", paymentNo);
 
-        WeChatPayment payment = weChatPaymentRepository.findByPaymentNo(paymentNo)
-                .orElseThrow(() -> new BusinessException("支付订单不存在"));
+        WeChatPayment payment = ownedPayment(paymentNo);
 
         if (payment.getStatus() != 0) {
             throw new BusinessException("只能关闭未支付的订单");
         }
 
+        if (!Boolean.TRUE.equals(weChatPayConfig.getMockEnabled())) {
+            Map<String, String> params = new HashMap<>();
+            params.put("appid", weChatPayConfig.getAppId());
+            params.put("mch_id", weChatPayConfig.getMchId());
+            params.put("out_trade_no", paymentNo);
+            params.put("nonce_str", WeChatPayUtil.generateNonceStr());
+            params.put("sign", WeChatPayUtil.generateMD5Sign(params, weChatPayConfig.getApiKey()));
+            Map<String, String> result = weChatPayHttpClient.xmlToMap(weChatPayHttpClient.postXml(
+                    "https://api.mch.weixin.qq.com/pay/closeorder", weChatPayHttpClient.mapToXml(params)));
+            if (!"SUCCESS".equals(result.get("return_code")) || !"SUCCESS".equals(result.get("result_code"))) {
+                throw new BusinessException("微信关闭订单失败，请查询支付状态后重试");
+            }
+        }
         payment.setStatus(2); // 已关闭
         payment.setUpdateAt(new Date());
         weChatPaymentRepository.save(payment);
 
-        // TODO: 实际项目中需要调用微信关闭订单API
         log.info("支付订单已关闭, 支付订单号: {}", paymentNo);
+    }
+
+    private WeChatPayment ownedPayment(String paymentNo) {
+        WeChatPayment payment = weChatPaymentRepository.findByPaymentNo(paymentNo)
+                .orElseThrow(() -> new BusinessException("支付订单不存在"));
+        if (!Objects.equals(payment.getUserId(), SecurityUtils.getCurrentUserId())) {
+            throw new BusinessException(403, "无权访问此支付记录");
+        }
+        return payment;
     }
 
     /**
@@ -275,6 +296,14 @@ public class PaymentServiceImpl implements PaymentService {
      * @param amount 支付金额
      * @return 模拟的支付响应
      */
+    private PaymentResponse resumePayment(WeChatPayment payment) {
+        boolean mock=payment.getPrepayId().startsWith("mock_");
+        if(mock && !Boolean.TRUE.equals(weChatPayConfig.getMockEnabled()))throw new BusinessException("请关闭原开发支付记录后重试");
+        String timestamp=String.valueOf(System.currentTimeMillis()/1000),nonce=WeChatPayUtil.generateNonceStr(),packageValue="prepay_id="+payment.getPrepayId();
+        var params=new HashMap<String,String>();params.put("appId",weChatPayConfig.getAppId());params.put("timeStamp",timestamp);params.put("nonceStr",nonce);params.put("package",packageValue);params.put("signType","MD5");
+        PaymentResponse response=new PaymentResponse();response.setPaymentNo(payment.getPaymentNo());response.setOrderId(payment.getOrderId());response.setAmount(payment.getAmount().toPlainString());response.setPrepayId(payment.getPrepayId());response.setTimeStamp(timestamp);response.setNonceStr(nonce);response.setPackageValue(packageValue);response.setSignType("MD5");response.setPaySign(mock?"MOCK_SIGNATURE":WeChatPayUtil.generateMD5Sign(params,weChatPayConfig.getApiKey()));response.setStatus(0);response.setMock(mock);response.setStatusDesc(mock?"未支付（开发模式）":"未支付");return response;
+    }
+
     private PaymentResponse createMockPaymentResponse(String paymentNo, Integer orderId, BigDecimal amount) {
         // 生成模拟的prepay_id
         String mockPrepayId = "mock_prepay_id_" + System.currentTimeMillis();
@@ -307,6 +336,7 @@ public class PaymentServiceImpl implements PaymentService {
         response.setAmount(String.valueOf(amount));
         response.setStatus(0);
         response.setStatusDesc("未支付（Mock模式）");
+        response.setMock(true);
         response.setPrepayId(mockPrepayId);
         response.setTimeStamp(timeStamp);
         response.setNonceStr(nonceStr);

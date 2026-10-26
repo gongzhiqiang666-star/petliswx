@@ -19,6 +19,10 @@ import java.util.List;
 @Data
 @Schema(description = "创建检测申请请求")
 public class OrderCreateRequest {
+    private Long draftId;
+    private Integer draftVersion;
+    private Integer laboratoryId;
+    private Long userCouponId;
 
     @Schema(description = "城市ID（已废弃，从token中获取）")
     private Integer cityId;  // 不再需要前端传递，从token中获取

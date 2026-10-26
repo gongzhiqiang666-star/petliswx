@@ -12,13 +12,13 @@
 .page-btn {
   min-width: 140rpx;
   padding: 16rpx 32rpx;
-  background: linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%);
+  background: linear-gradient(135deg, #0D6E6E 0%, #0A5A5A 100%);
   color: #FFFFFF;
   border: none;
   border-radius: 12rpx;
   font-size: 28rpx;
   font-weight: 500;
-  box-shadow: 0 4rpx 12rpx rgba(37, 99, 235, 0.15);
+  box-shadow: 0 4rpx 12rpx rgba(13, 110, 110, 0.15);
   transition: all 0.3s;
 }
 

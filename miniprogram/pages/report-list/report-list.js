@@ -4,9 +4,10 @@ const api = require('../../api/index.js')
 Page({
   data: {
     searchKeyword: '',
+    error:'',
     reports: [],
     filteredReports: [],
-    allReportsLoaded: [], // 所有已加载的报告（用于客户端筛选）
+    allReportsLoaded: [], // 当前服务端查询已加载的分页结果
     loading: false,
     loadingMore: false,
     isEmpty: false,
@@ -18,9 +19,10 @@ Page({
     totalCount: 0         // 总数据量
   },
 
-  onLoad() {
-    this.loadReports()
-  },
+  onLoad() {},
+  onReachBottom(){this.onScrollToLower()},
+  onUnload(){if(this.searchTimer)clearTimeout(this.searchTimer)},
+  retry(){this.loadReports(this._failedLoadMore===true)},
 
   onShow() {
     // 从其他页面返回时，如果是第一页则刷新列表
@@ -35,7 +37,7 @@ Page({
    */
   async loadReports(loadMore = false) {
     // 防止重复加载
-    if (this.data.loading || this.data.loadingMore) {
+    if (loadMore && (this.data.loading || this.data.loadingMore)) {
       return
     }
 
@@ -44,6 +46,9 @@ Page({
       return
     }
 
+    const requestId=this._requestId=(this._requestId || 0)+1
+    const requestedPage=loadMore?this.data.currentPage+1:1
+    this.setData({error:''})
     // 设置加载状态
     if (loadMore) {
       this.setData({ loadingMore: true })
@@ -59,16 +64,19 @@ Page({
 
     try {
       const result = await api.reports.getList({
-        pageNum: this.data.currentPage,
-        pageSize: this.data.pageSize
+        pageNum: requestedPage-1,
+        pageSize: this.data.pageSize,
+        keyword:this.data.searchKeyword.trim()
       })
 
+      if(requestId!==this._requestId)return
+      this._failedLoadMore=false
       // 处理返回的数据
       const reportList = result.list || result.content || result || []
       const totalCount = result.total || result.totalElements || 0
 
       // 判断是否还有更多数据
-      const hasMore = (this.data.currentPage * this.data.pageSize) < totalCount
+      const hasMore = (requestedPage * this.data.pageSize) < totalCount
 
       // 为新加载的报告添加状态标签和格式化日期
       const reportsWithLabels = reportList.map(report => ({
@@ -91,6 +99,7 @@ Page({
       const filteredReports = this.filterReports(newAllReports)
 
       this.setData({
+        currentPage:requestedPage,
         reports: newAllReports,
         allReportsLoaded: newAllReports,
         filteredReports: filteredReports,
@@ -109,10 +118,13 @@ Page({
         hasMore: hasMore
       })
     } catch (err) {
+      if(requestId!==this._requestId)return
+      this._failedLoadMore=loadMore
       console.error('[Reports] 加载报告列表失败:', err)
       this.setData({
         loading: false,
-        loadingMore: false
+        loadingMore: false,
+        error:err.message || '报告加载失败，请稍后重试'
       })
 
       // 网络错误提示
@@ -152,22 +164,6 @@ Page({
     const reports = reportsToFilter || this.data.allReportsLoaded
     let filtered = [...reports]
 
-    // 按关键词搜索
-    if (this.data.searchKeyword) {
-      const keyword = this.data.searchKeyword.toLowerCase()
-      filtered = filtered.filter(r => {
-        // 宠物名称搜索
-        if (r.animalName && r.animalName.toLowerCase().includes(keyword)) {
-          return true
-        }
-        // 检测项目搜索
-        if (r.testTypeName && r.testTypeName.toLowerCase().includes(keyword)) {
-          return true
-        }
-        return false
-      })
-    }
-
     // 按时间倒序排序（最新的在前）（iOS兼容）
     filtered.sort((a, b) => {
       const dateA = this.parseDate(a.createDt || a.sendMailDt || a.collectDt || 0)
@@ -184,22 +180,8 @@ Page({
   onScrollToLower() {
     console.log('[ReportList] 滚动到底部，加载更多')
 
-    // 搜索状态下不加载更多（因为搜索是客户端筛选）
-    if (this.data.searchKeyword) {
-      return
-    }
-
-    // 如果没有更多数据或正在加载，不执行
-    if (!this.data.hasMore || this.data.loading || this.data.loadingMore) {
-      return
-    }
-
-    // 页码加1并加载更多
-    this.setData({
-      currentPage: this.data.currentPage + 1
-    }, () => {
-      this.loadReports(true)
-    })
+    if(!this.data.hasMore || this.data.loading || this.data.loadingMore)return
+    this.loadReports(true)
   },
 
   /**
@@ -262,7 +244,9 @@ Page({
    * 搜索输入（带防抖）
    */
   onSearchInput(e) {
-    const keyword = e.detail.value
+    const keyword = e.detail.value.slice(0,100)
+    this._requestId=(this._requestId || 0)+1
+    this.setData({loading:true,loadingMore:false,error:''})
     this.setData({
       searchKeyword: keyword
     })
@@ -272,11 +256,7 @@ Page({
       clearTimeout(this.searchTimer)
     }
     this.searchTimer = setTimeout(() => {
-      // 客户端筛选
-      const filtered = this.filterReports()
-      this.setData({
-        filteredReports: filtered
-      })
+      this.loadReports(false)
     }, 400)
   },
 
@@ -292,11 +272,7 @@ Page({
       return
     }
 
-    // 已完成，显示详情弹窗
-    this.setData({
-      selectedReport: report,
-      showModal: true
-    })
+    wx.navigateTo({url:'/pages/report-view/report-view?id='+report.reportId})
   },
 
   /**
@@ -313,7 +289,7 @@ Page({
    * 新建预约
    */
   onNewAppointment() {
-    wx.navigateTo({
+    wx.switchTab({
       url: '/pages/order-select-pet/order-select-pet'
     })
   },
@@ -351,62 +327,8 @@ Page({
   /**
    * 下载PDF报告
    */
-  onDownloadPDF(e) {
-    const pdfUrl = e.currentTarget.dataset.url;
-    const reportName = e.currentTarget.dataset.name || '检测报告';
-
-    if (!pdfUrl) {
-      wx.showToast({
-        title: 'PDF地址不存在',
-        icon: 'none'
-      });
-      return;
-    }
-
-    console.log('[ReportList] 下载PDF:', pdfUrl);
-
-    wx.showLoading({
-      title: '下载中...',
-      mask: true
-    });
-
-    // 下载PDF文件
-    wx.downloadFile({
-      url: pdfUrl,
-      success: (res) => {
-        wx.hideLoading();
-        if (res.statusCode === 200) {
-          // 打开PDF文档
-          wx.openDocument({
-            filePath: res.tempFilePath,
-            fileType: 'pdf',
-            showMenu: true,
-            success: () => {
-              console.log('[ReportList] PDF打开成功');
-            },
-            fail: (err) => {
-              console.error('[ReportList] PDF打开失败:', err);
-              wx.showToast({
-                title: '打开失败',
-                icon: 'none'
-              });
-            }
-          });
-        } else {
-          wx.showToast({
-            title: '下载失败',
-            icon: 'none'
-          });
-        }
-      },
-      fail: (err) => {
-        wx.hideLoading();
-        console.error('[ReportList] PDF下载失败:', err);
-        wx.showToast({
-          title: '下载失败',
-          icon: 'none'
-        });
-      }
-    });
+  async onDownloadPDF(e) {
+    wx.showLoading({title:'下载中...',mask:true});
+    try{await require('../../utils/reports').openReportFromURL(e.currentTarget.dataset.url)}catch(error){wx.showToast({title:error.message || '下载失败，请重试',icon:'none'})}finally{wx.hideLoading()}
   }
 })

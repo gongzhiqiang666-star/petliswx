@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 750 320">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0B3D3A"/>
+      <stop offset="1" stop-color="#0D6E6E"/>
+    </linearGradient>
+    <linearGradient id="glass" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#7FD8C5" stop-opacity=".28"/>
+      <stop offset="1" stop-color="#7FD8C5" stop-opacity=".08"/>
+    </linearGradient>
+  </defs>
+  <rect width="750" height="320" rx="24" fill="url(#bg)"/>
+  <circle cx="640" cy="40" r="150" fill="#ffffff" opacity=".045"/>
+  <circle cx="60" cy="300" r="110" fill="#ffffff" opacity=".035"/>
+  <g fill="#9FD8CC" opacity=".35">
+    <circle cx="430" cy="62" r="3"/><circle cx="452" cy="62" r="3"/><circle cx="474" cy="62" r="3"/>
+    <circle cx="430" cy="84" r="3"/><circle cx="452" cy="84" r="3"/><circle cx="474" cy="84" r="3"/>
+    <circle cx="430" cy="106" r="3"/><circle cx="452" cy="106" r="3"/><circle cx="474" cy="106" r="3"/>
+  </g>
+  <g transform="translate(500,52)">
+    <path d="M64 8h56M72 8v52L20 166q-10 22 14 22h132q24 0 14-22L104 60V8" fill="url(#glass)" stroke="#BFE8DD" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M40 138h120" stroke="#BFE8DD" stroke-width="4" opacity=".4"/>
+    <g fill="#DFF5EE">
+      <ellipse cx="90" cy="124" rx="17" ry="13"/>
+      <circle cx="66" cy="98" r="8"/><circle cx="83" cy="88" r="8"/>
+      <circle cx="101" cy="88" r="8"/><circle cx="118" cy="98" r="8"/>
+    </g>
+    <path d="M188 36v28M174 50h28" stroke="#9FD8CC" stroke-width="5" stroke-linecap="round" opacity=".8"/>
+  </g>
+  <g fill="none" stroke="#C9E9E0" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" opacity=".85">
+    <path d="M486 252c-8 0-14-5-14-10 0-4 3-6 6-6 1 0 3 1 6 1s5-1 6-1c3 0 6 2 6 6 0 5-4 10-10 10z"/>
+    <path d="M470 236c-3 1-6-1-6-4 0-3 2-5 4-4s3 3 2 5c0 1 0 2-1 2zM480 229c-3 0-5-2-4-5s3-4 5-3 3 3 2 6c0 1-1 3-3 2zM492 229c3 0 5-2 4-5s-3-4-5-3-3 3-2 6c0 1 1 3 3 2zM502 236c3 1 6-1 6-4 0-3-2-5-4-4s-3 3-2 5c0 1 0 2 1 2z"/>
+    <path d="M626 262v-22l10-12 10 12v22M640 252h12M640 262h12" opacity=".7"/>
+    <path d="M606 262c0-10 8-18 20-18s20 8 20 18M614 262v-8M638 262v-8" opacity=".7"/>
+  </g>
+  <g fill="#EAF6F1">
+    <text x="42" y="82" font-family="Avenir Next,Helvetica Neue,sans-serif" font-size="15" letter-spacing="4" opacity=".75">LABOKLIN</text>
+    <text x="42" y="142" font-family="PingFang SC,Helvetica Neue,sans-serif" font-size="38" font-weight="600" letter-spacing="2">专注宠物医学检验</text>
+    <text x="42" y="188" font-family="PingFang SC,Helvetica Neue,sans-serif" font-size="19" font-weight="300" letter-spacing="1.5" opacity=".85">样本到报告 · 一站协同</text>
+    <text x="42" y="252" font-family="PingFang SC,Helvetica Neue,sans-serif" font-size="14" letter-spacing="1" opacity=".6">精准检测 · 快速协同 · 报告直达</text>
+  </g>
+</svg>

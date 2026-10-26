@@ -14,6 +14,10 @@ import java.util.Optional;
  */
 @Repository
 public interface WeChatPaymentRepository extends JpaRepository<WeChatPayment, Integer> {
+    @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
+    @org.springframework.data.jpa.repository.Query("select p from WeChatPayment p where p.paymentNo = :paymentNo")
+    Optional<WeChatPayment> findLockedByPaymentNo(@org.springframework.data.repository.query.Param("paymentNo") String paymentNo);
+
 
     /**
      * 根据支付订单号查询

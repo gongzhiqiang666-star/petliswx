@@ -6,12 +6,14 @@ import com.petlis.entity.business.DiagnosisDetail;
 import com.petlis.entity.business.DiagnosisDetailInfo;
 import com.petlis.entity.business.ListDiagnosisProject;
 import com.petlis.entity.dict.InfoHospital;
+import com.petlis.entity.dict.InfoSampleType;
 import com.petlis.entity.dict.InfoTestType;
 import com.petlis.common.exception.BusinessException;
 import com.petlis.mapper.ReportMapper;
 import com.petlis.repository.DiagnosisDetailInfoRepository;
 import com.petlis.repository.DiagnosisDetailRepository;
 import com.petlis.repository.InfoHospitalRepository;
+import com.petlis.repository.InfoSampleTypeRepository;
 import com.petlis.repository.InfoTestTypeRepository;
 import com.petlis.repository.ListDiagnosisProjectRepository;
 import com.petlis.service.FileService;
@@ -28,6 +30,7 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
 import java.net.URL;
@@ -35,6 +38,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
 /**
  * 检测报告Service实现类
@@ -52,6 +56,8 @@ public class ReportServiceImpl implements ReportService {
     private final ListDiagnosisProjectRepository listDiagnosisProjectRepository;
     private final InfoTestTypeRepository infoTestTypeRepository;
     private final InfoHospitalRepository infoHospitalRepository;
+    private final InfoSampleTypeRepository infoSampleTypeRepository;
+    private final JdbcTemplate jdbcTemplate;
     private final ReportMapper reportMapper;
     private final FileService fileService;
 
@@ -102,29 +108,41 @@ public class ReportServiceImpl implements ReportService {
     public ReportVO getReportDetail(Integer reportId) {
         log.info("获取报告详情, reportId: {}", reportId);
 
-        // 查询检测明细
         DiagnosisDetail detail = diagnosisDetailRepository.findById(reportId)
                 .orElseThrow(() -> new BusinessException("报告不存在"));
+        ListDiagnosisProject project = requireOwnedProject(detail);
+        InfoHospital hospital = requireHospital(project);
+        boolean paymentRestricted = isPaymentRestricted(project, hospital);
 
-        // 转换为VO
         ReportVO vo = reportMapper.toVO(detail);
-
-        // 加载报告内容
-        loadReportContent(vo, reportId);
-
-        // 加载申请单信息
-        ListDiagnosisProject project = listDiagnosisProjectRepository.findById(detail.getListDiagnosisProjectId())
-                .orElse(null);
-        if (project != null) {
-            reportMapper.updateProjectInfo(vo, project);
-
-            // 加载医院名称
-            if (project.getInfoHospitalId() != null) {
-                InfoHospital hospital = infoHospitalRepository.findById(project.getInfoHospitalId()).orElse(null);
-                if (hospital != null) {
-                    vo.setHospitalName(hospital.getHospitalName());
-                }
+        reportMapper.updateProjectInfo(vo, project);
+        vo.setHospitalName(hospital.getHospitalName());
+        vo.setPaymentRestricted(paymentRestricted);
+        vo.setPaid(project.getIsPayMoney() != null && project.getIsPayMoney() == 1);
+        if (project.getInfoSampleTypeId() != null) {
+            InfoSampleType sampleType = infoSampleTypeRepository.findById(project.getInfoSampleTypeId()).orElse(null);
+            if (sampleType != null) {
+                vo.setSampleTypeName(sampleType.getSampleName());
             }
+        }
+        List<Map<String, Object>> orderMetadata = jdbcTemplate.queryForList(
+                "SELECT l.name AS laboratoryName, oe.settlement_mode AS settlementMode FROM lin_order_extension oe LEFT JOIN lin_laboratory l ON l.id = oe.laboratory_id WHERE oe.order_id = ?",
+                project.getListDiagnosisProjectId()
+        );
+        if (!orderMetadata.isEmpty()) {
+            Map<String, Object> metadata = orderMetadata.get(0);
+            vo.setLaboratoryName((String) metadata.get("laboratoryName"));
+            Object settlementMode = metadata.get("settlementMode");
+            if (settlementMode != null) {
+                vo.setSettlementMode(settlementMode.toString());
+            }
+        }
+        if (paymentRestricted) {
+            vo.setReportResult(null);
+            vo.setMailReport(null);
+            vo.setPdfHttpUrl(null);
+        } else {
+            loadReportContent(vo, reportId);
         }
 
         // 加载检测项目名称
@@ -152,6 +170,7 @@ public class ReportServiceImpl implements ReportService {
         // 查询检测明细获取PDF URL
         DiagnosisDetail detail = diagnosisDetailRepository.findById(reportId)
                 .orElseThrow(() -> new BusinessException("报告不存在"));
+        assertPdfAccessAllowed(detail);
 
         String pdfUrl = detail.getPdfHttpUrl();
         if (pdfUrl == null || pdfUrl.isEmpty()) {
@@ -184,6 +203,7 @@ public class ReportServiceImpl implements ReportService {
         // 查询检测明细获取PDF URL
         DiagnosisDetail detail = diagnosisDetailRepository.findById(reportId)
                 .orElseThrow(() -> new BusinessException("报告不存在"));
+        assertPdfAccessAllowed(detail);
 
         String pdfUrl = detail.getPdfHttpUrl();
         if (pdfUrl == null || pdfUrl.isEmpty()) {
@@ -228,6 +248,22 @@ public class ReportServiceImpl implements ReportService {
 
             // 主查询中，只查询在子查询结果中的记录
             predicates.add(cb.in(root.get("listDiagnosisProjectId")).value(subquery));
+
+            if (request.getKeyword() != null && !request.getKeyword().isBlank()) {
+                String keyword=request.getKeyword().trim();
+                if(keyword.length()>100)throw new BusinessException("搜索关键词最多100个字符");
+                // Escape LIKE wildcards so user input remains a literal substring.
+                String pattern="%"+keyword.toLowerCase(java.util.Locale.ROOT).replace("!","!!").replace("%","!%").replace("_","!_")+"%";
+                var matchingPets=query.subquery(Integer.class);
+                var petProject=matchingPets.from(ListDiagnosisProject.class);
+                matchingPets.select(petProject.get("listDiagnosisProjectId"));
+                matchingPets.where(cb.equal(petProject.get("infoHospitalId"),currentHospitalId),cb.like(cb.lower(petProject.get("animalName")),pattern,'!'));
+                var matchingTests=query.subquery(Integer.class);
+                var test=matchingTests.from(InfoTestType.class);
+                matchingTests.select(test.get("infoTestTypeId"));
+                matchingTests.where(cb.like(cb.lower(test.get("testName")),pattern,'!'));
+                predicates.add(cb.or(root.get("listDiagnosisProjectId").in(matchingPets),root.get("infoTestTypeId").in(matchingTests)));
+            }
 
             // 按宠物ID筛选
             if (request.getPetId() != null) {
@@ -286,6 +322,32 @@ public class ReportServiceImpl implements ReportService {
         }
     }
 
+    private ListDiagnosisProject requireOwnedProject(DiagnosisDetail detail) {
+        ListDiagnosisProject project = listDiagnosisProjectRepository.findById(detail.getListDiagnosisProjectId())
+                .orElseThrow(() -> new BusinessException("报告关联订单不存在"));
+        if (!project.getInfoHospitalId().equals(getCurrentHospitalId())) {
+            throw new BusinessException("无权访问此报告");
+        }
+        return project;
+    }
+
+    private InfoHospital requireHospital(ListDiagnosisProject project) {
+        return infoHospitalRepository.findById(project.getInfoHospitalId())
+                .orElseThrow(() -> new BusinessException("订单所属医院不存在"));
+    }
+
+    private boolean isPaymentRestricted(ListDiagnosisProject project, InfoHospital hospital) {
+        return !Integer.valueOf(1).equals(hospital.getPayType())
+                && !Integer.valueOf(1).equals(project.getIsPayMoney());
+    }
+
+    private void assertPdfAccessAllowed(DiagnosisDetail detail) {
+        ListDiagnosisProject project = requireOwnedProject(detail);
+        if (isPaymentRestricted(project, requireHospital(project))) {
+            throw new BusinessException("订单未支付，报告暂未开放，请完成支付后查看");
+        }
+    }
+
     /**
      * 加载关联信息到Response
      *
@@ -297,6 +359,7 @@ public class ReportServiceImpl implements ReportService {
         ListDiagnosisProject project = listDiagnosisProjectRepository.findById(detail.getListDiagnosisProjectId())
                 .orElse(null);
         if (project != null) {
+            response.setPaymentRestricted(isPaymentRestricted(project, requireHospital(project)));
             response.setAnimalName(project.getAnimalName());
             response.setAnimalType(project.getAnimalType());
             response.setCollectDt(project.getCollectDt());

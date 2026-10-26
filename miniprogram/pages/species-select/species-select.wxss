@@ -1,3 +1,4 @@
+@import "../../styles/petlis-3-overrides.wxss";
 /* pages/species-select/species-select.wxss */
 
 /* 搜索栏 */
@@ -105,7 +106,8 @@
 }
 
 .empty-icon {
-  font-size: 96rpx;
+  width: 96rpx;
+  height: 96rpx;
   margin-bottom: 24rpx;
   opacity: 0.5;
 }
@@ -118,7 +120,7 @@
 
 .btn-clear {
   padding: 16rpx 48rpx;
-  background: linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%);
+  background: linear-gradient(135deg, #0D6E6E 0%, #0A5A5A 100%);
   color: #fff;
   border: none;
   border-radius: 12rpx;
@@ -182,7 +184,7 @@
 }
 
 .index-item.active {
-  background: #2563EB;
+  background: #0D6E6E;
   color: #fff;
   font-weight: 600;
   transform: scale(1.2);

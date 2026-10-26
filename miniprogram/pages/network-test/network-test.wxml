@@ -2,38 +2,38 @@
 <view class="container">
   <view class="header">网络测试页面</view>
 
-  <view class="section">
+  <view class="section petlis-card">
     <text class="title">配置信息</text>
     <text class="item">后端地址：{{baseURL}}</text>
     <text class="item">IP地址：{{ipAddress}}</text>
     <text class="item">登录状态：{{loginStatus}}</text>
   </view>
 
-  <view class="section">
+  <view class="section petlis-card">
     <text class="title">清除缓存</text>
-    <button bindtap="clearCache" type="warn" class="btn-danger">清除所有缓存并重新登录</button>
+    <button bindtap="clearCache" type="warn" class="btn-danger petlis-btn petlis-btn-danger">清除所有缓存并重新登录</button>
     <text class="hint">如果遇到"加载失败"，请点击此按钮</text>
   </view>
 
-  <view class="section">
+  <view class="section petlis-card">
     <text class="title">测试按钮</text>
-    <button bindtap="testConnection" type="primary">测试后端连接</button>
-    <button bindtap="testLogin" type="default">测试登录接口</button>
+    <button class="petlis-btn petlis-btn-primary" bindtap="testConnection" type="primary">测试后端连接</button>
+    <button class="petlis-btn petlis-btn-outline" bindtap="testLogin" type="default">测试登录接口</button>
   </view>
 
-  <view class="section">
+  <view class="section petlis-card">
     <text class="title">测试结果</text>
     <text class="result">{{testResult}}</text>
   </view>
 
-  <view class="section">
+  <view class="section petlis-card">
     <text class="title">环境信息</text>
     <text class="item">系统：{{systemInfo.system}}</text>
     <text class="item">平台：{{systemInfo.platform}}</text>
     <text class="item">微信版本：{{systemInfo.version}}</text>
   </view>
 
-  <view class="section">
+  <view class="section petlis-card">
     <text class="title">本地存储</text>
     <text class="item">Token：{{hasToken ? '存在' : '不存在'}}</text>
     <text class="item">用户信息：{{hasUserInfo ? '存在' : '不存在'}}</text>

@@ -1,0 +1,21 @@
+<view class="page">
+  <view wx:if="{{error}}" class="error petlis-empty"><image class="empty-icon" src="/assets/icons/brand-empty.png" mode="aspectFit" /><view class="petlis-empty-text">{{error}}</view><button class="petlis-btn petlis-btn-outline" bindtap="load">重试</button></view>
+  <view wx:if="{{account}}">
+    <view class="card petlis-list-card"><view>我的余额（元）</view><view class="balance">{{account.balance}}</view><view class="hint">个人余额与医院月结账户分开记录。</view></view>
+    <view class="card petlis-list-card"><view>可用积分</view><view class="balance">{{account.points}}</view></view>
+    <view class="card petlis-list-card">
+      <view wx:for="{{links}}" wx:key="page" class="nav" data-page="{{item.page}}" bindtap="open">
+        <image wx:if="{{item.page==='security'}}" class="nav-icon" src="/assets/icons/brand-security.png" mode="aspectFit" />
+        <image wx:elif="{{item.page==='recharge'}}" class="nav-icon" src="/assets/icons/brand-wallet.png" mode="aspectFit" />
+        <image wx:elif="{{item.page==='transactions?kind=wallet' || item.page==='transactions?kind=points'}}" class="nav-icon" src="/assets/icons/brand-transactions.png" mode="aspectFit" />
+        <image wx:elif="{{item.page==='mall'}}" class="nav-icon" src="/assets/icons/brand-gift.png" mode="aspectFit" />
+        <image wx:elif="{{item.page==='coupons'}}" class="nav-icon" src="/assets/icons/brand-coupon.png" mode="aspectFit" />
+        <image wx:elif="{{item.page==='invoices'}}" class="nav-icon" src="/assets/icons/brand-invoice.png" mode="aspectFit" />
+        <image wx:elif="{{item.page==='preferences'}}" class="nav-icon" src="/assets/icons/brand-settings.png" mode="aspectFit" />
+        <text class="nav-label">{{item.title}}</text>
+        <image class="nav-chevron" src="/assets/icons/brand-chevron-right.png" mode="aspectFit" />
+      </view>
+    </view>
+  </view>
+  <view wx:if="{{loading}}" class="loading-text">正在加载…</view>
+</view>

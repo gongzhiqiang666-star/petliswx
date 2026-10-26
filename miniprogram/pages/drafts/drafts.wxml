@@ -1,0 +1,15 @@
+<view class="page">
+  <view wx:if="{{error}}" class="error petlis-empty"><image class="empty-icon" src="/assets/icons/brand-empty.png" mode="aspectFit" /><view class="petlis-empty-text">{{error}}</view><button class="petlis-btn petlis-btn-outline" bindtap="load">重试</button></view>
+  <view wx:for="{{items}}" wx:key="id" class="card petlis-list-card">
+    <view>{{item.animalName || '送检草稿'}}</view>
+    <view class="meta">草稿编号：{{item.id}} · 最近更新 {{item.updatedAt}}</view>
+    <view class="row">
+      <button class="petlis-btn petlis-btn-primary" type="primary" data-id="{{item.id}}" bindtap="open" disabled="{{busy}}">继续填写</button>
+      <button class="petlis-btn petlis-btn-outline delete-button" data-id="{{item.id}}" bindtap="remove" disabled="{{busy}}">删除</button>
+    </view>
+  </view>
+  <view wx:if="{{!busy && !items.length && !error}}" class="empty petlis-empty">
+    <image class="empty-icon" src="/assets/icons/brand-empty.png" mode="aspectFit" aria-hidden="true" />
+    <view>暂无保存的草稿</view>
+  </view>
+</view>

@@ -1,134 +1,120 @@
-<!--pages/home/home.wxml-->
-<view class="home-page" role="main" aria-label="首页">
-  <!-- Hero Section -->
-  <view class="hero-section" role="banner" aria-label="关爱宠物健康">
-    <!-- Decorative Background Elements -->
-    <view class="hero-bg" aria-hidden="true">
-      <view class="bg-circle bg-circle-1"></view>
-      <view class="bg-circle bg-circle-2"></view>
-      <view class="bg-circle bg-circle-3"></view>
-    </view>
-
-    <!-- Hero Content -->
-    <view class="hero-content">
-      <view class="hero-text">
-        <text class="hero-title">关爱宠物健康</text>
-        <text class="hero-subtitle">科学检测 · 专业呵护每一天</text>
+<view class="home-page" role="main" aria-label="医生工作台">
+  <view class="home-hero">
+    <image class="hero-bg" src="/assets/brand/pet-dog.webp" mode="aspectFill" aria-hidden="true" />
+    <view class="hero-top">
+      <view class="hero-identity">
+        <view class="hero-eyebrow"><text>纳博科临 · LABOKLIN</text></view>
+        <view class="hero-hospital">{{hospitalName}}</view>
+        <view class="hero-greeting">你好，{{doctorName}}</view>
+        <view wx:if="{{qualificationStatusLabel}}" class="hero-qualification qualification-{{qualificationTone}}">
+          <view class="qualification-dot"></view>
+          <text>{{qualificationStatusLabel}}</text>
+        </view>
+      </view>
+      <view class="hero-actions">
+        <view class="hero-bell-hit" role="button" aria-label="消息中心" bindtap="onViewAll">
+          <view class="hero-bell"><image src="/assets/icons/brand-message.png" mode="aspectFit" /><view wx:if="{{notificationCount > 0}}" class="hero-unread-dot"></view></view>
+        </view>
+        <view class="hero-bell-hit" role="button" aria-label="使用帮助" bindtap="onHelp">
+          <view class="hero-bell"><image src="/assets/icons/brand-help.png" mode="aspectFit" /></view>
+        </view>
       </view>
     </view>
   </view>
 
-  <!-- Quick Actions Card -->
-  <view class="quick-actions-wrapper" role="region" aria-label="快速操作">
-    <view class="quick-actions-card">
-
-      <!-- 宠物建档 -->
-      <view class="action-item action-item-violet"
-            role="button"
-            aria-label="宠物建档，创建宠物健康档案"
-            bindtap="onPetAdd">
-        <view class="action-decorative" aria-hidden="true"></view>
-        <view class="action-content">
-          <view class="action-icon-box">
-            <image src="/assets/icons/pet.png"
-                   class="action-icon"
-                   mode="aspectFit"
-                   lazy-load="{{true}}"
-                   aria-hidden="true"></image>
-          </view>
-          <view class="action-info">
-            <text class="action-label">宠物建档</text>
-            <text class="action-desc">创建宠物健康档案</text>
-          </view>
-        </view>
-        <view class="action-arrow" aria-hidden="true">
-          <text class="arrow-icon">›</text>
-        </view>
-      </view>
-
-      <!-- 预约检测 -->
-      <view class="action-item action-item-primary"
-            role="button"
-            aria-label="预约检测，在线预约送检服务"
-            bindtap="onOrderSelect">
-        <view class="action-decorative" aria-hidden="true"></view>
-        <view class="action-content">
-          <view class="action-icon-box">
-            <image src="/assets/icons/calendar.png"
-                   class="action-icon"
-                   mode="aspectFit"
-                   lazy-load="{{true}}"
-                   aria-hidden="true"></image>
-          </view>
-          <view class="action-info">
-            <text class="action-label">预约检测</text>
-            <text class="action-desc">在线预约送检服务</text>
-          </view>
-        </view>
-        <view class="action-arrow" aria-hidden="true">
-          <text class="arrow-icon">›</text>
-        </view>
-      </view>
-
-      <!-- 查看报告 -->
-      <view class="action-item action-item-success"
-            role="button"
-            aria-label="查看报告，检测报告在线查询"
-            bindtap="onReportList">
-        <view class="action-decorative" aria-hidden="true"></view>
-        <view class="action-content">
-          <view class="action-icon-box">
-            <image src="/assets/icons/sparkles.png"
-                   class="action-icon"
-                   mode="aspectFit"
-                   lazy-load="{{true}}"
-                   aria-hidden="true"></image>
-          </view>
-          <view class="action-info">
-            <text class="action-label">查看报告</text>
-            <text class="action-desc">检测报告在线查询</text>
-          </view>
-        </view>
-        <view class="action-arrow" aria-hidden="true">
-          <text class="arrow-icon">›</text>
-        </view>
-      </view>
-
+  <view class="quick-card">
+    <view class="quick-entry-item" role="button" aria-label="我要检测" data-id="test" bindtap="openShortcut">
+      <image class="quick-icon" src="/assets/icons/brand-test.png" mode="aspectFit" /><text class="quick-label">我要检测</text>
+    </view>
+    <view class="quick-entry-item" role="button" aria-label="档案中心" data-id="pets" bindtap="openShortcut">
+      <image class="quick-icon" src="/assets/icons/brand-archive.png" mode="aspectFit" /><text class="quick-label">档案中心</text>
+    </view>
+    <view class="quick-entry-item" role="button" aria-label="报告中心" data-id="reports" bindtap="openShortcut">
+      <image class="quick-icon" src="/assets/icons/brand-report.png" mode="aspectFit" /><text class="quick-label">报告中心</text>
+    </view>
+    <view class="quick-entry-item" role="button" aria-label="消息中心" data-id="notifications" bindtap="openShortcut">
+      <image class="quick-icon" src="/assets/icons/brand-message.png" mode="aspectFit" /><text class="quick-label">消息中心</text>
     </view>
   </view>
 
-  <!-- Notifications Section -->
-  <view class="notifications-section">
-    <view class="section-header">
-      <view class="section-title-box">
-        <text class="section-title">消息通知</text>
-        <view class="title-badge" wx:if="{{notificationCount > 0}}">{{notificationCount}}</view>
+  <navigator wx:if="{{!posterError}}" class="poster-banner" url="/pages/articles/articles" aria-label="专注宠物医学检验，查看资讯与活动">
+    <image src="/assets/posters/lab-banner.webp" mode="aspectFit" binderror="onPosterError" />
+  </navigator>
+
+  <view class="home-content">
+    <view class="home-section">
+      <view class="section-heading">
+        <text class="section-title">今日待办</text>
+        <text class="section-note">常用业务直达</text>
       </view>
-      <text class="view-all-link" bindtap="onViewAll">查看全部</text>
+      <view wx:if="{{todoLoading}}" class="section-state">正在加载待办…</view>
+      <view wx:elif="{{todoError}}" class="section-state section-error petlis-empty">
+        <image src="/assets/icons/brand-empty.png" mode="aspectFit" /><view class="petlis-empty-text">{{todoError}}</view><button class="petlis-btn petlis-btn-outline" bindtap="loadTodoSummary">重新加载</button>
+      </view>
+      <view wx:else class="todo-row">
+        <view wx:for="{{todoChips}}" wx:key="status" class="todo-item" role="button" bindtap="onTodoTap">
+          <text class="todo-value todo-{{item.tone}}">{{item.value}}</text>
+          <text class="todo-label">{{item.label}}</text>
+        </view>
+      </view>
     </view>
 
-    <!-- Notifications List -->
-    <view class="notifications-list" wx:if="{{!isEmpty}}">
-      <view class="notification-card" wx:for="{{recentActivities}}" wx:key="id" bindtap="onActivityTap" data-item="{{item}}">
-        <view class="notification-icon-box">
-          <view class="notification-icon-bg">
-            <image src="/assets/icons/activity.png" class="notification-icon" mode="aspectFit"/>
+    <view class="home-section">
+      <view class="section-heading">
+        <text class="section-title">最近业务进度</text>
+        <text class="section-link" role="button" bindtap="onOrdersViewAll">查看全部</text>
+      </view>
+      <view wx:if="{{ordersLoading}}" class="section-state">正在加载业务进度…</view>
+      <view wx:elif="{{ordersError}}" class="section-state section-error petlis-empty">
+        <image src="/assets/icons/brand-empty.png" mode="aspectFit" /><view class="petlis-empty-text">{{ordersError}}</view><button class="petlis-btn petlis-btn-outline" bindtap="loadRecentOrders">重新加载</button>
+      </view>
+      <view wx:elif="{{!recentOrders.length}}" class="section-state petlis-empty"><image src="/assets/icons/brand-empty.png" mode="aspectFit" /><view class="petlis-empty-text">暂无最近订单</view></view>
+      <view wx:else class="timeline">
+        <view wx:for="{{recentOrders}}" wx:key="id" class="timeline-event event-{{item.statusTone}}" role="button" data-id="{{item.id}}" bindtap="onRecentOrderTap">
+          <view class="timeline-dot"></view>
+          <view class="timeline-pet">{{item.petName}}</view>
+          <view class="timeline-meta"><text>{{item.time}}</text><text class="timeline-status">{{item.statusLabel}}</text></view>
+        </view>
+      </view>
+    </view>
+
+    <view class="home-section">
+      <view class="section-heading"><text class="section-title">其他服务</text></view>
+      <view class="service-grid">
+        <view class="service-item" role="button" aria-label="钱包与充值" data-id="account" bindtap="openShortcut">
+          <image class="service-icon" src="/assets/icons/brand-wallet.png" mode="aspectFit" /><text class="service-label">钱包与充值</text>
+        </view>
+        <view class="service-item" role="button" aria-label="优惠券" data-id="coupons" bindtap="openShortcut">
+          <image class="service-icon" src="/assets/icons/brand-coupon.png" mode="aspectFit" /><text class="service-label">优惠券</text>
+        </view>
+        <view class="service-item" role="button" aria-label="送检记录" data-id="orders" bindtap="openShortcut">
+          <image class="service-icon" src="/assets/icons/brand-records.png" mode="aspectFit" /><text class="service-label">送检记录</text>
+        </view>
+        <view class="service-item" role="button" aria-label="发票管理" data-id="invoices" bindtap="openShortcut">
+          <image class="service-icon" src="/assets/icons/brand-invoice.png" mode="aspectFit" /><text class="service-label">发票管理</text>
+        </view>
+      </view>
+    </view>
+
+    <view class="home-section notification-section">
+      <view class="section-heading">
+        <text class="section-title">最新提醒</text>
+        <text class="section-link" role="button" bindtap="onViewAll">查看全部</text>
+      </view>
+      <view wx:if="{{notificationLoading}}" class="section-state">正在加载消息…</view>
+      <view wx:elif="{{notificationError}}" class="section-state section-error petlis-empty">
+        <image src="/assets/icons/brand-empty.png" mode="aspectFit" /><view class="petlis-empty-text">{{notificationError}}</view><button class="petlis-btn petlis-btn-outline" bindtap="loadRecentNotifications">重新加载</button>
+      </view>
+      <view wx:elif="{{isEmpty}}" class="section-state petlis-empty"><image src="/assets/icons/brand-empty.png" mode="aspectFit" /><view class="petlis-empty-text">暂无最新消息</view></view>
+      <view wx:else class="notice-list">
+        <view wx:for="{{recentActivities}}" wx:key="id" class="notice-item" role="button" bindtap="onActivityTap">
+          <view class="notice-body">
+            <view class="notice-title">{{item.title}}</view>
+            <view class="notice-description">{{item.description}}</view>
           </view>
+          <text class="notice-time">{{item.time}}</text>
         </view>
-        <view class="notification-content">
-          <text class="notification-text">{{item.description}}</text>
-          <text class="notification-time">{{item.time}}</text>
-        </view>
-        <view class="notification-indicator"></view>
       </view>
-    </view>
-
-    <!-- Empty State -->
-    <view class="empty-container" wx:if="{{isEmpty}}">
-      <view class="empty-illustration">
-        <image src="/assets/icons/empty-search.png" class="empty-image" mode="aspectFit"></image>
-      </view>
-      <text class="empty-message">暂无通知消息</text>
     </view>
   </view>
 </view>

@@ -1,3 +1,4 @@
+@import "../../styles/petlis-3-overrides.wxss";
 /* pages/sample-type-select/sample-type-select.wxss */
 
 /* 搜索栏 */
@@ -58,7 +59,7 @@
 
 .tab-item.active {
   color: white;
-  background: #2563EB;
+  background: #0D6E6E;
   font-weight: 500;
 }
 

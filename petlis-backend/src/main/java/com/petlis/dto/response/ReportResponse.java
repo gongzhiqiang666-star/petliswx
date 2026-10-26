@@ -135,4 +135,7 @@ public class ReportResponse {
      */
     @Schema(description = "报告编号")
     private String reportNO;
+
+    @Schema(description = "现结订单未支付时报告内容受限")
+    private Boolean paymentRestricted = false;
 }

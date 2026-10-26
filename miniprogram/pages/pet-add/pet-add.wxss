@@ -1,3 +1,4 @@
+@import "../../styles/petlis-3-overrides.wxss";
 /* pages/pet-add/pet-add.wxss */
 /* 微信原生简洁风格 */
 
@@ -85,7 +86,7 @@
 
 /* 表单值（选择器） */
 .form-value {
-  min-height: 88rpx;
+  height: 88rpx;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -98,7 +99,10 @@
 
 .value-text {
   flex: 1;
-  font-size: 30rpx;
+  display: flex;
+  align-items: center;
+  height: 88rpx;
+  font-size: 28rpx;
   color: #000000;
   line-height: 1.4;
 }
@@ -108,11 +112,11 @@
 }
 
 .value-arrow {
-  font-size: 48rpx;
-  color: #CCCCCC;
-  font-weight: 300;
-  line-height: 1;
+  width: 28rpx;
+  height: 28rpx;
+  flex-shrink: 0;
   margin-left: 16rpx;
+  opacity: 0.55;
 }
 
 .form-value-disabled {
@@ -139,6 +143,17 @@
   align-items: center;
   gap: 12rpx;
   cursor: pointer;
+}
+
+.form-radio-item.active {
+  background: #0D6E6E;
+  color: #FFFFFF;
+  box-shadow: none;
+}
+
+.form-radio-item.active .radio-label {
+  color: #FFFFFF;
+  font-weight: 500;
 }
 
 /* 原生 radio 组件样式 */
@@ -221,12 +236,12 @@ radio {
 
 /* 主要按钮 */
 .page-btn-primary {
-  background: #2563EB;
+  background: #0D6E6E;
   color: #ffffff;
 }
 
 .page-btn-primary:active {
-  background: #1D4ED8;
+  background: #0A5A5A;
 }
 
 /* 禁用按钮 */

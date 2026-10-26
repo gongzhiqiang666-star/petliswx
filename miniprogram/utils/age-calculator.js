@@ -104,7 +104,14 @@ function calculateAgeForPicker(birthday) {
   }
 }
 
+function formatAgeDisplay(age) {
+  const match = /^(?:(\d+)Y)?(?:(\d+)M)?$/.exec(age || '');
+  if (!match || (!match[1] && !match[2])) return '';
+  return `${match[1] ? `${match[1]}岁` : ''}${match[2] ? `${match[2]}个月` : ''}`;
+}
+
 module.exports = {
   calculateAge,
-  calculateAgeForPicker
+  calculateAgeForPicker,
+  formatAgeDisplay
 }

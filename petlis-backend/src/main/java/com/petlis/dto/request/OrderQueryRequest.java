@@ -14,6 +14,7 @@ import java.util.Date;
 @Data
 @Schema(description = "查询检测申请请求")
 public class OrderQueryRequest {
+    private String keyword;
 
     @Schema(description = "页码(从0开始)", example = "0")
     private Integer page = 0;

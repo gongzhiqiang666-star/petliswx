@@ -6,7 +6,10 @@ Component({
   properties: {
     value: {
       type: String,
-      value: ''
+      value: '',
+      observer(value) {
+        if (value) this.parseAge(value);
+      }
     }
   },
 

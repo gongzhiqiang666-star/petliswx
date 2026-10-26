@@ -1,4 +1,7 @@
+@import "../../styles/petlis-3-overrides.wxss";
 /* pages/pet-health/pet-health.wxss */
+
+.page { padding-top: 24rpx; }
 
 /* Header */
 .header {
@@ -30,6 +33,7 @@
 }
 
 .pet-selector {
+  margin: 0 32rpx 20rpx;
   display: flex;
   align-items: center;
   gap: 8rpx;
@@ -50,33 +54,24 @@
 
 /* Tabs */
 .tabs {
-  background: #fff;
   display: flex;
-  border-bottom: 2rpx solid #e5e7eb;
-  padding: 0 24rpx;
+  margin: 0 32rpx 20rpx;
+  padding: 4rpx;
+  border: 1rpx solid #E5E5E5;
+  border-radius: 16rpx;
+  background: #F5F7F6;
 }
 
 .tab-item {
   flex: 1;
+  min-width: 0;
+  padding: 0 12rpx;
   text-align: center;
-  padding: 32rpx 0;
-  font-size: 28rpx;
-  color: #6b7280;
   position: relative;
 }
 
-.tab-item.active {
-  color: #6366f1;
-}
-
-.tab-item.active::after {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 4rpx;
-  background: #6366f1;
+.tab-item.petlis-filter-item.active::after {
+  display: none;
 }
 
 /* Content */
@@ -94,7 +89,9 @@
 .vaccine-card {
   margin: 0 24rpx;
   background: #fff;
-  border-radius: 32rpx;
+  border: 1rpx solid #E7EEEA;
+  border-radius: 20rpx;
+  box-shadow: 0 2rpx 8rpx rgba(11,61,58,.04);
   padding: 40rpx;
 }
 
@@ -134,8 +131,8 @@
 }
 
 .vaccine-tag.recommended {
-  background: #eff6ff;
-  color: #2563eb;
+  background: #EAF4F1;
+  color: #0D6E6E;
 }
 
 .vaccine-details {
@@ -200,7 +197,9 @@
 
 .timeline-content {
   background: #fff;
-  border-radius: 32rpx;
+  border: 1rpx solid #E7EEEA;
+  border-radius: 20rpx;
+  box-shadow: 0 2rpx 8rpx rgba(11,61,58,.04);
   padding: 32rpx;
 }
 
@@ -253,18 +252,22 @@
 
 .checkup-action {
   display: flex;
+  min-height: 88rpx;
   align-items: center;
   gap: 8rpx;
+  margin-top: 16rpx;
+  padding-top: 16rpx;
+  border-top: 1rpx solid #EBF0ED;
+  color: #0D6E6E;
   font-size: 28rpx;
-  color: #6366f1;
-  padding-top: 24rpx;
-  border-top: 2rpx solid #f3f4f6;
 }
 
 /* Medical Card */
 .medical-card {
   background: #fff;
-  border-radius: 32rpx;
+  border: 1rpx solid #E7EEEA;
+  border-radius: 20rpx;
+  box-shadow: 0 2rpx 8rpx rgba(11,61,58,.04);
   padding: 40rpx;
 }
 
@@ -287,8 +290,8 @@
 }
 
 .medical-type.medicine {
-  background: #dbeafe;
-  color: #2563eb;
+  background: #D5EAE4;
+  color: #0D6E6E;
 }
 
 .medical-date {
@@ -318,21 +321,37 @@
 
 /* Add Button */
 .add-btn {
+  min-height: 88rpx;
+  box-sizing: border-box;
   background: #fff;
-  border: 4rpx dashed #d1d5db;
-  border-radius: 32rpx;
-  padding: 32rpx;
+  border: 1rpx solid #0D6E6E;
+  border-radius: 44rpx;
+  padding: 0 32rpx;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 16rpx;
-  color: #6366f1;
+  color: #0D6E6E;
   font-size: 28rpx;
+}
+
+.health-state {
+  padding: 40rpx 32rpx;
+}
+
+.health-state-error .petlis-empty-text {
+  color: #C96F45;
 }
 
 .add-icon {
   width: 40rpx;
   height: 40rpx;
+}
+
+.action-arrow {
+  width: 28rpx;
+  height: 28rpx;
+  flex-shrink: 0;
 }
 
 /* FAB */

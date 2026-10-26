@@ -1,93 +1,110 @@
-<!--pages/order-preview/order-preview.wxml-->
-<view class="page">
-  <scroll-view class="content" scroll-y>
-    <!-- Pet Info -->
-    <view class="card">
+<view class="page" role="main" aria-label="确认送检信息">
+  <view class="content">
+    <view class="flow-header">
+      <view class="flow-steps" aria-label="送检进度：第 3 步，共 3 步">
+        <view class="flow-step">
+          <view class="flow-step-dot">1</view>
+          <text class="flow-step-label">填写资料</text>
+        </view>
+        <view class="flow-connector"></view>
+        <view class="flow-step">
+          <view class="flow-step-dot">2</view>
+          <text class="flow-step-label">选择项目</text>
+        </view>
+        <view class="flow-connector"></view>
+        <view class="flow-step active">
+          <view class="flow-step-dot">3</view>
+          <text class="flow-step-label">确认送检</text>
+        </view>
+      </view>
+    </view>
+
+    <view class="card petlis-card">
       <view class="card-header">
         <view class="header-line"></view>
-        <text class="card-title">宠物信息</text>
+        <text class="card-title">档案摘要</text>
+      </view>
+      <view class="patient-hero">
+        <view class="patient-identity">
+          <view class="patient-name">{{formData.petInfo.animalName}}</view>
+          <view class="patient-name-en">{{formData.petInfo.animalNameEn || '英文名未填写'}}</view>
+        </view>
+        <text class="patient-tag">送检档案</text>
       </view>
       <view class="info-grid">
-        <view class="info-item info-full">
-          <text class="info-label">宠物名字：</text>
-          <text class="info-value">{{formData.petInfo.animalName}}</text>
-        </view>
-        <view class="info-item info-full">
-          <text class="info-label">英文名：</text>
-          <text class="info-value">{{formData.petInfo.animalNameEn}}</text>
-        </view>
         <view class="info-item">
-          <text class="info-label">物种：</text>
+          <text class="info-label">物种</text>
           <text class="info-value {{formData.petInfo.infoAnimalName ? '' : 'empty'}}">{{formData.petInfo.infoAnimalName || '未填写'}}</text>
         </view>
         <view class="info-item">
-          <text class="info-label">品种：</text>
+          <text class="info-label">品种</text>
           <text class="info-value {{formData.petInfo.infoVarietyName ? '' : 'empty'}}">{{formData.petInfo.infoVarietyName || '未填写'}}</text>
         </view>
         <view class="info-item">
-          <text class="info-label">性别：</text>
+          <text class="info-label">性别</text>
           <text class="info-value">{{formData.petInfo.genderText}}</text>
         </view>
         <view class="info-item">
-          <text class="info-label">年龄：</text>
+          <text class="info-label">年龄</text>
           <text class="info-value {{formData.animalInfo.ageDisplay !== '未填写' ? '' : 'empty'}}">{{formData.animalInfo.ageDisplay}}</text>
         </view>
         <view class="info-item">
-          <text class="info-label">体重：</text>
+          <text class="info-label">体重</text>
           <text class="info-value {{formData.animalInfo.weightDisplay !== '未填写' ? '' : 'empty'}}">{{formData.animalInfo.weightDisplay}}</text>
         </view>
         <view class="info-item info-full">
-          <text class="info-label">芯片号：</text>
+          <text class="info-label">芯片号</text>
           <text class="info-value {{formData.petInfo.chipNo ? '' : 'empty'}}">{{formData.petInfo.chipNo || '未填写'}}</text>
         </view>
       </view>
     </view>
 
-    <!-- Sample Info -->
-    <view class="card">
+    <view class="card petlis-card">
       <view class="card-header">
         <view class="header-line"></view>
         <text class="card-title">采样信息</text>
       </view>
       <view class="info-row-list">
         <view class="info-row">
-          <text class="row-label">采样类型：</text>
+          <text class="row-label">采样类型</text>
           <text class="row-value {{formData.sampleInfo.sampleTypeName ? '' : 'empty'}}">{{formData.sampleInfo.sampleTypeName || '未填写'}}</text>
         </view>
         <view class="info-row">
-          <text class="row-label">采样部位：</text>
+          <text class="row-label">采样部位</text>
           <text class="row-value {{formData.sampleInfo.sampleArea ? '' : 'empty'}}">{{formData.sampleInfo.sampleArea || '未填写'}}</text>
         </view>
         <view class="info-row">
-          <text class="row-label">采样日期：</text>
+          <text class="row-label">采样日期</text>
           <text class="row-value {{formData.sampleInfo.collectDt ? '' : 'empty'}}">{{formData.sampleInfo.collectDt || '未填写'}}</text>
         </view>
       </view>
     </view>
 
-    <!-- Delivery Info -->
-    <view class="card">
+    <view class="card petlis-card">
       <view class="card-header">
         <view class="header-line"></view>
         <text class="card-title">送检信息</text>
       </view>
       <view class="info-row-list">
         <view class="info-row">
-          <text class="row-label">畜主姓名：</text>
-          <text class="row-value {{formData.deliveryInfo.masterName ? '' : 'empty'}}">{{formData.deliveryInfo.masterName || '未填写'}} ({{formData.deliveryInfo.masterNameEn || '未填写'}})</text>
+          <text class="row-label">畜主姓名</text>
+          <text class="row-value {{formData.deliveryInfo.masterName ? '' : 'empty'}}">{{formData.deliveryInfo.masterName || '未填写'}}（{{formData.deliveryInfo.masterNameEn || '未填写'}}）</text>
         </view>
         <view class="info-row">
-          <text class="row-label">送检医师：</text>
+          <text class="row-label">送检医师</text>
           <text class="row-value {{formData.deliveryInfo.doctorName ? '' : 'empty'}}">{{formData.deliveryInfo.doctorName || '未填写'}}</text>
         </view>
       </view>
     </view>
 
-    <!-- Test Items -->
-    <view class="card">
+    <view class="card petlis-card fee-card">
       <view class="card-header">
         <view class="header-line"></view>
-        <text class="card-title">检测项目</text>
+        <text class="card-title">费用明细</text>
+      </view>
+      <view class="laboratory-row">
+        <text class="row-label">检测实验室</text>
+        <text class="laboratory-value">{{formData.laboratoryName}}</text>
       </view>
       <view class="test-items">
         <view class="test-item"
@@ -97,27 +114,64 @@
           <view class="test-price">¥{{item.price}}</view>
         </view>
       </view>
+
+      <picker class="coupon-picker" range="{{coupons}}" range-key="name" value="{{couponIndex}}" bindchange="couponChange">
+        <view class="coupon-row petlis-input">
+          <text class="coupon-label">优惠券</text>
+          <view class="coupon-value-wrap">
+            <text class="coupon-value">{{coupons[couponIndex].name || '加载中'}}</text>
+            <image class="coupon-arrow" src="/assets/icons/brand-chevron-down.png" mode="aspectFit" aria-hidden="true"></image>
+          </view>
+        </view>
+      </picker>
+
+      <view class="quote-detail" wx:if="{{quote}}">
+        <view class="quote-row">
+          <text>项目原价</text>
+          <text>¥{{quote.originalAmount}}</text>
+        </view>
+        <view class="quote-row discount-row">
+          <text>优惠金额</text>
+          <text>-¥{{quote.discountAmount}}</text>
+        </view>
+      </view>
+      <view class="quote-status quote-error" wx:if="{{quoteError}}">{{quoteError}}</view>
+      <view class="quote-status" wx:if="{{quoting}}">正在核价，请稍候…</view>
+
       <view class="total-price">
-        <text class="total-label">总计：</text>
+        <text class="total-label">合计</text>
         <text class="total-amount">¥{{totalPrice}}</text>
       </view>
     </view>
 
-    <!-- Remark -->
-    <view class="card" wx:if="{{formData.otherInfo.remark}}">
+    <view class="subscription-card petlis-card">
+      <view class="subscription-title">进度提醒</view>
+      <checkbox-group wx:if="{{subscriptionTemplates.length}}" bindchange="subscribeChange">
+        <label class="subscription-option">
+          <checkbox value="yes" checked="{{subscribe}}" color="#0D6E6E" />
+          <text>接收本次审核与报告微信提醒</text>
+        </label>
+      </checkbox-group>
+      <view class="subscription-fallback" wx:else>审核与报告进度可在消息中心查看。</view>
+    </view>
+
+    <view class="card petlis-card" wx:if="{{formData.otherInfo.remark}}">
       <view class="card-header">
         <view class="header-line"></view>
         <text class="card-title">备注</text>
       </view>
       <view class="remark-text">{{formData.otherInfo.remark}}</view>
     </view>
-  </scroll-view>
+  </view>
 
-  <!-- Bottom Actions -->
   <view class="bottom-actions">
-    <button class="btn-outline" bindtap="onBack">返回修改</button>
-    <button class="btn-primary" bindtap="onSubmit" disabled="{{submitting}}">
-      {{submitting ? '提交中...' : '提交预约'}}
-    </button>
+    <view class="submit-note">待审核，审核通过后现结支付/月结挂账</view>
+    <view class="action-buttons">
+      <button class="draft-button btn-outline petlis-btn petlis-btn-outline" bindtap="saveDraft" disabled="{{submitting}}">保存草稿</button>
+      <button class="btn-outline petlis-btn petlis-btn-outline" bindtap="onBack">返回修改</button>
+      <button class="btn-primary petlis-btn petlis-btn-primary" bindtap="onSubmit" disabled="{{submitting}}">
+        {{submitting ? '提交中...' : '提交送检'}}
+      </button>
+    </view>
   </view>
 </view>

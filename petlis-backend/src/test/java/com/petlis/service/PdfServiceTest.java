@@ -3,7 +3,9 @@ package com.petlis.service;
 import com.petlis.common.exception.BusinessException;
 import com.petlis.entity.business.DiagnosisDetail;
 import com.petlis.entity.business.ListDiagnosisProject;
+import com.petlis.entity.dict.InfoHospital;
 import com.petlis.repository.DiagnosisDetailRepository;
+import com.petlis.repository.InfoHospitalRepository;
 import com.petlis.repository.ListDiagnosisProjectRepository;
 import com.petlis.service.impl.PdfServiceImpl;
 import jakarta.servlet.http.HttpServletRequest;
@@ -43,6 +45,9 @@ class PdfServiceTest {
     private ListDiagnosisProjectRepository projectRepository;
 
     @Mock
+    private InfoHospitalRepository hospitalRepository;
+
+    @Mock
     private HttpServletRequest request;
 
     @InjectMocks
@@ -50,6 +55,7 @@ class PdfServiceTest {
 
     private DiagnosisDetail mockDetail;
     private ListDiagnosisProject mockProject;
+    private InfoHospital mockHospital;
     private Path tempPdfFile;
 
     @BeforeEach
@@ -74,10 +80,16 @@ class PdfServiceTest {
         mockProject = new ListDiagnosisProject();
         mockProject.setListDiagnosisProjectId(1);
         mockProject.setInfoHospitalId(1); // 医院1
+        mockProject.setIsPayMoney(1);
+        mockHospital = new InfoHospital();
+        mockHospital.setInfoHospitalId(1);
+        mockHospital.setPayType(0);
 
         // 模拟请求头
-        when(request.getHeader("Authorization")).thenReturn("Bearer valid_token_123");
-        when(request.getParameter("token")).thenReturn(null);
+    }
+
+    void allowHospitalAccess() {
+        when(hospitalRepository.findById(1)).thenReturn(Optional.of(mockHospital));
     }
 
     /**
@@ -88,6 +100,7 @@ class PdfServiceTest {
         // Given: 模拟查询成功
         when(detailRepository.findById(1)).thenReturn(Optional.of(mockDetail));
         when(projectRepository.findById(1)).thenReturn(Optional.of(mockProject));
+        allowHospitalAccess();
 
         // 模拟从token中获取医院ID（通过反射调用私有方法需要测试类中暴露）
         // 这里我们模拟SecurityUtils的调用
@@ -183,6 +196,7 @@ class PdfServiceTest {
         // Given: 模拟查询成功
         when(detailRepository.findById(1)).thenReturn(Optional.of(mockDetail));
         when(projectRepository.findById(1)).thenReturn(Optional.of(mockProject));
+        allowHospitalAccess();
 
         try (var mockedStatic = mockStatic(com.petlis.common.security.SecurityUtils.class)) {
             mockedStatic.when(com.petlis.common.security.SecurityUtils::getCurrentHospitalId)
@@ -195,7 +209,7 @@ class PdfServiceTest {
             assertNotNull(previewUrl);
             assertTrue(previewUrl.startsWith("https://laboklin.cn"));
             assertTrue(previewUrl.contains("/api/pdf/view/1"));
-            assertTrue(previewUrl.contains("token=valid_token_123"));
+            assertFalse(previewUrl.contains("token="));
 
             verify(detailRepository).findById(1);
         }
@@ -221,6 +235,32 @@ class PdfServiceTest {
         }
     }
 
+    @Test
+    void cashUnpaidPdfAndPreviewUrlAreRejected() {
+        mockProject.setIsPayMoney(0);
+        when(detailRepository.findById(1)).thenReturn(Optional.of(mockDetail));
+        when(projectRepository.findById(1)).thenReturn(Optional.of(mockProject));
+        allowHospitalAccess();
+        try (var mockedStatic = mockStatic(com.petlis.common.security.SecurityUtils.class)) {
+            mockedStatic.when(com.petlis.common.security.SecurityUtils::getCurrentHospitalId).thenReturn(1);
+            assertThrows(BusinessException.class, () -> pdfService.getPdfWithAuth(1, request));
+            assertThrows(BusinessException.class, () -> pdfService.getPdfPreviewUrlWithAuth(1, request));
+        }
+    }
+
+    @Test
+    void monthlyUnpaidPdfIsAllowed() throws Exception {
+        mockProject.setIsPayMoney(0);
+        mockHospital.setPayType(1);
+        when(detailRepository.findById(1)).thenReturn(Optional.of(mockDetail));
+        when(projectRepository.findById(1)).thenReturn(Optional.of(mockProject));
+        allowHospitalAccess();
+        try (var mockedStatic = mockStatic(com.petlis.common.security.SecurityUtils.class)) {
+            mockedStatic.when(com.petlis.common.security.SecurityUtils::getCurrentHospitalId).thenReturn(1);
+            assertEquals("Test PDF Content", new String(pdfService.getPdfWithAuth(1, request)));
+        }
+    }
+
     /**
      * 测试token提取
      */
@@ -243,7 +283,6 @@ class PdfServiceTest {
     void testExtractToken_NoBearerPrefix() {
         // Given: 没有Bearer前缀
         when(request.getHeader("Authorization")).thenReturn("test_token_123");
-        when(request.getParameter("token")).thenReturn(null);
 
         // When: 提取token
         String token = ReflectionTestUtils.invokeMethod(pdfService, "extractToken", request);
@@ -259,7 +298,6 @@ class PdfServiceTest {
     void testExtractToken_EmptyToken() {
         // Given: 空token
         when(request.getHeader("Authorization")).thenReturn(null);
-        when(request.getParameter("token")).thenReturn(null);
 
         // When: 提取token
         String token = ReflectionTestUtils.invokeMethod(pdfService, "extractToken", request);

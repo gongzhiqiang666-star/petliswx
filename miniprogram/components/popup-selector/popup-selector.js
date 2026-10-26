@@ -36,6 +36,14 @@ Component({
       type: String,
       value: '暂无数据'
     },
+    loading: {
+      type: Boolean,
+      value: false
+    },
+    errorMessage: {
+      type: String,
+      value: ''
+    },
     // 数据字段映射 - ID字段
     itemIdKey: {
       type: String,
@@ -164,6 +172,10 @@ Component({
 
       // 选中后关闭弹窗
       this.onClose();
+    },
+
+    onRetry() {
+      this.triggerEvent('retry');
     },
 
     /**

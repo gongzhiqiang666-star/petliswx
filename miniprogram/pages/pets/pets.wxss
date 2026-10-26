@@ -1,285 +1,363 @@
-/* pages/pets/pets.wxss */
-/* 微信原生简洁风格 */
+@import "../../styles/petlis-3-overrides.wxss";
 
-/* Page Container */
-.page {
-  display: flex;
-  flex-direction: column;
-  height: 100vh;
-  background: #F7F7F7;
+page {
+  background: #F5F7F6;
 }
 
-/* Search Bar */
-.search-bar {
-  flex-shrink: 0;
-  margin: 16rpx 24rpx;
-  height: 88rpx;
-  background: #FFFFFF;
-  border-radius: 8rpx;
-  border: 1rpx solid #E5E5E5;
+.page {
   display: flex;
+  height: 100vh;
+  flex-direction: column;
+  background: #F5F7F6;
+  color: #263832;
+}
+
+.pets-header {
+  position: relative;
+  overflow: hidden;
+  flex-shrink: 0;
+  margin: 24rpx 32rpx;
+  padding: 36rpx;
+  border-radius: 32rpx;
+  background: #0B3D3A;
+  box-shadow: 0 16rpx 36rpx rgba(11, 61, 58, .12);
+}
+
+.pets-header::after {
+  content: '';
+  position: absolute;
+  top: -88rpx;
+  right: -48rpx;
+  width: 230rpx;
+  height: 230rpx;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, .05);
+}
+
+.pets-title {
+  position: relative;
+  color: #F1F7F4;
+  font-size: 38rpx;
+  font-weight: 600;
+  line-height: 1.4;
+  letter-spacing: 1rpx;
+}
+
+.pets-subtitle {
+  position: relative;
+  margin-top: 10rpx;
+  color: #B9D4CD;
+  font-size: 24rpx;
+  font-weight: 300;
+  line-height: 1.6;
+}
+
+.search-bar {
+  display: flex;
+  height: 96rpx;
+  flex-shrink: 0;
   align-items: center;
-  padding: 0 32rpx;
-  gap: 16rpx;
-  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.04);
-  transition: box-shadow 0.2s;
+  box-sizing: border-box;
+  margin: 24rpx 32rpx;
+  padding: 0 20rpx 0 28rpx;
+  border: 1rpx solid #E3EAE7;
+  border-radius: 32rpx;
+  background: #FFFFFF;
+  box-shadow: 0 8rpx 24rpx rgba(11, 61, 58, .04);
 }
 
 .search-icon {
-  width: 32rpx;
-  height: 32rpx;
+  width: 30rpx;
+  height: 30rpx;
+  margin-right: 18rpx;
+  opacity: .48;
 }
 
 .search-input {
+  min-width: 0;
+  height: 94rpx;
   flex: 1;
-  font-size: 28rpx;
-  height: 100%;
+  color: #263832;
+  font-size: 27rpx;
+  line-height: 94rpx;
+}
+
+.search-placeholder {
+  color: #A3B2AC;
+  font-weight: 300;
 }
 
 .clear-icon {
-  width: 32rpx;
-  height: 32rpx;
+  width: 88rpx;
+  height: 88rpx;
+  flex-shrink: 0;
+  box-sizing: border-box;
+  margin-left: 8rpx;
+  padding: 29rpx;
   opacity: 0;
-  transition: opacity 0.2s;
+  transition: opacity .2s;
 }
 
 .clear-icon.show {
-  opacity: 1;
+  opacity: .5;
 }
 
-/* Pet List */
 .pet-list {
+  min-height: 0;
   flex: 1;
-  padding-bottom: 140rpx; /* 为底部按钮留出空间 */
+  box-sizing: border-box;
+  padding: 8rpx 0 calc(156rpx + env(safe-area-inset-bottom));
 }
 
 .pet-card {
-  background: #FFFFFF;
-  border-radius: 8rpx;
+  margin: 0 32rpx 24rpx;
   padding: 32rpx;
-  margin: 0 24rpx 24rpx;
-  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.04);
-  border: 1rpx solid #F0F0F0;
-  transition: box-shadow 0.2s;
+  border: 1rpx solid #E3EAE7;
+  border-radius: 32rpx;
+  background: #FFFFFF;
+  box-shadow: 0 12rpx 32rpx rgba(11, 61, 58, .05);
+  transition: box-shadow .2s;
 }
 
 .pet-card:active {
-  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.08);
+  box-shadow: 0 16rpx 36rpx rgba(11, 61, 58, .09);
 }
 
 .pet-main {
   display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
+  min-height: 112rpx;
+  align-items: center;
+  gap: 24rpx;
+}
+
+.pet-avatar {
+  display: flex;
+  width: 112rpx;
+  height: 112rpx;
+  overflow: hidden;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border: 1rpx solid #E3EAE7;
+  border-radius: 28rpx;
+  background: #E6F0EC;
+}
+
+.pet-avatar image {
+  width: 100%;
+  height: 100%;
 }
 
 .pet-info {
+  min-width: 0;
   flex: 1;
 }
 
 .pet-name-row {
   display: flex;
   align-items: center;
-  gap: 16rpx;
-  margin-bottom: 16rpx;
+  gap: 14rpx;
+  margin-bottom: 12rpx;
 }
 
 .pet-name {
-  font-size: 28rpx;
-  color: #000000;
-  font-weight: 600;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  color: #0B3D3A;
+  font-size: 33rpx;
+  font-weight: 500;
   line-height: 1.4;
+  letter-spacing: .5rpx;
 }
 
 .gender-badge {
-  width: 40rpx;
-  height: 40rpx;
-  border-radius: 50%;
   display: flex;
+  min-width: 42rpx;
+  height: 36rpx;
+  flex-shrink: 0;
   align-items: center;
   justify-content: center;
-  font-size: 24rpx;
+  box-sizing: border-box;
+  padding: 0 10rpx;
+  border-radius: 20rpx;
+  font-size: 21rpx;
+  line-height: 1;
 }
 
 .gender-badge.male {
-  background: #F0F9FF;
-  color: #2563EB;
+  background: #E6F0EC;
+  color: #0D6E6E;
 }
 
 .gender-badge.female {
-  background: #FFF0F5;
-  color: #FA5151;
+  background: #F7EAE2;
+  color: #C96F45;
 }
 
 .pet-details {
   display: flex;
   flex-direction: column;
-  gap: 8rpx;
+  gap: 6rpx;
 }
 
 .detail-item {
-  font-size: 28rpx;
-  color: #888888;
-  line-height: 1.4;
+  overflow-wrap: anywhere;
+  color: #8A9B95;
+  font-size: 23rpx;
+  font-weight: 300;
+  line-height: 1.5;
+}
+
+.pet-details .pet-breed {
+  color: #667872;
+  font-size: 25rpx;
 }
 
 .edit-btn {
-  padding: 20rpx 32rpx;
-  color: #2563EB;
-  font-size: 28rpx;
-  min-height: 72rpx;
   display: flex;
+  width: 88rpx;
+  min-height: 88rpx;
+  flex-shrink: 0;
   align-items: center;
+  justify-content: center;
+  margin-right: -16rpx;
+  color: #0D6E6E;
+  font-size: 25rpx;
   line-height: 1.4;
-  transition: opacity 0.2s;
 }
 
 .edit-btn:active {
-  opacity: 0.8;
+  opacity: .55;
 }
 
-/* Empty State */
 .empty-state {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 128rpx 0;
+  margin: 0 32rpx;
+  padding: 72rpx 32rpx;
+  border: 1rpx solid #E3EAE7;
+  border-radius: 32rpx;
+  background: #FFFFFF;
 }
 
 .empty-icon {
-  width: 160rpx;
-  height: 160rpx;
-  background: #F7F7F7;
-  border-radius: 50%;
   display: flex;
+  width: 144rpx;
+  height: 144rpx;
   align-items: center;
   justify-content: center;
-  margin-bottom: 32rpx;
+  margin-bottom: 28rpx;
+  border-radius: 50%;
+  background: #F5F7F6;
 }
 
 .empty-icon .icon {
-  width: 80rpx;
-  height: 80rpx;
-  opacity: 0.5;
+  width: 120rpx;
+  height: 120rpx;
+  opacity: .45;
 }
 
 .empty-text {
-  font-size: 28rpx;
-  color: #888888;
-  margin-bottom: 8rpx;
-  line-height: 1.4;
+  margin-bottom: 10rpx;
+  color: #33443F;
+  font-size: 29rpx;
+  font-weight: 500;
+  line-height: 1.5;
 }
 
 .empty-hint {
+  margin-bottom: 36rpx;
+  color: #98A8A3;
   font-size: 24rpx;
-  color: #888888;
-  margin-bottom: 48rpx;
-  line-height: 1.4;
+  font-weight: 300;
+  line-height: 1.6;
+  text-align: center;
 }
 
-.btn-primary {
-  padding: 20rpx 64rpx;
-  background: #2563EB;
-  color: #FFFFFF;
-  font-size: 30rpx;
-  border-radius: 8rpx;
-  border: none;
-  font-weight: 500;
-  min-height: 88rpx;
-  line-height: 1.4;
-  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.1);
-}
-
-.btn-primary::after {
-  border: none;
-}
-
-.btn-primary:active {
-  opacity: 0.8;
-}
-
-/* Bottom Action Button */
-.bottom-action {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  padding: 24rpx;
-  background: #fff;
-  box-shadow: 0 -2rpx 8rpx rgba(0, 0, 0, 0.05);
-  z-index: 10;
-}
-
-/* 添加新宠物按钮 */
-.add-pet-btn {
-  background: #FFFFFF;
-  border: 1rpx dashed #E5E5E5;
-  border-radius: 8rpx;
-  padding: 32rpx;
+.empty-state .btn-primary {
   display: flex;
+  min-height: 88rpx;
   align-items: center;
   justify-content: center;
-  gap: 12rpx;
-  color: #2563EB;
+  padding: 0 48rpx;
+  border: 0;
+  border-radius: 24rpx;
+  background: #0D6E6E;
+  color: #FFFFFF;
   font-size: 28rpx;
   font-weight: 500;
+  line-height: 1.4;
+}
+
+.empty-state .btn-primary::after {
+  border: 0;
+}
+
+.bottom-action {
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 10;
+  box-sizing: border-box;
+  padding: 24rpx 32rpx calc(24rpx + env(safe-area-inset-bottom));
+  border-top: 1rpx solid #E3EAE7;
+  background: #FFFFFF;
+  box-shadow: 0 -8rpx 24rpx rgba(11, 61, 58, .05);
+}
+
+.add-pet-btn {
+  display: flex;
   min-height: 88rpx;
-  transition: all 0.2s;
-  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.04);
+  align-items: center;
+  justify-content: center;
+  gap: 14rpx;
+  box-sizing: border-box;
+  border-radius: 24rpx;
+  background: #0D6E6E;
+  box-shadow: 0 8rpx 20rpx rgba(13, 110, 110, .12);
+  color: #FFFFFF;
+  font-size: 28rpx;
+  font-weight: 500;
 }
 
 .add-pet-btn:active {
-  background-color: #F7F7F7;
-  border-color: #2563EB;
+  background: #0B3D3A;
 }
 
 .plus-icon {
-  width: 32rpx;
-  height: 32rpx;
+  width: 30rpx;
+  height: 30rpx;
 }
 
-/* Loading More */
-.loading-more {
+.loading-more,
+.no-more {
   display: flex;
+  min-height: 88rpx;
   align-items: center;
   justify-content: center;
-  padding: 32rpx 0;
+  color: #98A8A3;
 }
 
 .loading-spinner {
-  width: 32rpx;
-  height: 32rpx;
-  border: 3rpx solid #F1F5F9;
-  border-top-color: #2563EB;
+  width: 28rpx;
+  height: 28rpx;
+  margin-right: 16rpx;
+  border: 2rpx solid #E3EAE7;
+  border-top-color: #0D6E6E;
   border-radius: 50%;
   animation: spin 1s linear infinite;
-  margin-right: 16rpx;
 }
 
 @keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
+  to { transform: rotate(360deg); }
 }
 
-.loading-text {
-  font-size: 24rpx;
-  color: #888888;
-  line-height: 1.4;
-}
-
-/* No More */
-.no-more {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 32rpx 0;
-}
-
+.loading-text,
 .no-more-text {
-  font-size: 24rpx;
-  color: #CCCCCC;
-  line-height: 1.4;
+  font-size: 23rpx;
+  font-weight: 300;
+  line-height: 1.5;
 }
-

@@ -25,13 +25,21 @@ class Request {
 
     // 添加token
     if (needAuth) {
-      const token = wx.getStorageSync(config.storageKeys.TOKEN)
+      const app=getApp();const token = (app && app.globalData && app.globalData.token) || wx.getStorageSync(config.storageKeys.TOKEN)
       if (token) {
         headers['Authorization'] = `Bearer ${token}`
       }
     }
 
     return headers
+  }
+
+  unauthorized() {
+    wx.removeStorageSync(config.storageKeys.TOKEN)
+    wx.removeStorageSync(config.storageKeys.USER_INFO)
+    wx.removeStorageSync(config.storageKeys.HOSPITAL_ID)
+    const app=getApp();if(app && app.globalData){app.globalData.token=null;app.globalData.userInfo=null;app.globalData.hospitalId=null;app.globalData.cityId=null}
+    const pages=getCurrentPages();if(pages.length && pages[pages.length-1].route!=='pages/login/login' && !this._redirecting){this._redirecting=true;wx.reLaunch({url:'/pages/login/login',complete:()=>{this._redirecting=false}})}
   }
 
   /**
@@ -46,13 +54,7 @@ class Request {
       // 处理401未授权 - 只清除本地数据，不自动跳转，避免循环
       if (statusCode === 401) {
         console.log('[Request] 401 未授权，清除本地登录信息')
-        // 清除登录信息
-        wx.removeStorageSync(config.storageKeys.TOKEN)
-        wx.removeStorageSync(config.storageKeys.USER_INFO)
-        wx.removeStorageSync(config.storageKeys.HOSPITAL_ID)
-
-        // 不自动跳转，避免死循环
-        // 让app.js的自然流程处理重新登录
+        this.unauthorized()
         throw new Error('登录已过期')
       }
 
@@ -75,6 +77,7 @@ class Request {
     }
 
     // 业务状态码检查
+    if (data.code === 401) this.unauthorized()
     if (data.code !== undefined && data.code !== 200) {
       throw new Error(data.message || '请求失败')
     }
@@ -128,7 +131,7 @@ class Request {
       // 完整URL
       const fullURL = /^https?:\/\//.test(url) ? url : `${this.baseURL}${url}`
 
-      console.log(`[Request] ${method} ${fullURL}`, data)
+      // Do not log credentials, tokens or patient data.
 
       wx.request({
         method: method.toUpperCase(),
@@ -139,7 +142,7 @@ class Request {
         success: (res) => {
           try {
             const result = this.handleResponse(res)
-            console.log(`[Response]`, result)
+            // Response bodies may contain private data.
             resolve(result)
           } catch (err) {
             reject(err)
@@ -216,19 +219,19 @@ class Request {
     return new Promise((resolve, reject) => {
       const fullURL = /^https?:\/\//.test(url) ? url : `${this.baseURL}${url}`
 
-      console.log(`[Upload] ${fullURL}`, filePath)
+      // Keep private file paths out of logs.
 
       wx.uploadFile({
         url: fullURL,
         filePath: filePath,
         name: name,
         formData: formData,
-        header: this.getHeaders(true),
+        header: Object.fromEntries(Object.entries(this.getHeaders(true)).filter(([key]) => key !== 'Content-Type')),
         success: (res) => {
           try {
             const data = JSON.parse(res.data)
             const result = this.handleResponse({ statusCode: res.statusCode, data })
-            console.log(`[Upload Response]`, result)
+            // Keep uploaded qualification capabilities out of logs.
             resolve(result)
           } catch (err) {
             reject(err)
@@ -259,6 +262,7 @@ class Request {
         url: fullURL,
         header: this.getHeaders(true),
         success: (res) => {
+          if(res.statusCode===401){this.unauthorized();reject(new Error('登录已过期，请重新登录'));return}
           if (res.statusCode === 200) {
             console.log(`[Download Success]`, res.tempFilePath)
             resolve(res.tempFilePath)

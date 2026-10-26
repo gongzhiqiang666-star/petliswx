@@ -1,16 +1,16 @@
 /**
  * PETLIS 全局样式
- * 经典商务蓝配色方案
+ * 品牌青绿配色方案
  */
 
 /* ==================== 颜色变量 ==================== */
 page
 {
   /* 主色 */
-  --primary-color: #2563EB;
-  --primary-hover: #1D4ED8;
-  --primary-light: #DBEAFE;
-  --primary-lighter: #EFF6FF;
+  --primary-color: #0D6E6E;
+  --primary-hover: #0A5A5A;
+  --primary-light: #D5EAE4;
+  --primary-lighter: #EAF4F1;
 
   /* 辅助色 */
   --secondary-color: #64748B;
@@ -20,7 +20,7 @@ page
   --success-color: #10B981;
   --warning-color: #F59E0B;
   --error-color: #EF4444;
-  --info-color: #3B82F6;
+  --info-color: #0D6E6E;
 
   /* 背景色 */
   --bg-primary: #FFFFFF;
@@ -78,7 +78,7 @@ page
 {
   width: 8rpx;
   height: 40rpx;
-  background: #2563EB;
+  background: #0D6E6E;
   border-radius: 4rpx;
 }
 
@@ -161,8 +161,8 @@ page
 
 .form-input:focus
 {
-  border-color: #2563EB;
-  box-shadow: 0 0 0 6rpx rgba(37, 99, 235, 0.1);
+  border-color: #0D6E6E;
+  box-shadow: 0 0 0 6rpx rgba(13, 110, 110, 0.1);
 }
 
 .form-input::placeholder
@@ -205,7 +205,7 @@ page
 
 .form-picker:active
 {
-  border-color: #2563EB;
+  border-color: #0D6E6E;
 }
 
 .picker-value
@@ -271,9 +271,9 @@ page
 
 .gender-btn.active
 {
-  border-color: #2563EB;
+  border-color: #0D6E6E;
   background: #eef2ff;
-  color: #2563EB;
+  color: #0D6E6E;
   transform: scale(1.02);
 }
 
@@ -284,13 +284,13 @@ page
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%);
+  background: linear-gradient(135deg, #0D6E6E 0%, #0A5A5A 100%);
   color: #fff;
   border-radius: 16rpx;
   font-size: 32rpx;
   font-weight: 600;
   border: none;
-  box-shadow: 0 4rpx 12rpx rgba(37, 99, 235, 0.25);
+  box-shadow: 0 4rpx 12rpx rgba(13, 110, 110, 0.25);
   transition: all 0.3s;
 }
 
@@ -338,13 +338,13 @@ page
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%);
+  background: linear-gradient(135deg, #0D6E6E 0%, #0A5A5A 100%);
   color: #fff;
   border-radius: 16rpx;
   font-size: 32rpx;
   font-weight: 600;
   border: none;
-  box-shadow: 0 4rpx 12rpx rgba(37, 99, 235, 0.25);
+  box-shadow: 0 4rpx 12rpx rgba(13, 110, 110, 0.25);
   transition: all 0.3s;
 }
 

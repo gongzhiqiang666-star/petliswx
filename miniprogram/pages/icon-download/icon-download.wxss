@@ -1,3 +1,4 @@
+@import "../../styles/petlis-3-overrides.wxss";
 /* pages/icon-download/icon-download.wxss */
 
 /* Header */
@@ -41,7 +42,7 @@
 }
 
 .gradient-bg {
-  background: linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%);
+  background: linear-gradient(135deg, #0D6E6E 0%, #0A5A5A 100%);
 }
 
 .stats-header {
@@ -99,16 +100,27 @@
   color: #fff;
 }
 
+.stats-card .stats-label,
+.stats-card .stats-number,
+.stats-card .stat-box-label,
+.stats-card .stat-box-value {
+  color: #0B3D3A;
+}
+
+.stats-card .stat-box {
+  background: #F2F7F5;
+}
+
 /* Quick Download */
 .quick-download {
   margin: 0 24rpx 32rpx;
   padding: 32rpx;
-  background: linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%);
+  background: linear-gradient(135deg, #0D6E6E 0%, #0A5A5A 100%);
   border-radius: 16rpx;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  box-shadow: 0 8rpx 24rpx rgba(37, 99, 235, 0.2);
+  box-shadow: 0 8rpx 24rpx rgba(13, 110, 110, 0.2);
 }
 
 .quick-download-content {
@@ -214,7 +226,7 @@
 }
 
 .category-item.active {
-  background: linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%);
+  background: linear-gradient(135deg, #0D6E6E 0%, #0A5A5A 100%);
   color: #fff;
   border-color: transparent;
 }
@@ -258,7 +270,7 @@
 }
 
 .icon-card.selected {
-  border-color: #2563EB;
+  border-color: #0D6E6E;
   background: #eef2ff;
 }
 
@@ -275,7 +287,7 @@
 }
 
 .icon-wrapper.selected {
-  background: #DBEAFE;
+  background: #D5EAE4;
 }
 
 .icon-img {

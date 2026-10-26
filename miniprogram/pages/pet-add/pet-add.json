@@ -2,7 +2,7 @@
   "usingComponents": {
     "popup-selector": "/components/popup-selector/popup-selector"
   },
-  "navigationBarTitleText": "宠物建档",
+  "navigationBarTitleText": "新建档案",
   "navigationBarBackgroundColor": "#ffffff",
   "navigationBarTextStyle": "black",
   "backgroundColor": "#f9fafb"

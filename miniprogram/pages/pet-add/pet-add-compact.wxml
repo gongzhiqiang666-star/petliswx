@@ -8,14 +8,14 @@
   </view>
 
   <!-- 紧凑双列表单 -->
-  <view class="form-grid">
+  <view class="form-grid petlis-card">
     <!-- 第一列 -->
     <view class="form-column">
       <!-- 宠物中文名 -->
       <view class="form-field-compact">
         <text class="field-label">宠物中文名</text>
         <input
-          class="field-input-compact {{formData.animalName ? 'has-value' : ''}}"
+          class="field-input-compact petlis-input {{formData.animalName ? 'has-value' : ''}}"
           placeholder="旺旺"
           value="{{formData.animalName}}"
           bindinput="onInputChange"
@@ -26,31 +26,23 @@
       <!-- 物种 -->
       <view class="form-field-compact">
         <text class="field-label">物种</text>
-        <view class="field-selector-compact" bindtap="showSpeciesSelector">
+        <view class="field-selector-compact petlis-input" bindtap="showSpeciesSelector">
           <text class="selector-text-compact {{selectedAnimalName ? '' : 'placeholder'}}">
             {{selectedAnimalName || '选择'}}
           </text>
-          <text class="selector-arrow">▼</text>
+          <image class="selector-arrow" src="/assets/icons/brand-chevron-down.png" mode="aspectFit" aria-hidden="true" />
         </view>
       </view>
 
       <!-- 性别 -->
       <view class="form-field-compact">
         <text class="field-label">性别</text>
-        <view class="gender-selector-compact">
-          <view
-            class="gender-option-compact {{formData.dictSexId === 1 ? 'selected' : ''}}"
-            bindtap="onGenderChange"
-            data-id="1"
-          >
-            <text class="gender-icon">♂</text>
+        <view class="gender-selector-compact petlis-filters" role="radiogroup" aria-label="选择性别">
+          <view class="gender-option-compact petlis-filter-item {{formData.dictSexId === 1 ? 'selected active' : ''}}" bindtap="onGenderChange" data-id="1" role="radio" aria-checked="{{formData.dictSexId === 1}}">
+            <text class="gender-icon">公</text>
           </view>
-          <view
-            class="gender-option-compact {{formData.dictSexId === 2 ? 'selected' : ''}}"
-            bindtap="onGenderChange"
-            data-id="2"
-          >
-            <text class="gender-icon">♀</text>
+          <view class="gender-option-compact petlis-filter-item {{formData.dictSexId === 2 ? 'selected active' : ''}}" bindtap="onGenderChange" data-id="2" role="radio" aria-checked="{{formData.dictSexId === 2}}">
+            <text class="gender-icon">母</text>
           </view>
         </view>
       </view>
@@ -67,6 +59,7 @@
           <text class="picker-text-compact {{formData.birthday ? '' : 'placeholder'}}">
             {{formData.birthday || '选择日期'}}
           </text>
+          <image class="selector-arrow" src="/assets/icons/brand-calendar.png" mode="aspectFit" aria-hidden="true" />
         </picker>
       </view>
 
@@ -74,7 +67,7 @@
       <view class="form-field-compact">
         <text class="field-label">芯片号</text>
         <input
-          class="field-input-compact"
+          class="field-input-compact petlis-input"
           placeholder="选填"
           value="{{formData.chipNo}}"
           bindinput="onInputChange"
@@ -89,7 +82,7 @@
       <view class="form-field-compact">
         <text class="field-label">英文名</text>
         <input
-          class="field-input-compact {{formData.animalNameEn ? 'has-value' : ''}}"
+          class="field-input-compact petlis-input {{formData.animalNameEn ? 'has-value' : ''}}"
           placeholder="Wangwang"
           value="{{formData.animalNameEn}}"
           bindinput="onInputChange"
@@ -100,11 +93,11 @@
       <!-- 品种 -->
       <view class="form-field-compact">
         <text class="field-label">品种</text>
-        <view class="field-selector-compact" bindtap="onSelectBreed">
+        <view class="field-selector-compact petlis-input" bindtap="onSelectBreed">
           <text class="selector-text-compact {{selectedBreed ? '' : 'placeholder'}}">
             {{selectedBreed ? selectedBreed.varietyCn : '选择'}}
           </text>
-          <text class="selector-arrow">▶</text>
+          <image class="selector-arrow" src="/assets/icons/brand-chevron-right.png" mode="aspectFit" aria-hidden="true" />
         </view>
       </view>
 
@@ -112,7 +105,7 @@
       <view class="form-field-compact">
         <text class="field-label">年龄</text>
         <input
-          class="field-input-compact field-readonly"
+          class="field-input-compact petlis-input field-readonly"
           placeholder="自动计算"
           value="{{formData.age}}"
           disabled
@@ -123,7 +116,7 @@
       <view class="form-field-compact">
         <text class="field-label">主人姓名</text>
         <input
-          class="field-input-compact {{formData.ownerName ? 'has-value' : ''}}"
+          class="field-input-compact petlis-input {{formData.ownerName ? 'has-value' : ''}}"
           placeholder="李四"
           value="{{formData.ownerName}}"
           bindinput="onInputChange"
@@ -135,7 +128,7 @@
       <view class="form-field-compact">
         <text class="field-label">拼音</text>
         <input
-          class="field-input-compact field-readonly"
+          class="field-input-compact petlis-input field-readonly"
           placeholder="自动"
           value="{{formData.ownerNameEn}}"
           disabled
@@ -146,8 +139,8 @@
 
   <!-- 底部按钮 -->
   <view class="bottom-actions-compact">
-    <button class="action-btn-compact btn-cancel" bindtap="onBack">取消</button>
-    <button class="action-btn-compact btn-primary {{isSubmitting ? 'submitting' : ''}}" bindtap="onSave">
+    <button class="action-btn-compact petlis-btn petlis-btn-outline btn-cancel" bindtap="onBack">取消</button>
+    <button class="action-btn-compact petlis-btn petlis-btn-primary btn-primary {{isSubmitting ? 'submitting' : ''}}" bindtap="onSave">
       {{isSubmitting ? '保存中...' : '保存档案'}}
     </button>
   </view>
@@ -165,5 +158,21 @@
     emptyText="暂无物种数据"
     bindselect="onSpeciesSelect"
     bindclose="hideSpeciesSelector"
+  />
+  <popup-selector
+    visible="{{showBreedSelector}}"
+    title="选择品种"
+    items="{{breedList}}"
+    selectedId="{{formData.infoVarietyId}}"
+    itemIdKey="iid"
+    itemNameKey="varietyCn"
+    itemNameEnKey="varietyEn"
+    searchPlaceholder="搜索品种（中文或英文）"
+    emptyText="暂无品种数据"
+    loading="{{breedLoading}}"
+    errorMessage="{{breedError}}"
+    bindselect="onBreedSelect"
+    bindclose="hideBreedSelector"
+    bindretry="onRetryBreed"
   />
 </view>

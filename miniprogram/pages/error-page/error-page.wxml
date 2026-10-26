@@ -1,9 +1,9 @@
 <!--pages/error-page/error-page.wxml-->
 <view class="page">
-  <view class="error-container">
+  <view class="error-container petlis-card">
     <!-- 错误图标 -->
     <view class="error-icon-wrapper">
-      <text class="error-icon">{{errorData.icon || '❓'}}</text>
+      <image class="error-icon" src="/assets/icons/brand-empty.png" mode="aspectFit" />
     </view>
 
     <!-- 错误标题 -->
@@ -37,31 +37,31 @@
     <view class="toggle-details" bindtap="onToggleDetails">
       <text class="toggle-text">{{showDetails ? '隐藏' : '查看'}}详情</text>
       <image class="toggle-arrow {{showDetails ? 'rotate' : ''}}"
-             src="/assets/icons/arrow-down.png"
+             src="/assets/icons/brand-chevron-down.png"
              mode="aspectFit"></image>
     </view>
 
     <!-- 操作按钮 -->
     <view class="action-buttons">
       <!-- 主操作按钮 -->
-      <button class="btn-primary"
+      <button class="btn-primary petlis-btn petlis-btn-primary"
               bindtap="onPrimaryAction">
         {{errorData.action || '重新加载'}}
       </button>
 
       <!-- 次要操作按钮 -->
-      <button class="btn-secondary"
+      <button class="btn-secondary petlis-btn petlis-btn-outline"
               bindtap="onSecondaryAction"
               wx:if="{{errorData.showSecondary}}">
-        返回首页
+        <image class="button-icon" src="/assets/icons/brand-home.png" mode="aspectFit" />返回首页
       </button>
 
       <!-- 联系客服按钮 -->
-      <button class="btn-contact"
+      <button class="btn-contact petlis-btn petlis-btn-outline"
               bindtap="onContactSupport"
               open-type="contact"
               session-from="error-page">
-        联系客服
+        <image class="button-icon" src="/assets/icons/brand-help.png" mode="aspectFit" />联系客服
       </button>
     </view>
 

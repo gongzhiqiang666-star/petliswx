@@ -1,0 +1,207 @@
+page {
+  background: #0B3D3A;
+}
+.login-page {
+  position: relative;
+  min-height: 100vh;
+  box-sizing: border-box;
+  padding: calc(24rpx + env(safe-area-inset-top)) 40rpx calc(48rpx + env(safe-area-inset-bottom));
+  display: flex;
+  flex-direction: column;
+}
+.login-page .hero-bg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 45%;
+  z-index: 0;
+}
+.login-page::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 1;
+  background: linear-gradient(160deg, rgba(11,61,58,.45) 0%, rgba(13,90,86,.55) 55%, rgba(13,110,110,.78) 100%);
+}
+.login-page .hero, .login-page .login-card, .login-page .footer-hint {
+  position: relative;
+  z-index: 2;
+}
+.hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 240rpx;
+  margin-bottom: 40rpx;
+}
+.hero-logo {
+  width: 104rpx;
+  height: 104rpx;
+  margin-bottom: 20rpx;
+}
+.hero-wordmark {
+  font-size: 60rpx;
+  font-weight: 600;
+  letter-spacing: 6rpx;
+  color: #EAF6F1;
+  line-height: 1.2;
+}
+.hero-latin {
+  margin-top: 10rpx;
+  font-size: 20rpx;
+  letter-spacing: 8rpx;
+  color: rgba(234, 246, 241, 0.55);
+}
+.hero-slogan {
+  margin-top: 16rpx;
+  font-size: 26rpx;
+  letter-spacing: 4rpx;
+  color: rgba(234, 246, 241, 0.82);
+}
+.hero-sub {
+  margin-top: 14rpx;
+  font-size: 22rpx;
+  letter-spacing: 2rpx;
+  color: rgba(234, 246, 241, 0.55);
+}
+.login-card {
+  margin-top: 80rpx;
+  background: #FFFFFF;
+  border: 1rpx solid #E7EEEA;
+  border-radius: 20rpx;
+  padding: 40rpx 36rpx 32rpx;
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.04);
+}
+.card-title {
+  font-size: 38rpx;
+  font-weight: 600;
+  color: #12312C;
+  letter-spacing: 1rpx;
+}
+.card-hint {
+  margin-top: 12rpx;
+  margin-bottom: 32rpx;
+  font-size: 23rpx;
+  line-height: 1.6;
+  color: #7A8B87;
+}
+.field {
+  display: flex;
+  align-items: center;
+  height: 96rpx;
+  margin-bottom: 20rpx;
+  padding: 0 24rpx;
+  background: #F5F7F6;
+  border: 1rpx solid #E7EEEA;
+  border-radius: 18rpx;
+}
+.field-icon {
+  width: 36rpx;
+  height: 36rpx;
+  flex-shrink: 0;
+  margin-right: 20rpx;
+}
+.field-input {
+  flex: 1;
+  min-width: 0;
+  font-size: 28rpx;
+  color: #12312C;
+}
+.field-placeholder {
+  color: #A3B2AC;
+  font-size: 28rpx;
+}
+.row {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  min-height: 72rpx;
+  font-size: 24rpx;
+  color: #5F716C;
+}
+.row checkbox {
+  flex-shrink: 0;
+  transform: scale(0.82);
+}
+.error {
+  margin: 8rpx 0 4rpx;
+  font-size: 24rpx;
+  line-height: 1.5;
+  color: #C96F45;
+}
+button.login-button {
+  width: 100%;
+  height: 96rpx;
+  margin-top: 32rpx;
+  border-radius: 44rpx;
+  background: #0D6E6E;
+  color: #FFFFFF;
+  font-size: 30rpx;
+  font-weight: 600;
+  letter-spacing: 4rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8rpx 20rpx rgba(13, 110, 110, 0.28);
+}
+.login-button::after,
+.wechat-button::after,
+.link::after {
+  border: none;
+}
+button.login-button:active {
+  background: #0A5A5A;
+}
+.wechat-button {
+  width: 100%;
+  height: 96rpx;
+  margin-top: 20rpx;
+  border-radius: 44rpx;
+  background: #F2F7F5;
+  color: #1E4B44;
+  font-size: 28rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14rpx;
+}
+.wechat-icon {
+  width: 40rpx;
+  height: 40rpx;
+}
+.links {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 24rpx;
+  margin-top: 28rpx;
+}
+.link {
+  min-height: 88rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8rpx 12rpx;
+  background: transparent;
+  color: #5F716C;
+  font-size: 25rpx;
+  line-height: 1.5;
+}
+.link::after {
+  border: none;
+}
+.links-divider {
+  color: #C3CEC9;
+  font-size: 22rpx;
+}
+.footer-hint {
+  margin-top: 36rpx;
+  font-size: 21rpx;
+  line-height: 1.7;
+  text-align: center;
+  color: rgba(234, 246, 241, 0.6);
+}

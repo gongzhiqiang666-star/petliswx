@@ -142,12 +142,12 @@ public class ReportController {
 
         // 为每个报告填充安全PDF URL
         result.getContent().forEach(report -> {
-            if (report.getPdfFullUrl() != null && !report.getPdfFullUrl().isEmpty()) {
+            if (!Boolean.TRUE.equals(report.getPaymentRestricted())
+                    && report.getPdfFullUrl() != null && !report.getPdfFullUrl().isEmpty()) {
                 // 生成安全访问URL：/api/pdf/view/{reportId}?token={token}
-                String secureUrl = String.format("%s/api/pdf/view/%d?token=%s",
+                String secureUrl = String.format("%s/api/pdf/view/%d",
                         serverDomain,
-                        report.getReportId(),
-                        token);
+                        report.getReportId());
                 report.setSecurePdfUrl(secureUrl);
             }
         });

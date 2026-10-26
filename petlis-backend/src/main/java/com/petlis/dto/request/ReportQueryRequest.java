@@ -14,6 +14,9 @@ import lombok.Data;
 @Schema(description = "检测报告查询请求")
 public class ReportQueryRequest {
 
+    @Schema(description = "宠物名称或检测项目关键词")
+    private String keyword;
+
     /**
      * 宠物ID
      */

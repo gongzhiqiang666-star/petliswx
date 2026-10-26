@@ -14,7 +14,12 @@ Page({
     pageSize: 10,
     total: 0,
     hasMore: true,
-    isLoadingMore: false
+    isLoadingMore: false,
+    loadError: ''
+  },
+
+  onRetryLoad() {
+    this.loadPets()
   },
 
   onLoad() {
@@ -70,13 +75,15 @@ Page({
         isEmpty: petsWithAge.length === 0,
         pageNum: 1,
         total: pets.totalElements || pets.total || 0,
-        hasMore: !pets.last  // 使用后端返回的 last 字段判断
+        hasMore: !pets.last,
+        loadError: ''
       })
     } catch (err) {
       console.error('[Pets] 加载宠物列表失败:', err)
       this.setData({
         loading: false,
-        isEmpty: false
+        isEmpty: false,
+        loadError: '加载宠物列表失败，请重试'
       })
 
       // 使用统一错误处理器

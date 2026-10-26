@@ -1,256 +1,299 @@
-/* pages/report-list/report-list.wxss */
+@import "../../styles/petlis-3-overrides.wxss";
 
-/* Search Bar */
+page {
+  background: #F5F7F6;
+}
+
+.reports-page {
+  min-height: 100vh;
+  box-sizing: border-box;
+  padding: 24rpx 32rpx calc(48rpx + env(safe-area-inset-bottom));
+  background: #F5F7F6;
+  color: #263832;
+}
+
+.page-heading {
+  margin-bottom: 16rpx;
+  padding: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.page-heading::after {
+  display: none;
+}
+
+.page-heading .ui-section-title {
+  color: #0B3D3A;
+  font-size: 30rpx;
+  font-weight: 600;
+  line-height: 1.4;
+  letter-spacing: 1rpx;
+}
+
+.report-tools {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  margin-bottom: 16rpx;
+}
+
 .search-bar {
-  margin: 16rpx 24rpx 24rpx 24rpx;
-}
-
-/* Report List */
-.report-list {
+  display: flex;
   flex: 1;
-  padding-bottom: 32rpx;
-}
-
-/* Loading State */
-.loading-state {
-  display: flex;
+  min-width: 0;
+  height: 88rpx;
   align-items: center;
-  justify-content: center;
-  padding: 80rpx 0;
-  color: #666666;
-  font-size: 28rpx;
+  box-sizing: border-box;
+  padding: 0 20rpx;
+  border-radius: 20rpx;
+  box-shadow: none;
 }
 
-/* Loading More State */
-.loading-more {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 40rpx 0;
-  color: #888888;
-  font-size: 26rpx;
+.search-icon {
+  width: 30rpx;
+  height: 30rpx;
+  margin-right: 18rpx;
+  opacity: .48;
 }
 
-.loading-more text {
-  display: flex;
-  align-items: center;
-  gap: 8rpx;
+.search-input {
+  min-width: 0;
+  height: 94rpx;
+  flex: 1;
+  color: #263832;
+  font-size: 27rpx;
+  line-height: 94rpx;
 }
 
-.loading-more text::before {
-  content: '';
-  width: 32rpx;
-  height: 32rpx;
-  border: 3rpx solid #E5E5E5;
-  border-top-color: #2563EB;
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
+.search-placeholder {
+  color: #A3B2AC;
+  font-weight: 300;
 }
 
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
+.list-summary {
+  flex-shrink: 0;
+  margin: 0;
+  color: #85968F;
+  font-size: 22rpx;
+  font-weight: 300;
+  line-height: 1.5;
+  white-space: nowrap;
 }
 
-/* No More Data */
-.no-more {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 40rpx 0;
-  color: #888888;
-  font-size: 26rpx;
-}
-
-/* Report Card */
 .report-card {
-  background: #fff;
-  border-radius: 8rpx;
-  padding: 32rpx;
-  margin: 0 24rpx 24rpx;
-  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.04);
-  border: 1rpx solid #F0F0F0;
-  transition: all 0.2s;
+  overflow: hidden;
+  margin-bottom: 16rpx;
+  padding: 28rpx;
+  border: 1rpx solid #E3EAE7;
+  border-radius: 32rpx;
+  background: #FFFFFF;
+  box-shadow: 0 12rpx 32rpx rgba(11, 61, 58, .055);
 }
 
-.report-card:active {
-  background-color: #F7F7F7;
+.report-card.payment-restricted {
+  border-color: #EFD8CA;
+  background: #FFFCFA;
+}
+
+.report-content {
+  min-height: 88rpx;
 }
 
 .report-header {
   display: flex;
+  align-items: flex-start;
   justify-content: space-between;
-  align-items: center;
-  margin-bottom: 24rpx;
+  gap: 20rpx;
 }
 
 .report-title {
-  font-size: 32rpx;
-  color: #000000;
-  font-weight: 600;
+  min-width: 0;
   flex: 1;
-  line-height: 1.4;
+  overflow-wrap: anywhere;
+  color: #0B3D3A;
+  font-size: 30rpx;
+  font-weight: 500;
+  line-height: 1.45;
+  letter-spacing: .5rpx;
 }
 
 .status-badge {
-  padding: 8rpx 24rpx;
-  border-radius: 8rpx;
-  font-size: 24rpx;
-  font-weight: 500;
   flex-shrink: 0;
+  padding: 8rpx 16rpx;
+  border-radius: 24rpx;
+  background: #E6F0EC;
+  color: #0D6E6E;
+  font-size: 22rpx;
+  font-weight: 400;
+  line-height: 1.5;
 }
 
-.status-0.status-badge {
-  background: #fef3c7;
-  color: #d97706;
+.status-badge.locked {
+  background: #F7EAE2;
+  color: #C96F45;
 }
 
-.status-1.status-badge {
-  background: #d1fae5;
-  color: #059669;
-}
-
-.report-info {
-  display: flex;
-  flex-direction: column;
-  gap: 12rpx;
-  margin-bottom: 16rpx;
-  padding-bottom: 16rpx;
-  border-bottom: 1rpx solid #F0F0F0;
+.test-title {
+  margin: 8rpx 0 12rpx;
+  overflow-wrap: anywhere;
+  color: #42534D;
+  font-size: 27rpx;
+  font-weight: 400;
+  line-height: 1.5;
 }
 
 .info-row {
   display: flex;
+  align-items: baseline;
   justify-content: space-between;
-  align-items: center;
+  gap: 16rpx;
+  margin-top: 0;
+  color: #98A8A3;
+  font-size: 21rpx;
+  font-weight: 300;
+  line-height: 1.5;
 }
 
-.info-label {
-  font-size: 26rpx;
-  color: #666666;
-  line-height: 1.4;
+.report-doctor {
+  margin-top: 6rpx;
 }
 
 .info-value {
-  font-size: 26rpx;
-  color: #000000;
+  min-width: 0;
+  flex: 1;
+  overflow-wrap: anywhere;
+  color: #52665F;
+  font-size: 24rpx;
+  text-align: right;
+}
+
+.detail-link {
+  display: flex;
+  min-height: 48rpx;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 20rpx;
+  margin-top: 16rpx;
+  padding-top: 16rpx;
+  border-top: 1rpx solid #EBF0ED;
+  color: #0D6E6E;
+  font-size: 24rpx;
+  line-height: 1.5;
+}
+
+.payment-restricted .detail-link {
+  border-top-color: #F1E2D8;
+  color: #C96F45;
+}
+
+.chevron-icon {
+  width: 28rpx;
+  height: 28rpx;
+  flex-shrink: 0;
+  opacity: .6;
+}
+
+.report-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 16rpx;
+  margin-top: 16rpx;
+  padding-top: 16rpx;
+  border-top: 1rpx solid #EBF0ED;
+}
+
+.ui-button {
+  display: flex;
+  min-height: 88rpx;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  padding: 0 28rpx;
+  border-radius: 24rpx;
+  font-size: 27rpx;
   font-weight: 500;
   line-height: 1.4;
 }
 
-.report-footer {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+.ui-button::after,
+.load-more::after {
+  border: 0;
 }
 
-.view-hint {
-  font-size: 26rpx;
-  color: #2563EB;
-  line-height: 1.4;
+.ui-button-primary {
+  background: #0D6E6E;
+  color: #FFFFFF;
 }
 
-.arrow-icon {
-  width: 32rpx;
-  height: 32rpx;
+.ui-button-secondary {
+  border: 1rpx solid #DCE6E2;
+  background: #FFFFFF;
+  color: #0D6E6E;
 }
 
-/* Empty State */
-.empty-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 120rpx 32rpx;
+.report-actions button.ui-button {
+  flex: 0 0 auto;
+  width: auto;
+  margin: 0;
+}
+
+.ui-card.state {
+  padding: 56rpx 32rpx;
+  border: 1rpx solid #E3EAE7;
+  border-radius: 32rpx;
+  background: #FFFFFF;
+  box-shadow: 0 12rpx 32rpx rgba(11, 61, 58, .04);
+}
+
+.state.error .petlis-empty-text { color: #C96F45; }
+.state {
+  color: #85968F;
+  font-size: 25rpx;
+  font-weight: 300;
+  line-height: 1.7;
+  text-align: center;
+}
+
+.state button {
+  margin-top: 28rpx;
 }
 
 .empty-icon {
-  width: 96rpx;
-  height: 96rpx;
+  width: 112rpx;
+  height: 112rpx;
   margin-bottom: 24rpx;
-  opacity: 0.4;
-  display: flex;
-  align-items: center;
-  justify-content: center;
 }
 
-.empty-icon .icon {
-  width: 96rpx;
-  height: 96rpx;
-}
-
-.empty-text {
-  font-size: 28rpx;
-  color: #888888;
-  margin-bottom: 48rpx;
-  line-height: 1.4;
-}
-
-.btn-primary {
-  padding: 24rpx 64rpx;
-  background: #2563EB;
-  color: #fff;
-  font-size: 28rpx;
-  border-radius: 8rpx;
-  border: none;
-}
-
-.btn-primary::after {
-  border: none;
-}
-
-/* PDF Action Buttons */
-.report-actions {
-  display: flex;
-  gap: 16rpx;
-  margin-top: 16rpx;
-}
-
-.btn-preview,
-.btn-download {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8rpx;
-  padding: 20rpx 24rpx;
-  border-radius: 8rpx;
-  font-size: 26rpx;
+.empty-title {
+  margin-bottom: 12rpx;
+  color: #263832;
+  font-size: 30rpx;
   font-weight: 500;
-  border: none;
-  transition: all 0.2s;
-  min-height: 68rpx;
-  box-sizing: border-box;
 }
 
-.btn-preview {
-  background: #2563EB;
-  color: #fff;
+.state .ui-muted {
+  color: #8A9B95;
+  font-size: 24rpx;
 }
 
-.btn-preview::after {
-  border: none;
+.error {
+  color: #A4563F;
 }
 
-.btn-preview:active {
-  opacity: 0.8;
+.end-note {
+  padding: 30rpx;
+  color: #A3B2AC;
+  font-size: 23rpx;
+  font-weight: 300;
+  text-align: center;
 }
 
-.btn-download {
-  background: #2563EB;
-  color: #fff;
-}
-
-.btn-download::after {
-  border: none;
-}
-
-.btn-download:active {
-  opacity: 0.8;
-}
-
-.btn-icon {
-  width: 28rpx;
-  height: 28rpx;
+.load-more {
+  min-height: 88rpx;
+  background: transparent;
+  color: #0D6E6E;
+  font-size: 26rpx;
+  font-weight: 400;
+  line-height: 88rpx;
 }

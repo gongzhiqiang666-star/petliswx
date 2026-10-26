@@ -124,4 +124,19 @@ public class ReportVO {
 
     @Schema(description = "医院名称")
     private String hospitalName;
+
+    @Schema(description = "样本类型名称")
+    private String sampleTypeName;
+
+    @Schema(description = "实验室名称")
+    private String laboratoryName;
+
+    @Schema(description = "订单是否已支付")
+    private Boolean paid;
+
+    @Schema(description = "结算方式")
+    private String settlementMode;
+
+    @Schema(description = "现结订单未支付时报告内容受限")
+    private Boolean paymentRestricted = false;
 }

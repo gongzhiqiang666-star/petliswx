@@ -1,6 +1,6 @@
 <!--搜索输入组件-->
 <view class="search-input-wrapper">
-  <image src="/assets/icons/icon-search.png"
+  <image src="/assets/icons/brand-search.png"
          class="search-icon"
          mode="aspectFit"
          lazy-load="{{true}}"
@@ -14,7 +14,7 @@
   />
   <image
     wx:if="{{value}}"
-    src="/assets/icons/close-icon.png"
+    src="/assets/icons/brand-close.png"
     class="clear-icon"
     mode="aspectFit"
     lazy-load="{{true}}"

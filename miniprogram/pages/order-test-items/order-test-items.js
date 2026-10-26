@@ -1,8 +1,10 @@
 // pages/order-test-items/order-test-items.js
+const request = require('../../utils/request');
 const api = require('../../api/index.js');
 
 Page({
   data: {
+    laboratories: [], laboratoryId: null, laboratoryName: '',
     allItems: [],          // 所有已加载的数据（用于维护选中状态）
     allItemsMap: {},       // 所有项目的Map，key为infoTestTypeId，用于快速查找
     displayItems: [],      // 实际显示的项目
@@ -16,6 +18,7 @@ Page({
     hasMore: true,         // 是否还有更多数据
     isLoadingMore: false,  // 是否正在加载更多
     loading: false,        // 初始加载状态
+    loadError: '',
     showDrawer: false,     // 是否显示已选项目抽屉
     selectedItemsList: [], // 已选项目列表
     searchMode: false,     // 是否处于搜索模式
@@ -25,9 +28,36 @@ Page({
   onLoad() {
     // 注意：这里不清除缓存，因为用户可能从 preview 页面返回
     // 缓存会在 order-add-pet 和 order-preview 页面清除
-    this.loadTestItems();
+    this.loadLaboratories();
   },
 
+  async loadLaboratories() {
+    this.setData({loadError:''});
+    try {
+      const labs=await request.get('/laboratories');
+      const form=wx.getStorageSync('order_form') || {};
+      const selected=labs.find(x=>x.id===form.laboratoryId) || (!form.laboratoryId && labs.length===1?labs[0]:null);
+      this.setData({laboratories:labs,laboratoryId:selected?selected.id:null,laboratoryName:selected?selected.name:''});
+      if(selected)this.loadTestItems();
+      if(!labs.length)wx.showModal({title:'实验室尚未配置',content:'请联系实验室管理员维护检测目录后再送检。',showCancel:false});
+    }catch(e){this.setData({loadError:e.message || '实验室加载失败，请重试'})}
+  },
+  onRetryLoad() {
+    return this.data.laboratoryId ? this.loadTestItems() : this.loadLaboratories();
+  },
+  async laboratoryChange(e) {
+    const selected=this.data.laboratories[Number(e.detail.value)];
+    if(selected.id===this.data.laboratoryId)return;
+    if(this.data.selectedIds.length){const c=await wx.showModal({title:'更换实验室？',content:'已选项目将清空，宠物及采样资料会保留。'});if(!c.confirm)return;}
+    const form=wx.getStorageSync('order_form') || {};
+    form.laboratoryId=selected.id;form.laboratoryName=selected.name;form.selectedTestItems=[];form.userCouponId=null;wx.setStorageSync('order_form',form);
+    this.setData({laboratoryId:selected.id,laboratoryName:selected.name,selectedIds:[],allItems:[],allItemsMap:{},selectedCount:0,totalPrice:'0.00'});this.loadTestItems();
+  },
+  async catalog(params) {
+    if(!this.data.laboratoryId)throw new Error('请先选择实验室');
+    const r=await request.get('/laboratories/'+this.data.laboratoryId+'/tests',{search:params.keyword,page:params.page,size:params.size});
+    return {content:r.items,totalElements:r.total,totalPages:Math.ceil(r.total/r.size)};
+  },
   onShow() {
     // 如果从 preview 页面返回，需要恢复已选择的项目
     // 从 storage 读取之前的选择状态
@@ -36,12 +66,14 @@ Page({
       if (formData && formData.selectedTestItems) {
         const selectedIds = formData.selectedTestItems.map(item => item.infoTestTypeId);
         this.setData({
+          allItemsMap:{...this.data.allItemsMap,...Object.fromEntries(formData.selectedTestItems.map(x=>[x.infoTestTypeId,x]))},
           selectedIds: selectedIds,
           selectedCount: selectedIds.length
         });
 
         // 更新所有项目的选中状态
         this.updateAllItemsSelection(selectedIds);
+        this.updateSelection(selectedIds);
 
         console.log('[OrderTestItems] 已恢复之前的选择:', selectedIds);
       }
@@ -61,14 +93,14 @@ Page({
     }
 
     if (!isLoadMore) {
-      this.setData({ loading: true, currentPage: 0 });
+      this.setData({ loading: true, currentPage: 0, loadError: '' });
     } else {
       this.setData({ isLoadingMore: true });
     }
 
     try {
       // 调用分页API
-      const pageData = await api.dictionary.getTestTypesPaginated({
+      const pageData = await this.catalog({
         keyword: '',  // 非搜索模式下关键词为空
         page: this.data.currentPage,
         size: this.data.pageSize
@@ -83,7 +115,7 @@ Page({
       const itemsWithPrices = items.map(item => ({
         ...item,
         testName: item.testName || `检测项目${item.infoTestTypeId}`,
-        price: item.price || 0,
+        price: item.price == null ? null : item.price,
         selected: this.data.selectedIds.includes(item.infoTestTypeId)
       }));
 
@@ -105,7 +137,7 @@ Page({
         allItems: newAllItems,
         allItemsMap: newAllItemsMap,
         displayItems: newAllItems,
-        filteredItems: newAllItems,
+        filteredItems: newAllItems.map(item=>item.price==null?{...item,price:'价格待维护'}:item),
         hasMore,
         loading: false,
         isLoadingMore: false
@@ -123,11 +155,8 @@ Page({
       console.error('[OrderTestItems] 加载检测项目失败:', error);
       this.setData({
         loading: false,
-        isLoadingMore: false
-      });
-      wx.showToast({
-        title: '加载失败，请重试',
-        icon: 'none'
+        isLoadingMore: false,
+        loadError: error.message || '加载失败，请重试'
       });
     }
   },
@@ -149,7 +178,7 @@ Page({
     if (searchQuery.length === 0) {
       // 清空搜索，恢复显示已加载的数据
       this.setData({
-        filteredItems: this.data.displayItems,
+        filteredItems: this.data.displayItems.map(item=>item.price==null?{...item,price:'价格待维护'}:item),
         hasMore: (this.data.currentPage + 1) < Math.ceil((this.data.displayItems.length) / this.data.pageSize),
         searchMode: false
       });
@@ -172,7 +201,7 @@ Page({
 
     try {
       // 调用后端分页搜索API
-      const pageData = await api.dictionary.getTestTypesPaginated({
+      const pageData = await this.catalog({
         keyword: query,
         page: 0,  // 搜索从第一页开始
         size: 100  // 搜索结果可以多一点
@@ -186,7 +215,7 @@ Page({
       const itemsWithPrices = items.map(item => ({
         ...item,
         testName: item.testName || `检测项目${item.infoTestTypeId}`,
-        price: item.price || 0,
+        price: item.price == null ? null : item.price,
         selected: this.data.selectedIds.includes(item.infoTestTypeId)
       }));
 
@@ -197,7 +226,7 @@ Page({
       });
 
       this.setData({
-        filteredItems: itemsWithPrices,
+        filteredItems: itemsWithPrices.map(item=>item.price==null?{...item,price:'价格待维护'}:item),
         allItemsMap: newAllItemsMap,
         hasMore: false,  // 搜索模式下不支持加载更多
         loading: false
@@ -210,11 +239,7 @@ Page({
       });
     } catch (error) {
       console.error('[OrderTestItems] 搜索失败:', error);
-      this.setData({ loading: false });
-      wx.showToast({
-        title: '搜索失败，请重试',
-        icon: 'none'
-      });
+      this.setData({ loading: false, loadError: '搜索失败，请重试' });
     }
   },
 
@@ -227,7 +252,7 @@ Page({
     this.setData({
       searchQuery: '',
       searchMode: false,
-      filteredItems: this.data.displayItems,
+      filteredItems: this.data.displayItems.map(item=>item.price==null?{...item,price:'价格待维护'}:item),
       hasMore: (this.data.currentPage + 1) < Math.ceil((this.data.displayItems.length) / this.data.pageSize),
       searchTimer: null
     });
@@ -256,6 +281,8 @@ Page({
   // 切换项目选中状态
   onToggleItem(e) {
     const itemId = e.currentTarget.dataset.id;
+    const item=this.data.allItemsMap[itemId];
+    if(!item || item.price==null || !Number.isFinite(Number(item.price)) || Number(item.price)<0){wx.showToast({title:'该项目价格待维护，请联系实验室',icon:'none'});return;}
     let selectedIds = [...this.data.selectedIds];
 
     // 切换选中状态
@@ -323,7 +350,7 @@ Page({
     this.setData({
       selectedIds,
       filteredItems,
-      selectedItemsList: selectedItems,
+      selectedItemsList: selectedItems.map(item=>item.price==null?{...item,price:'价格待维护'}:item),
       selectedCount: selectedItems.length,
       totalPrice: totalPrice.toFixed(2)
     });
@@ -384,6 +411,8 @@ Page({
       });
     }
 
+    formData.laboratoryId=this.data.laboratoryId;
+    formData.laboratoryName=this.data.laboratoryName;
     formData.selectedTestItems = selectedItems;
     wx.setStorageSync('order_form', formData);
 

@@ -1,3 +1,4 @@
+@import "./styles/native-theme.wxss";
 /**app.wxss**/
 page {
   background-color: #F7F7F7;  /* 微信标准浅灰 */
@@ -56,9 +57,9 @@ page {
   padding-bottom: 160rpx;
 }
 
-/* 渐变背景（品牌蓝）*/
+/* 渐变背景（品牌青绿）*/
 .gradient-bg {
-  background: linear-gradient(180deg, #2563EB 0%, #1D4ED8 100%);
+  background: linear-gradient(180deg, #0D6E6E 0%, #0A5A5A 100%);
   position: relative;
   overflow: hidden;
 }
@@ -72,9 +73,9 @@ page {
 }
 
 /* ===== 按钮样式 ===== */
-/* 主要按钮 - 品牌蓝 */
+/* 主要按钮 - 品牌青绿 */
 .btn-primary {
-  background: #2563EB;
+  background: #0D6E6E;
   color: #ffffff;
   border-radius: 8rpx;
   padding: 20rpx 32rpx;
@@ -85,7 +86,7 @@ page {
 }
 
 .btn-primary:active {
-  background: #1D4ED8;
+  background: #0A5A5A;
 }
 
 /* 次要按钮 */
@@ -136,7 +137,7 @@ page {
 }
 
 .btn-gradient-blue {
-  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  background: linear-gradient(135deg, #0D6E6E 0%, #0A5A5A 100%);
   color: #fff;
 }
 
@@ -166,9 +167,9 @@ page {
   color: #576B95;
 }
 
-/* 成功（品牌蓝）*/
+/* 成功（品牌青绿）*/
 .text-success {
-  color: #2563EB;
+  color: #0D6E6E;
 }
 
 /* 警告（微信橙）*/

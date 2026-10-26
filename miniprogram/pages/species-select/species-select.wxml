@@ -3,8 +3,8 @@
   <view class="page-content">
     <!-- 搜索框 -->
     <view class="search-bar">
-      <image src="/assets/icons/icon-search.png" class="search-icon" mode="aspectFit"></image>
-      <input class="search-input"
+      <image src="/assets/icons/brand-search.png" class="search-icon" mode="aspectFit"></image>
+      <input class="search-input petlis-input"
              placeholder="搜索物种名称"
              value="{{searchKeyword}}"
              bindinput="onSearch" />
@@ -29,7 +29,7 @@
 
           <!-- 该分组下的物种 -->
           <view
-            class="species-item"
+            class="species-item petlis-list-card"
             wx:for="{{item.items}}"
             wx:for-item="species"
             wx:key="infoAnimalId"
@@ -41,7 +41,7 @@
               <view class="species-name-en">{{species.animalNameEn}}</view>
             </view>
             <view class="species-check" wx:if="{{selectedId === species.infoAnimalId}}">
-              <image src="/assets/icons/check-circle.png" class="check-icon" mode="aspectFit"></image>
+              <image src="/assets/icons/brand-check.png" class="check-icon" mode="aspectFit"></image>
             </view>
           </view>
         </block>
@@ -57,8 +57,8 @@
         </view>
 
         <!-- 空状态 -->
-        <view class="empty-state" wx:if="{{groupedSpecies.length === 0 && !loading}}">
-          <view class="empty-icon">🔍</view>
+        <view class="empty-state petlis-empty" wx:if="{{groupedSpecies.length === 0 && !loading}}">
+          <image class="empty-icon" src="/assets/icons/brand-empty.png" mode="aspectFit" aria-hidden="true"></image>
           <view class="empty-text">未找到匹配的物种</view>
         </view>
 
