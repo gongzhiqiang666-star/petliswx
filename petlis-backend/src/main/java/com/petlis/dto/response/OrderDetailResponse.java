@@ -16,6 +16,12 @@ import java.util.List;
 @Data
 @Schema(description = "检测申请详情响应")
 public class OrderDetailResponse {
+    private Integer laboratoryId;
+    private String laboratoryName;
+    private Long userCouponId;
+    private String reviewReason;
+    private boolean canResubmit;
+    private java.util.List<java.util.Map<String,Object>> reviewHistory;
 
     @Schema(description = "申请单ID")
     private Integer orderId;

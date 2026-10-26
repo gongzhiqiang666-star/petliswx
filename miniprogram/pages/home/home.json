@@ -1,9 +1,9 @@
 {
   "usingComponents": {},
-  "navigationBarTitleText": "",
-  "navigationBarBackgroundColor": "#2563EB",
-  "navigationBarTextStyle": "white",
-  "backgroundColor": "#2563EB",
+  "navigationBarTitleText": "纳博科临",
+  "navigationBarBackgroundColor": "#fafafa",
+  "navigationBarTextStyle": "black",
+  "backgroundColor": "#fafafa",
   "enablePullDownRefresh": true,
-  "backgroundTextStyle": "light"
+  "backgroundTextStyle": "dark"
 }

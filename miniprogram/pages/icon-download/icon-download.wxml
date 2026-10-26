@@ -1,13 +1,13 @@
 <!--pages/icon-download/icon-download.wxml-->
 <view class="page">
   <!-- Stats Section -->
-  <view class="stats-card gradient-bg">
+  <view class="stats-card petlis-card">
     <view class="stats-header">
       <view class="stats-info">
         <text class="stats-label">项目使用图标</text>
         <text class="stats-number">{{icons.length}}</text>
       </view>
-      <image src="/assets/icons/sparkle.png" class="sparkle-icon" mode="aspectFit"></image>
+      <image src="/assets/icons/brand-points.png" class="sparkle-icon" mode="aspectFit"></image>
     </view>
     <view class="stats-grid">
       <view class="stat-box">
@@ -26,27 +26,27 @@
   </view>
 
   <!-- Quick Download Section -->
-  <view class="quick-download" bindtap="onNavigateToExport">
+  <view class="quick-download petlis-list-card" bindtap="onNavigateToExport">
     <view class="quick-download-content">
       <view class="quick-icon-wrapper">
-        <image src="/assets/icons/download.png" class="quick-icon" mode="aspectFit"></image>
+        <image src="/assets/icons/brand-download.png" class="quick-icon" mode="aspectFit"></image>
       </view>
       <view class="quick-info">
         <text class="quick-title">导出微信小程序TabBar图标</text>
         <text class="quick-desc">81px × 81px · 8个PNG文件 · 可预览</text>
       </view>
     </view>
-    <image src="/assets/icons/arrow-down.png" class="quick-arrow" mode="aspectFit"></image>
+    <image src="/assets/icons/brand-chevron-right.png" class="quick-arrow" mode="aspectFit"></image>
   </view>
 
   <!-- Search Section -->
   <view class="search-section">
-    <image src="/assets/icons/icon-search.png" class="search-icon" mode="aspectFit"></image>
+    <image src="/assets/icons/brand-search.png" class="search-icon" mode="aspectFit"></image>
     <input class="search-input"
            placeholder="搜索图标名称..."
            value="{{searchQuery}}"
            bindinput="onSearchInput" />
-    <image src="/assets/icons/close-icon.png"
+    <image src="/assets/icons/brand-close.png"
            class="clear-icon {{searchQuery ? 'show' : ''}}"
            mode="aspectFit"
            bindtap="onClearSearch"></image>
@@ -54,8 +54,8 @@
 
   <!-- Category Filter -->
   <scroll-view class="category-scroll" scroll-x>
-    <view class="category-list">
-      <view class="category-item {{selectedCategory === item ? 'active' : ''}}"
+    <view class="category-list petlis-filters">
+      <view class="category-item petlis-filter-item {{selectedCategory === item ? 'active' : ''}}"
             wx:for="{{categories}}"
             wx:key="*this"
             bindtap="onCategoryChange"
@@ -66,14 +66,14 @@
   </scroll-view>
 
   <!-- Select All Button -->
-  <view class="select-all-btn" bindtap="onToggleSelectAll">
-    <image src="/assets/icons/check-circle.png" class="check-icon" mode="aspectFit"></image>
+  <view class="select-all-btn petlis-btn petlis-btn-outline" bindtap="onToggleSelectAll">
+    <image src="/assets/icons/brand-check.png" class="check-icon" mode="aspectFit"></image>
     <text>{{isAllSelected ? '取消全选' : '全选当前'}}</text>
   </view>
 
   <!-- Icons Grid -->
   <scroll-view class="icons-grid" scroll-y>
-    <view class="icon-card {{item.selected ? 'selected' : ''}}"
+    <view class="icon-card petlis-list-card {{item.selected ? 'selected' : ''}}"
           wx:for="{{filteredIcons}}"
           wx:key="name"
           bindtap="onToggleIcon"
@@ -83,14 +83,14 @@
       </view>
       <text class="icon-name">{{item.name}}</text>
       <text class="icon-category">{{item.category}}</text>
-      <image src="/assets/icons/check-circle.png"
+      <image src="/assets/icons/brand-check.png"
              class="check-badge {{item.selected ? 'show' : ''}}"
              mode="aspectFit"></image>
     </view>
 
     <!-- Empty State -->
-    <view class="empty-state" wx:if="{{filteredIcons.length === 0}}">
-      <image src="/assets/icons/info-icon.png" class="empty-icon" mode="aspectFit"></image>
+    <view class="empty-state petlis-empty" wx:if="{{filteredIcons.length === 0}}">
+      <image src="/assets/icons/brand-empty.png" class="empty-icon" mode="aspectFit"></image>
       <text class="empty-text">未找到匹配的图标</text>
       <text class="empty-hint">请尝试其他搜索词或分类</text>
     </view>
@@ -98,12 +98,12 @@
 
   <!-- Bottom Action Buttons -->
   <view class="bottom-actions">
-    <button class="btn-primary" bindtap="onDownloadSelected" disabled="{{selectedCount === 0}}">
-      <image src="/assets/icons/download.png" class="btn-icon" mode="aspectFit"></image>
+    <button class="btn-primary petlis-btn petlis-btn-primary" bindtap="onDownloadSelected" disabled="{{selectedCount === 0}}">
+      <image src="/assets/icons/brand-download.png" class="btn-icon" mode="aspectFit"></image>
       下载选中图标 ({{selectedCount}})
     </button>
-    <button class="btn-outline" bindtap="onDownloadAll">
-      <image src="/assets/icons/search.png" class="btn-icon" mode="aspectFit"></image>
+    <button class="btn-outline petlis-btn petlis-btn-outline" bindtap="onDownloadAll">
+      <image src="/assets/icons/brand-download.png" class="btn-icon" mode="aspectFit"></image>
       下载完整列表 ({{icons.length}})
     </button>
   </view>

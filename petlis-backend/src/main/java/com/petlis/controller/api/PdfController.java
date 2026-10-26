@@ -59,7 +59,7 @@ public class PdfController {
                     .headers(headers)
                     .body(pdfData);
 
-        } catch (SecurityException e) {
+        } catch (SecurityException | com.petlis.common.exception.BusinessException e) {
             log.error("PDF访问权限验证失败: {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         } catch (IllegalArgumentException e) {
@@ -90,9 +90,9 @@ public class PdfController {
             String previewUrl = pdfService.getPdfPreviewUrlWithAuth(detailId, request);
             log.info("PDF预览URL生成成功, detailId: {}", detailId);
             return ResponseEntity.ok(previewUrl);
-        } catch (SecurityException e) {
+        } catch (SecurityException | com.petlis.common.exception.BusinessException e) {
             log.error("PDF预览URL生成失败, 权限验证失败: {}", e.getMessage());
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("无权访问此报告");
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
         } catch (IllegalArgumentException e) {
             log.error("PDF预览URL生成失败: {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("报告不存在");

@@ -1,0 +1,17 @@
+<view class="page">
+  <view wx:if="{{submitted}}" class="card petlis-list-card">修改已提交，请等待审核结果。审核通过后需重新登录。</view>
+  <view wx:else class="card petlis-list-card">
+    <view class="group-title">基本资料</view>
+    <view class="form-item"><view class="form-label">医生姓名</view><input class="petlis-input" data-key="nickname" value="{{form.nickname}}" bindinput="field" placeholder="请输入医生姓名" maxlength="50"/></view>
+    <view class="form-item"><view class="form-label">职称</view><input class="petlis-input" data-key="title" value="{{form.title}}" bindinput="field" placeholder="请输入职称" maxlength="100"/></view>
+    <view class="form-item"><view class="form-label">所属医院</view><view class="search-row"><image class="search-icon" src="/assets/icons/brand-search.png" mode="aspectFit" /><input class="petlis-input search-field" value="{{search}}" bindinput="search" placeholder="搜索医院"/><button class="petlis-btn petlis-btn-outline search-trigger" bindtap="searchHospitals">搜索</button></view></view>
+    <view class="form-item"><picker range="{{hospitals}}" range-key="hospitalName" bindchange="hospital"><view class="nav petlis-input"><image class="nav-icon" src="/assets/icons/brand-hospital.png" mode="aspectFit" /><text class="nav-label">{{hospitalName || '请选择医院'}}</text><image class="nav-chevron" src="/assets/icons/brand-chevron-down.png" mode="aspectFit" /></view></picker></view>
+    <button class="petlis-btn petlis-btn-outline" bindtap="avatar"><image class="button-icon" src="/assets/icons/brand-mine.png" mode="aspectFit" />选择新头像</button><view wx:if="{{form.avatar}}" class="hint">头像已选择</view>
+    <view wx:for="{{files}}" wx:key="*this" class="line"><text>资质 {{index+1}}</text><button class="petlis-btn petlis-btn-outline" data-index="{{index}}" bindtap="remove" disabled="{{busy}}"><image class="button-icon" src="/assets/icons/brand-trash.png" mode="aspectFit" />移除</button></view>
+    <button class="petlis-btn petlis-btn-outline" bindtap="upload" disabled="{{busy || files.length>=5}}"><image class="button-icon" src="/assets/icons/brand-plus.png" mode="aspectFit" />添加资质文件</button>
+  </view>
+  <view wx:if="{{!submitted}}" class="bottom-actions"><button class="petlis-btn petlis-btn-primary" bindtap="submit" loading="{{busy}}" disabled="{{busy}}">提交资料审核</button></view>
+  <view wx:if="{{error}}" class="petlis-empty"><image class="empty-icon" src="/assets/icons/brand-empty.png" mode="aspectFit" /><view class="petlis-empty-text">{{error}}</view><button wx:if="{{!submitted}}" class="petlis-btn petlis-btn-outline petlis-empty-retry" bindtap="submit">重新提交</button></view><view class="title" style="font-size:32rpx;margin-top:32rpx">修改记录</view>
+  <view wx:for="{{history}}" wx:key="id" class="card petlis-list-card"><view>{{item.status==='pending'?'待审核':item.status==='approved'?'已通过':'未通过'}}</view><view class="meta">{{item.createdAt}}</view><view wx:if="{{item.reviewReason}}" class="hint">{{item.reviewReason}}</view></view>
+  <view wx:if="{{!history.length}}" class="empty petlis-empty"><image class="empty-icon" src="/assets/icons/brand-empty.png" mode="aspectFit" /><view class="petlis-empty-text">暂无资料修改记录</view></view>
+</view>

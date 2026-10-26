@@ -16,7 +16,7 @@
 
 .search-input-wrapper:focus-within {
   background-color: #FFFFFF;
-  border-color: #2563EB;
+  border-color: #0D6E6E;
 }
 
 .search-icon {

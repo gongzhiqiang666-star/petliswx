@@ -29,6 +29,9 @@ import java.util.Map;
 public class PaymentController {
 
     private final PaymentService paymentService;
+    private final com.petlis.service.impl.PaymentNotificationService paymentNotificationService;
+    private final com.petlis.config.WeChatPayConfig payConfig;
+    private final org.springframework.core.env.Environment environment;
 
     /**
      * 创建支付订单
@@ -36,7 +39,7 @@ public class PaymentController {
     @PostMapping("/create")
     @Operation(summary = "创建支付订单", description = "创建支付订单并获取支付参数")
     public Result<PaymentResponse> createPayment(@RequestBody PaymentCreateRequest request) {
-        log.info("创建支付订单请求: {}", request);
+        log.info("创建支付订单，业务单号: {}", request.getOrderId());
         PaymentResponse response = paymentService.createPayment(request);
         return Result.success(response);
     }
@@ -53,14 +56,11 @@ public class PaymentController {
             StringBuilder sb = new StringBuilder();
             String line;
             while ((line = reader.readLine()) != null) {
+                if(sb.length()+line.length()>65536)throw new com.petlis.common.exception.BusinessException("回调内容过大");
                 sb.append(line);
             }
 
-            log.info("收到微信支付回调: {}", sb.toString());
-
-            // TODO: 解析XML，验证签名
-            // TODO: 获取订单号和交易号
-            // TODO: 调用paymentService.handlePaymentCallback()
+            paymentNotificationService.handle(sb.toString());
 
             // 返回成功响应
             Map<String, String> response = new HashMap<>();
@@ -72,7 +72,7 @@ public class PaymentController {
             log.error("处理支付回调失败", e);
             Map<String, String> response = new HashMap<>();
             response.put("return_code", "FAIL");
-            response.put("return_msg", e.getMessage());
+            response.put("return_msg", "NOT_PROCESSED");
 
             return buildXmlResponse(response);
         }
@@ -113,6 +113,10 @@ public class PaymentController {
     public Result<String> mockPaymentCallback(
             @PathVariable String paymentNo,
             @RequestParam(defaultValue = "true") Boolean success) {
+        if (!Boolean.TRUE.equals(payConfig.getMockEnabled()) || environment.acceptsProfiles(org.springframework.core.env.Profiles.of("prod"))) {
+            throw new com.petlis.common.exception.BusinessException(403, "模拟支付仅可用于开发环境");
+        }
+        paymentService.getPaymentStatus(paymentNo); // 验证当前医生拥有此支付记录。
         log.info("模拟支付回调 - 支付订单号: {}, 支付结果: {}", paymentNo, success);
 
         if (success) {

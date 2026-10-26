@@ -9,7 +9,8 @@ Page({
     filteredPets: [],
     searchKeyword: '',
     pageSize: 50,  // 增加pageSize，确保能获取所有宠物
-    loading: false
+    loading: false,
+    loadError: ''
   },
 
   onLoad(options) {
@@ -30,7 +31,7 @@ Page({
   },
 
   async loadPets() {
-    this.setData({ loading: true });
+    this.setData({ loading: true, loadError: '' });
 
     try {
       // 从后端获取数据，由后端数据库按createtime倒序排序
@@ -87,10 +88,7 @@ Page({
       console.log('[OrderSelectPet] 宠物加载完成，总数:', pets.length);
     } catch (error) {
       console.error('[OrderSelectPet] 加载宠物列表失败:', error);
-      wx.showToast({
-        title: '加载失败',
-        icon: 'none'
-      });
+      this.setData({ loadError: error.message || '加载失败，请重试' });
     } finally {
       this.setData({ loading: false });
     }

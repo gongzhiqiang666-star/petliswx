@@ -18,7 +18,7 @@ spring:
   servlet:
     multipart:
       max-file-size: 2MB
-      max-request-size: 2MB
+      max-request-size: 3MB
       enabled: true
 
   # JPA配置
@@ -38,7 +38,7 @@ spring:
 
   # Flyway配置
   flyway:
-    enabled: true
+    enabled: ${DB_MIGRATIONS_ENABLED:false}
     baseline-on-migrate: true
     baseline-version: 0
     locations: classpath:db/migration
@@ -85,7 +85,7 @@ app:
   # PDF报告配置
   pdf:
     base-url: https://laboklin.cn
-    storage-path: /public/Content/FilePdf
+    storage-path: ${PDF_STORAGE_PATH:/public/Content/FilePdf}
 
 # 日志配置
 logging:
@@ -94,6 +94,6 @@ logging:
     com.petlis: DEBUG
     org.springframework.web: INFO
     org.hibernate.SQL: INFO
-    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+    org.hibernate.type.descriptor.sql.BasicBinder: OFF
   pattern:
     console: '%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n'

@@ -1,14 +1,8 @@
 <!--pages/order-select-pet/order-select-pet.wxml-->
 <view class="page" role="main" aria-label="选择宠物">
   <view class="page-content">
-    <!-- 页面头部 -->
-    <view class="page-header" role="heading">
-      <view class="header-title">选择宠物</view>
-      <view class="header-desc">请选择要预约检测的宠物，或添加新宠物</view>
-    </view>
-
     <!-- 搜索框 -->
-    <view class="search-section" role="search">
+    <view class="search-section petlis-input" role="search">
       <search-input
         placeholder="搜索宠物姓名、主人姓名"
         bind:search="onSearch"
@@ -21,6 +15,7 @@
       <!-- 有宠物数据时 -->
       <block wx:if="{{filteredPets.length > 0}}">
         <pet-card
+          class="petlis-list-card"
           wx:for="{{filteredPets}}"
           wx:key="id"
           pet="{{item}}"
@@ -33,11 +28,17 @@
         />
       </block>
 
+      <view class="empty-state petlis-empty error-state" wx:if="{{loadError && !loading}}" role="alert">
+        <image src="/assets/icons/brand-empty.png" class="empty-icon" mode="aspectFit" aria-hidden="true"></image>
+        <view class="empty-text">{{loadError}}</view>
+        <button class="petlis-btn petlis-btn-outline petlis-empty-retry" bindtap="loadPets">重新加载</button>
+      </view>
+
       <!-- 空状态 -->
-      <view class="empty-state" wx:if="{{filteredPets.length === 0 && !loading}}" role="status">
-        <image src="/assets/icons/empty-search.png" class="empty-icon" mode="aspectFit"></image>
+      <view class="empty-state petlis-empty" wx:if="{{filteredPets.length === 0 && !loading && !loadError}}" role="status">
+        <image src="/assets/icons/brand-empty.png" class="empty-icon" mode="aspectFit"></image>
         <view class="empty-text">未找到匹配的宠物</view>
-        <button class="btn-clear" bindtap="onClearSearch" aria-label="清空搜索条件">清空搜索</button>
+        <button class="btn-clear petlis-btn petlis-btn-outline" bindtap="onClearSearch" aria-label="清空搜索条件">清空搜索</button>
       </view>
 
       <!-- 加载状态 -->
@@ -47,11 +48,11 @@
     </view>
 
     <!-- 添加新宠物按钮 -->
-    <view class="add-pet-btn"
+    <view class="add-pet-btn petlis-btn petlis-btn-outline"
           role="button"
           aria-label="添加新宠物"
           bindtap="onAddPet">
-      <image src="/assets/icons/add-icon.png" class="plus-icon" mode="aspectFit"></image>
+      <image src="/assets/icons/brand-plus.png" class="plus-icon" mode="aspectFit"></image>
       <text>添加新宠物</text>
     </view>
   </view>
@@ -59,6 +60,6 @@
   <!-- 底部按钮 -->
   <view class="bottom-action" wx:if="{{selectedPetId}}" role="form">
     <view class="action-tip">已选择宠物，点击继续填写预约信息</view>
-    <button class="btn-primary" bindtap="onConfirm" data-id="{{selectedPetId}}" aria-label="下一步，填写预约信息">下一步</button>
+    <button class="btn-primary petlis-btn petlis-btn-primary" bindtap="onConfirm" data-id="{{selectedPetId}}" aria-label="下一步，填写预约信息">下一步</button>
   </view>
 </view>

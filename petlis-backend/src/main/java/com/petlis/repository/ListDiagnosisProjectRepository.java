@@ -18,6 +18,10 @@ import java.util.List;
  */
 @Repository
 public interface ListDiagnosisProjectRepository extends JpaRepository<ListDiagnosisProject, Integer>, JpaSpecificationExecutor<ListDiagnosisProject> {
+    @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
+    @Query("select p from ListDiagnosisProject p where p.listDiagnosisProjectId = :id")
+    java.util.Optional<ListDiagnosisProject> findLockedById(@Param("id") Integer id);
+
 
     /**
      * 根据医院ID查询申请列表
@@ -150,4 +154,11 @@ public interface ListDiagnosisProjectRepository extends JpaRepository<ListDiagno
             @Param("sampleStatus") Integer sampleStatus,
             @Param("startDate") Date startDate,
             @Param("endDate") Date endDate);
+    @Query("SELECT p FROM ListDiagnosisProject p WHERE p.infoHospitalId=:hospitalId " +
+        "AND (:status IS NULL OR p.sampleStatus=:status) AND (:startDate IS NULL OR p.createDt>=:startDate) " +
+        "AND (:endDate IS NULL OR p.createDt<=:endDate) AND (:keyword IS NULL OR LOWER(p.animalName) LIKE LOWER(CONCAT('%',:keyword,'%')) " +
+        "OR LOWER(p.masterName) LIKE LOWER(CONCAT('%',:keyword,'%')) OR LOWER(p.userNO) LIKE LOWER(CONCAT('%',:keyword,'%')) OR LOWER(p.chipNO) LIKE LOWER(CONCAT('%',:keyword,'%')))")
+    org.springframework.data.domain.Page<ListDiagnosisProject> findPagedOrders(@Param("hospitalId") Integer hospitalId,@Param("status") Integer status,
+        @Param("startDate") Date startDate,@Param("endDate") Date endDate,@Param("keyword") String keyword,org.springframework.data.domain.Pageable pageable);
+
 }

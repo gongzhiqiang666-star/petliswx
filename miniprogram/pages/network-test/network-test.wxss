@@ -1,3 +1,4 @@
+@import "../../styles/petlis-3-overrides.wxss";
 /* pages/network-test/network-test.wxss */
 .container {
   padding: 32rpx;

@@ -1,0 +1,8 @@
+<view class="page">
+  <view class="filters petlis-filters"><button wx:for="{{filters}}" wx:key="id" class="petlis-filter-item {{category===item.id?'active':''}}" disabled="{{busy}}" data-id="{{item.id}}" bindtap="filter">{{item.title}}</button></view>
+  <view wx:if="{{error}}" class="error petlis-empty"><image class="empty-icon" src="/assets/icons/brand-empty.png" mode="aspectFit" /><view class="petlis-empty-text">{{error}}</view><button class="petlis-btn petlis-btn-outline" bindtap="retry">重试</button></view>
+  <view wx:for="{{items}}" wx:key="id" class="card petlis-list-card"><view class="line"><text>{{item.memo || '账户变动'}}</text><text class="amount">{{item.amount>0?'+':''}}{{item.amount}}</text></view><view class="meta">{{item.time}}</view><view class="meta">变动后{{kind==='points'?'积分':'余额'}}：{{item.balanceAfter}}</view></view>
+  <view wx:if="{{!busy && !items.length && !error}}" class="empty petlis-empty"><image class="empty-icon" src="/assets/icons/brand-empty.png" mode="aspectFit" /><view class="petlis-empty-text">暂无流水记录</view></view>
+  <button wx:if="{{more}}" class="petlis-btn petlis-btn-outline" loading="{{busy}}" bindtap="more">加载更多</button>
+  <view class="bottom-actions"><button class="petlis-btn petlis-btn-primary" bindtap="exportFile" disabled="{{busy}}"><image class="button-icon" src="/assets/icons/brand-download.png" mode="aspectFit" />导出当前分类流水</button></view>
+</view>

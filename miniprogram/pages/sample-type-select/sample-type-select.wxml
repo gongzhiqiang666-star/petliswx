@@ -2,20 +2,20 @@
 <view class="page">
   <!-- 搜索栏 -->
   <view class="search-bar">
-    <image src="/assets/icons/icon-search.png" class="search-icon" mode="aspectFit"></image>
-    <input class="search-input"
+    <image src="/assets/icons/brand-search.png" class="search-icon" mode="aspectFit"></image>
+    <input class="search-input petlis-input"
            placeholder="搜索样本类型（中文或英文）"
            value="{{searchQuery}}"
            bindinput="onSearchInput" />
-    <image src="/assets/icons/clear.png"
+    <image src="/assets/icons/brand-close.png"
            class="clear-icon {{searchQuery ? 'show' : ''}}"
            mode="aspectFit"
            bindtap="onClearSearch"></image>
   </view>
 
   <!-- 分类标签 -->
-  <view class="category-tabs">
-    <view class="tab-item {{activeTab === index ? 'active' : ''}}"
+  <view class="category-tabs petlis-filters">
+    <view class="tab-item petlis-filter-item {{activeTab === index ? 'active' : ''}}"
           wx:for="{{categories}}"
           wx:key="filter"
           bindtap="onTabTap"
@@ -28,7 +28,7 @@
   <scroll-view class="sample-list"
               scroll-y
               bindscrolltolower="onScrollToLower">
-    <view class="sample-item"
+    <view class="sample-item petlis-list-card"
           wx:for="{{filteredSamples}}"
           wx:key="infoSampleTypeId"
           bindtap="onSelectSample"
@@ -37,7 +37,7 @@
         <text class="sample-name-cn">{{item.sampleName}}</text>
         <text class="sample-name-en">{{item.sampleNameEn}}</text>
       </view>
-      <image src="/assets/icons/arrow-down.png" class="arrow-icon" mode="aspectFit"></image>
+      <image src="/assets/icons/brand-chevron-right.png" class="arrow-icon" mode="aspectFit"></image>
     </view>
 
     <!-- 加载更多提示 -->
@@ -51,8 +51,8 @@
     </view>
 
     <!-- 空状态 -->
-    <view class="empty-state" wx:if="{{filteredSamples.length === 0}}">
-      <image src="/assets/icons/empty-search.png" class="empty-icon" mode="aspectFit"></image>
+    <view class="empty-state petlis-empty" wx:if="{{filteredSamples.length === 0}}">
+      <image src="/assets/icons/brand-empty.png" class="empty-icon" mode="aspectFit"></image>
       <text class="empty-text">未找到相关样本类型</text>
       <text class="empty-hint">请尝试其他关键词或切换分类</text>
     </view>

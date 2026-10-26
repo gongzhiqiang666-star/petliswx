@@ -1,69 +1,35 @@
 package com.petlis.common.util;
 
-import cn.hutool.http.HttpUtil;
-import cn.hutool.json.JSONObject;
+import com.petlis.common.exception.BusinessException;
 import cn.hutool.json.JSONUtil;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import java.net.*;
+import java.net.http.*;
+import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 
-/**
- * 微信工具类
- *
- * 用于微信小程序登录
- *
- * @author PETLIS Team
- */
-@Slf4j
 @Component
 public class WechatUtil {
-
-    @Value("${app.wechat.appid}")
-    private String appid;
-
-    @Value("${app.wechat.secret}")
-    private String secret;
-
-    @Value("${app.wechat.url}")
-    private String url;
-
-    /**
-     * 通过code换取openid
-     *
-     * @param code 微信登录code
-     * @return openid和session_key
-     */
-    public WechatLoginResponse code2Session(String code) {
-        String requestUrl = String.format("%s?appid=%s&secret=%s&js_code=%s&grant_type=authorization_code",
-                url, appid, secret, code);
-
-        try {
-            String response = HttpUtil.get(requestUrl);
-            log.info("Wechat code2Session response: {}", response);
-
-            JSONObject jsonObject = JSONUtil.parseObj(response);
-
-            // 检查是否有错误
-            if (jsonObject.containsKey("errcode")) {
-                Integer errcode = jsonObject.getInt("errcode");
-                String errmsg = jsonObject.getStr("errmsg");
-                throw new RuntimeException("Wechat login failed: " + errmsg + " (errcode: " + errcode + ")");
-            }
-
-            // 解析成功响应
-            String openid = jsonObject.getStr("openid");
-            String sessionKey = jsonObject.getStr("session_key");
-
-            return new WechatLoginResponse(openid, sessionKey);
-        } catch (Exception e) {
-            log.error("Wechat code2Session error: {}", e.getMessage(), e);
-            throw new RuntimeException("Failed to get openid from Wechat: " + e.getMessage(), e);
-        }
-    }
-
-    /**
-     * 微信登录响应
-     */
-    public record WechatLoginResponse(String openid, String sessionKey) {
-    }
+ @Value("${app.wechat.appid}") private String appid;
+ @Value("${app.wechat.secret}") private String secret;
+ @Value("${app.wechat.url}") private String url;
+ private final HttpClient client=HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(5)).followRedirects(HttpClient.Redirect.NEVER).build();
+ public boolean configured(){return secret!=null && !secret.isBlank();}
+ public WechatLoginResponse code2Session(String code){
+  if(code==null || code.isBlank() || code.length()>512)throw new BusinessException("微信授权凭证无效");
+  if(secret==null || secret.isBlank())throw new BusinessException("微信登录尚未配置，请使用账号密码登录");
+  try{
+   String target=url+"?appid="+encode(appid)+"&secret="+encode(secret)+"&js_code="+encode(code)+"&grant_type=authorization_code";
+   var response=client.send(HttpRequest.newBuilder(URI.create(target)).timeout(Duration.ofSeconds(10)).GET().build(),HttpResponse.BodyHandlers.ofString());
+   if(response.statusCode()!=200)throw new BusinessException("微信登录暂不可用，请稍后重试");
+   var data=JSONUtil.parseObj(response.body());
+   if(data.containsKey("errcode") && data.getInt("errcode",-1)!=0)throw new BusinessException("微信授权已失效，请重新授权");
+   String openid=data.getStr("openid"),sessionKey=data.getStr("session_key");
+   if(openid==null || openid.isBlank() || sessionKey==null || sessionKey.isBlank())throw new BusinessException("微信授权响应无效，请重试");
+   return new WechatLoginResponse(openid,sessionKey);
+  }catch(BusinessException e){throw e;}catch(InterruptedException e){Thread.currentThread().interrupt();throw new BusinessException("微信登录已中断，请重试");}catch(Exception e){throw new BusinessException("微信登录暂不可用，请稍后重试");}
+ }
+ private static String encode(String v){return URLEncoder.encode(v,StandardCharsets.UTF_8);}
+ public record WechatLoginResponse(String openid,String sessionKey){}
 }

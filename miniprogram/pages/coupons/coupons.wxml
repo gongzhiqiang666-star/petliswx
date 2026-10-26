@@ -1,0 +1,6 @@
+<view class="page">
+  <view class="filters petlis-filters"><button wx:for="{{filters}}" wx:key="id" class="petlis-filter-item {{category===item.id?'active':''}}" disabled="{{busy}}" bindtap="filter">{{item.title}}</button></view>
+  <view wx:if="{{error}}" class="error petlis-empty"><image class="empty-icon" src="/assets/icons/brand-empty.png" mode="aspectFit" /><view class="petlis-empty-text">{{error}}</view><button class="petlis-btn petlis-btn-outline" bindtap="load">重试</button></view>
+  <view wx:for="{{items}}" wx:key="id" class="card petlis-list-card"><view>{{item.name}}</view><view class="balance">¥{{item.amount}}</view><view class="meta">满 ¥{{item.minimumAmount}} 可用 · {{item.laboratoryName || '全部实验室'}}</view><view class="meta">有效期 {{item.starts}} 至 {{item.ends}}</view><view class="badge">{{item.label}}</view></view>
+  <view wx:if="{{!busy && !items.length && !error}}" class="empty petlis-empty"><image class="empty-icon" src="/assets/icons/brand-empty.png" mode="aspectFit" /><view class="petlis-empty-text">当前分类暂无优惠券</view></view>
+</view>

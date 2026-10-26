@@ -52,7 +52,7 @@ public class OrderController {
      * @return 申请单ID和支付信息
      */
     @PostMapping
-    @Operation(summary = "创建检测申请", description = "创建新的检测申请单,初始状态为草稿。如果不是月结客户，返回需要支付的信息")
+    @Operation(summary = "创建检测申请", description = "创建新的检测申请单,提交后进入待审核，审核通过后按现结或月结结算")
     public Result<OrderCreateResponse> createOrder(@Valid @RequestBody OrderCreateRequest request) {
         log.info("接收到创建检测申请请求");
         try {
@@ -68,7 +68,7 @@ public class OrderController {
             InfoHospital hospital = hospitalRepository.findById(hospitalId).orElse(null);
 
             boolean isMonthlyCustomer = (hospital != null && hospital.getPayType() != null && hospital.getPayType() == 1);
-            boolean needPayment = !isMonthlyCustomer;
+            boolean needPayment = false; // 审核通过后才支付
             String payTypeDesc = isMonthlyCustomer ? "月结客户" : "现结客户";
 
             // 4. 构建响应
@@ -83,7 +83,7 @@ public class OrderController {
             return Result.success("检测申请创建成功", response);
         } catch (Exception e) {
             log.error("创建检测申请失败", e);
-            return Result.fail(e.getMessage());
+            return Result.fromException(e);
         }
     }
 
@@ -101,6 +101,7 @@ public class OrderController {
     @Operation(summary = "查询检测申请列表", description = "根据条件查询检测申请列表,支持分页")
     public Result<Page<OrderResponse>> queryOrders(
             @Parameter(description = "样本状态") @RequestParam(required = false) Integer status,
+            @RequestParam(defaultValue="") String keyword,
             @Parameter(description = "开始日期") @RequestParam(required = false) String startDate,
             @Parameter(description = "结束日期") @RequestParam(required = false) String endDate,
             @Parameter(description = "页码") @RequestParam(required = false, defaultValue = "0") Integer page,
@@ -113,6 +114,10 @@ public class OrderController {
 
             OrderQueryRequest request = new OrderQueryRequest();
             request.setStatus(status);
+            request.setKeyword(keyword);
+            request.setStartDate(parseQueryDate(startDate,false));
+            request.setEndDate(parseQueryDate(endDate,true));
+            if(request.getStartDate()!=null && request.getEndDate()!=null && request.getStartDate().after(request.getEndDate()))throw new com.petlis.common.exception.BusinessException("开始日期不能晚于结束日期");
             request.setHospitalId(hospitalId);
             request.setPage(page);
             request.setSize(size);
@@ -121,8 +126,13 @@ public class OrderController {
             return Result.success(result);
         } catch (Exception e) {
             log.error("查询检测申请列表失败", e);
-            return Result.fail(e.getMessage());
+            return Result.fromException(e);
         }
+    }
+
+    private java.util.Date parseQueryDate(String value,boolean end){
+        if(value==null || value.isBlank())return null;
+        try{var date=java.time.LocalDate.parse(value);var time=(end?date.plusDays(1):date).atStartOfDay(java.time.ZoneId.of("Asia/Shanghai")).toInstant();return java.util.Date.from(end?time.minusMillis(1):time);}catch(java.time.DateTimeException error){throw new com.petlis.common.exception.BusinessException("日期格式应为 YYYY-MM-DD");}
     }
 
     /**
@@ -148,7 +158,7 @@ public class OrderController {
             return Result.success(response);
         } catch (Exception e) {
             log.error("获取检测申请详情失败", e);
-            return Result.fail(e.getMessage());
+            return Result.fromException(e);
         }
     }
 
@@ -167,10 +177,9 @@ public class OrderController {
         response.getItems().forEach(item -> {
             if (item.getPdfFullUrl() != null && !item.getPdfFullUrl().isEmpty()) {
                 // 生成安全访问URL：/api/pdf/view/{detailId}?token={token}
-                String secureUrl = String.format("%s/api/pdf/view/%d?token=%s",
+                String secureUrl = String.format("%s/api/pdf/view/%d",
                         serverDomain,
-                        item.getItemId(),
-                        token);
+                        item.getItemId());
                 item.setSecurePdfUrl(secureUrl);
             }
         });
@@ -194,6 +203,11 @@ public class OrderController {
      * @param request 更新请求
      * @return 操作结果
      */
+    @PostMapping("/{id}/resubmit")
+    public Result<Void> resubmit(@PathVariable Integer id,@Valid @RequestBody OrderCreateRequest request){
+        orderService.resubmit(id,request);return Result.success("已重新提交，等待审核");
+    }
+
     @PutMapping("/{id}")
     @Operation(summary = "更新检测申请信息", description = "更新检测申请的基本信息(仅草稿状态可修改)")
     public Result<Void> updateOrder(
@@ -206,7 +220,7 @@ public class OrderController {
             return Result.success("检测申请更新成功");
         } catch (Exception e) {
             log.error("更新检测申请失败", e);
-            return Result.fail(e.getMessage());
+            return Result.fromException(e);
         }
     }
 
@@ -229,7 +243,7 @@ public class OrderController {
             return Result.success("状态更新成功");
         } catch (Exception e) {
             log.error("更新检测申请状态失败", e);
-            return Result.fail(e.getMessage());
+            return Result.fromException(e);
         }
     }
 
@@ -253,7 +267,7 @@ public class OrderController {
             return Result.success("检测项目添加成功", itemId);
         } catch (Exception e) {
             log.error("添加检测项目失败", e);
-            return Result.fail(e.getMessage());
+            return Result.fromException(e);
         }
     }
 
@@ -276,7 +290,7 @@ public class OrderController {
             return Result.success("检测项目删除成功");
         } catch (Exception e) {
             log.error("删除检测项目失败", e);
-            return Result.fail(e.getMessage());
+            return Result.fromException(e);
         }
     }
 
@@ -297,7 +311,7 @@ public class OrderController {
             return Result.success(fee);
         } catch (Exception e) {
             log.error("计算申请总费用失败", e);
-            return Result.fail(e.getMessage());
+            return Result.fromException(e);
         }
     }
 }

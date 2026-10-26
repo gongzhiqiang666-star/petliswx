@@ -1,6 +1,7 @@
 # Server配置
 server:
   port: 8082
+  domain: ${SERVER_DOMAIN:http://127.0.0.1:8082}
 
 spring:
   # 数据源配置
@@ -19,7 +20,7 @@ spring:
 
   # JPA配置
   jpa:
-    show-sql: true
+    show-sql: false
     properties:
       hibernate:
         format_sql: true
@@ -28,11 +29,11 @@ spring:
 logging:
   level:
     root: INFO
-    com.petlis: DEBUG
-    org.springframework.web: DEBUG
-    org.hibernate.SQL: DEBUG
-    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
-    org.springframework.security: DEBUG
+    com.petlis: INFO
+    org.springframework.web: INFO
+    org.hibernate.SQL: INFO
+    org.hibernate.type.descriptor.sql.BasicBinder: OFF
+    org.springframework.security: INFO
   file:
     name: logs/petlis-backend-dev.log
     max-size: 100MB
@@ -52,8 +53,14 @@ springdoc:
 
 # 文件上传路径(开发环境)
 app:
+  rate-limit:
+    # 本机联调与模拟器自动化验收共用同一出口 IP，放宽避免 429 误伤
+    per-minute: 1000
+  notifications:
+    legacy-bridge-enabled: true
   file:
     upload-path: ./uploads
+    access-url: ${APP_FILE_ACCESS_URL:http://127.0.0.1:8082/api/files}
 
 # 微信支付配置（开发环境）
 wechat:

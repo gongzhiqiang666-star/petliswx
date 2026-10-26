@@ -1,248 +1,303 @@
-// pages/home/home.js
+const request = require('../../utils/request')
 const api = require('../../api/index.js')
 const app = getApp()
 
+const statusLabels = {
+  '-3': '待支付',
+  '-2': '草稿',
+  '0': '待审核',
+  '1': '审核未通过',
+  '2': '等待报告',
+  '3': '检测完成',
+  '4': '已取消'
+}
+
+const statusTones = {
+  '-3': 'warn',
+  '3': 'muted',
+  '4': 'muted'
+}
+
+const qualificationStatuses = {
+  approved: { label: '资质审核通过', tone: 'success' },
+  pending: { label: '资质待审核', tone: 'pending' },
+  rejected: { label: '资质已驳回', tone: 'rejected' }
+}
+
 Page({
   data: {
+    doctorName: '送检医生',
+    hospitalName: '宠物医院工作台',
+    qualificationStatusLabel: '',
+    qualificationTone: '',
+    notificationCount: 0,
+    notificationLoading: true,
+    notificationError: '',
     recentActivities: [],
     isEmpty: true,
-    hasLoadedOnce: false
-  },
-
-  onLoad() {
-    // 等待登录完成后再加载通知
-    this.waitForLoginAndLoad()
+    shortcuts: [
+      { id: 'test', title: '我要检测', icon: '/assets/icons/calendar.png' },
+      { id: 'pets', title: '档案中心', icon: '/assets/icons/pet.png' },
+      { id: 'reports', title: '报告中心', icon: '/assets/icons/report.png' },
+      { id: 'notifications', title: '消息中心', icon: '/assets/icons/bell.png' }
+    ],
+    services: [
+      { id: 'account', title: '钱包与充值', icon: '/assets/icons/icon-pay.png' },
+      { id: 'coupons', title: '优惠券', icon: '/assets/icons/activity.png' },
+      { id: 'orders', title: '送检记录', icon: '/assets/icons/order.png' },
+      { id: 'invoices', title: '发票管理', icon: '/assets/icons/filetext.png' }
+    ],
+    todoChips: [
+      { status: -3, label: '待支付', value: null, tone: 'warn' },
+      { status: 0, label: '待审核', value: null, tone: 'primary' },
+      { status: 2, label: '待报告', value: null, tone: 'primary' }
+    ],
+    todoLoading: true,
+    todoError: '',
+    recentOrders: [],
+    ordersLoading: true,
+    ordersError: '',
+    balance: null,
+    financeLoading: true,
+    financeError: ''
   },
 
   onShow() {
-    // 只在首次加载时请求，避免频繁触发
-    // 用户可通过下拉刷新更新数据
-    if (!this.data.hasLoadedOnce) {
-      this.waitForLoginAndLoad()
-      this.setData({ hasLoadedOnce: true })
-    }
+    this.waitForLoginAndLoad()
   },
 
-  /**
-   * 等待登录完成后再加载通知
-   */
   async waitForLoginAndLoad() {
-    console.log('[Home] 等待登录完成...')
-
-    // 等待登录完成，最多等待10秒
-    const maxWaitTime = 10000  // 10秒
-    const checkInterval = 100  // 100ms检查一次
+    const maxWaitTime = 10000
+    const checkInterval = 100
     let elapsedTime = 0
 
     while (!app.isLoggedIn() && elapsedTime < maxWaitTime) {
       await new Promise(resolve => setTimeout(resolve, checkInterval))
       elapsedTime += checkInterval
     }
+    if (!app.isLoggedIn()) return
 
-    if (!app.isLoggedIn()) {
-      console.log('[Home] 登录超时，不加载通知')
-      return
-    }
-
-    console.log('[Home] 登录已完成，开始加载通知')
-    await this.loadRecentNotifications()
-  },
-
-  /**
-   * 加载最近3条通知
-   */
-  async loadRecentNotifications() {
-    try {
-      console.log('[Home] 开始加载通知...')
-      const result = await api.notifications.getMyHospitalNotifications({
-        pageNum: 0,
-        pageSize: 3
-      })
-
-      console.log('[Home] API返回结果:', result)
-
-      // 处理分页数据结构
-      let notifications = []
-      if (Array.isArray(result)) {
-        notifications = result
-      } else if (result && result.content) {
-        notifications = result.content
-      } else if (result && result.list) {
-        notifications = result.list
-      } else if (result && result.data) {
-        notifications = result.data
-      }
-
-      console.log('[Home] 提取的通知数据:', notifications)
-
-      const activities = this.formatNotifications(notifications)
-
-      console.log('[Home] 格式化后的活动数据:', activities)
-
+    if (this._homeLoad) return this._homeLoad
+    this._homeLoad = (async () => {
+      await app.refreshUserInfo()
+      const user = app.globalData.userInfo || {}
       this.setData({
-        recentActivities: activities,
-        isEmpty: activities.length === 0
+        doctorName: user.nickname || user.doctorName || '送检医生',
+        hospitalName: user.hospital?.hospitalName || user.hospitalName || '宠物医院工作台'
       })
-
-      console.log('[Home] 首页通知加载完成，数量:', activities.length)
-    } catch (err) {
-      console.error('[Home] 加载通知失败:', err)
-      // 不显示错误提示，静默失败
+      await Promise.all([
+        this.loadRecentNotifications(),
+        this.loadTodoSummary(),
+        this.loadRecentOrders(),
+        this.loadAccount()
+      ])
+    })()
+    try {
+      await this._homeLoad
+    } finally {
+      this._homeLoad = null
     }
   },
 
-  /**
-   * 格式化通知数据
-   */
-  formatNotifications(notifications) {
-    if (!Array.isArray(notifications) || notifications.length === 0) {
-      console.log('[Home] 没有通知数据')
-      return []
-    }
-
-    console.log('[Home] 开始格式化通知，数量:', notifications.length)
-
-    return notifications.map(item => {
-      console.log('[Home] 处理通知项:', item)
-
-      // 格式化时间
-      const time = this.formatTime(item.operationTime)
-
-      // 使用notificationMessage或生成默认消息
-      let title = item.notificationMessage || '订单状态更新'
-      let description = ''
-
-      if (!item.notificationMessage) {
-        // 如果没有详细消息，使用状态信息
-        const statusMap = {
-          '-3': '已取消',
-          '-2': '草稿',
-          '0': '待审核',
-          '1': '已审核',
-          '2': '检测中',
-          '3': '检测完成'
-        }
-        const statusText = statusMap[item.newStatus] || '状态更新'
-        description = `订单状态已更新为：${statusText}`
-      } else {
-        // 提取消息的前30个字符作为描述
-        description = item.notificationMessage.substring(0, 30)
-        if (item.notificationMessage.length > 30) {
-          description += '...'
-        }
-      }
-
-      const formatted = {
+  async loadRecentNotifications() {
+    const requestId = (this._notificationRequestId || 0) + 1
+    this._notificationRequestId = requestId
+    this.setData({ notificationError: '', notificationLoading: true })
+    try {
+      const [result, count] = await Promise.all([
+        request.get('/inbox', { page: 0, size: 2 }),
+        request.get('/inbox/unread-count')
+      ])
+      if (requestId !== this._notificationRequestId) return
+      const activities = (result.items || []).slice(0, 2).map(item => ({
         id: String(item.id),
-        type: 'notification',
-        title: title,
-        description: description,
-        time: time,
-        orderId: item.orderId
-      }
-
-      console.log('[Home] 格式化后的通知:', formatted)
-      return formatted
-    })
+        title: item.title,
+        description: item.message,
+        time: this.formatTime(item.createdAt)
+      }))
+      this.setData({
+        notificationCount: count,
+        recentActivities: activities,
+        isEmpty: !activities.length
+      })
+      await this.checkArticlePopup()
+    } catch (error) {
+      if (requestId !== this._notificationRequestId) return
+      this.setData({ notificationError: '消息暂时无法加载，请稍后重试' })
+    } finally {
+      if (requestId === this._notificationRequestId) this.setData({ notificationLoading: false })
+    }
   },
 
-  /**
-   * 格式化时间
-   */
+  async loadTodoSummary() {
+    const requestId = (this._todoRequestId || 0) + 1
+    this._todoRequestId = requestId
+    const chips = this.data.todoChips
+    this.setData({ todoLoading: true, todoError: '' })
+    try {
+      const results = await Promise.all(chips.map(chip =>
+        api.orders.getList({ page: 0, size: 1, status: chip.status })
+      ))
+      if (requestId !== this._todoRequestId) return
+      const todoChips = chips.map((chip, index) => {
+        const result = results[index]
+        const total = result.totalElements !== undefined ? result.totalElements : result.total
+        if (total === undefined || total === null || !Number.isFinite(Number(total))) {
+          throw new Error('待办计数返回格式异常')
+        }
+        return { ...chip, value: Number(total) }
+      })
+      this.setData({ todoChips })
+    } catch (error) {
+      if (requestId !== this._todoRequestId) return
+      this.setData({
+        todoChips: chips.map(chip => ({ ...chip, value: null })),
+        todoError: '待办暂时无法加载，请稍后重试'
+      })
+    } finally {
+      if (requestId === this._todoRequestId) this.setData({ todoLoading: false })
+    }
+  },
+
+  async loadRecentOrders() {
+    const requestId = (this._ordersRequestId || 0) + 1
+    this._ordersRequestId = requestId
+    this.setData({ ordersLoading: true, ordersError: '' })
+    try {
+      const result = await api.orders.getList({ page: 0, size: 3 })
+      if (requestId !== this._ordersRequestId) return
+      const rows = result.content || result.list || []
+      this.setData({
+        recentOrders: rows.slice(0, 3).map(order => ({
+          id: order.orderId,
+          petName: order.animalName || order.orderNo || '',
+          statusLabel: statusLabels[String(order.sampleStatus)] || order.sampleStatusDesc || '状态更新',
+          statusTone: statusTones[String(order.sampleStatus)] || 'primary',
+          time: this.formatTime(order.createDt || order.collectDt)
+        }))
+      })
+    } catch (error) {
+      if (requestId !== this._ordersRequestId) return
+      this.setData({ ordersError: '业务进度暂时无法加载，请稍后重试' })
+    } finally {
+      if (requestId === this._ordersRequestId) this.setData({ ordersLoading: false })
+    }
+  },
+
+  async loadAccount() {
+    const requestId = (this._accountRequestId || 0) + 1
+    this._accountRequestId = requestId
+    this.setData({ financeLoading: true, financeError: '' })
+    try {
+      const account = await request.get('/account')
+      if (requestId !== this._accountRequestId) return
+      if (account.balance === undefined || account.balance === null) throw new Error('余额返回格式异常')
+      const qualification = qualificationStatuses[account.reviewStatus] || { label: '', tone: '' }
+      this.setData({
+        balance: account.balance,
+        qualificationStatusLabel: qualification.label,
+        qualificationTone: qualification.tone
+      })
+    } catch (error) {
+      if (requestId !== this._accountRequestId) return
+      this.setData({ balance: null, financeError: '余额暂时无法加载，请稍后重试' })
+    } finally {
+      if (requestId === this._accountRequestId) this.setData({ financeLoading: false })
+    }
+  },
+
+  async checkArticlePopup() {
+    if (this._popupInFlight) return
+    this._popupInFlight = true
+    try {
+      const article = await request.get('/articles/popup')
+      if (!article.id || wx.getStorageSync('article-popup-' + article.id)) return
+      wx.setStorageSync('article-popup-' + article.id, true)
+      const answer = await wx.showModal({
+        title: article.title,
+        content: article.summary || '有新的资讯发布',
+        confirmText: '查看详情',
+        cancelText: '稍后查看'
+      })
+      if (answer.confirm) wx.navigateTo({ url: '/pages/article-detail/article-detail?id=' + article.id })
+    } catch (error) {
+    } finally {
+      this._popupInFlight = false
+    }
+  },
+
   formatTime(timeStr) {
     if (!timeStr) return ''
-
     const time = new Date(timeStr)
-    const now = new Date()
-    const diff = now.getTime() - time.getTime()
-
-    // 1分钟内
-    if (diff < 60000) {
-      return '刚刚'
-    }
-
-    // 1小时内
-    if (diff < 3600000) {
-      const minutes = Math.floor(diff / 60000)
-      return `${minutes}分钟前`
-    }
-
-    // 24小时内
-    if (diff < 86400000) {
-      const hours = Math.floor(diff / 3600000)
-      return `${hours}小时前`
-    }
-
-    // 7天内
-    if (diff < 604800000) {
-      const days = Math.floor(diff / 86400000)
-      return `${days}天前`
-    }
-
-    // 超过7天显示具体日期
+    if (Number.isNaN(time.getTime())) return ''
+    const diff = new Date().getTime() - time.getTime()
+    if (diff < 60000) return '刚刚'
+    if (diff < 3600000) return `${Math.floor(diff / 60000)}分钟前`
+    if (diff < 86400000) return `${Math.floor(diff / 3600000)}小时前`
+    if (diff < 604800000) return `${Math.floor(diff / 86400000)}天前`
     const month = String(time.getMonth() + 1).padStart(2, '0')
     const day = String(time.getDate()).padStart(2, '0')
     return `${month}-${day}`
   },
 
-  // 导航到预约检测
+  onPosterError() {
+    this.setData({ posterError: true })
+  },
+
+  openShortcut(e) {
+    const id = e.currentTarget.dataset.id
+    if (id === 'test') return this.onOrderSelect()
+    if (id === 'reports') return this.onReportList()
+    if (id === 'notifications') return this.onViewAll()
+    wx.navigateTo({ url: `/pages/${id}/${id}` })
+  },
+
+  onTodoTap() {
+    wx.navigateTo({ url: '/pages/orders/orders' })
+  },
+
+  onOrdersViewAll() {
+    wx.navigateTo({ url: '/pages/orders/orders' })
+  },
+
+  onRecentOrderTap(e) {
+    wx.navigateTo({ url: `/pages/order-detail/order-detail?id=${e.currentTarget.dataset.id}` })
+  },
+
+  onRecharge() {
+    wx.navigateTo({ url: '/pages/recharge/recharge' })
+  },
+
+  onHelp() {
+    wx.showModal({
+      title: '使用帮助',
+      content: '点击“我要检测”开始送检，可在送检记录、报告中心和消息中心查看后续进度。',
+      showCancel: false,
+      confirmText: '知道了'
+    })
+  },
+
   onOrderSelect() {
-    wx.navigateTo({
-      url: '/pages/order-select-pet/order-select-pet'
-    })
+    wx.switchTab({ url: '/pages/order-select-pet/order-select-pet' })
   },
 
-  // 导航到宠物建档
-  onPetAdd() {
-    wx.navigateTo({
-      url: '/pages/pet-add/pet-add'
-    })
-  },
-
-  // 导航到报告列表
   onReportList() {
-    wx.navigateTo({
-      url: '/pages/report-list/report-list'
-    })
+    wx.switchTab({ url: '/pages/report-list/report-list' })
   },
 
-  // 查看全部通知
   onViewAll() {
-    wx.navigateTo({
-      url: '/pages/notifications/notifications'
-    })
+    wx.switchTab({ url: '/pages/notifications/notifications' })
   },
 
-  // 下拉刷新
   async onPullDownRefresh() {
     try {
-      await this.loadRecentNotifications()
-      wx.showToast({
-        title: '刷新成功',
-        icon: 'success',
-        duration: 1500
-      })
-    } catch (err) {
-      console.error('[Home] 刷新失败:', err)
-      wx.showToast({
-        title: '刷新失败',
-        icon: 'none',
-        duration: 1500
-      })
+      await this.waitForLoginAndLoad()
     } finally {
-      // 停止下拉刷新动画
       wx.stopPullDownRefresh()
     }
   },
 
-  // 点击通知项
-  onActivityTap(e) {
-    const item = e.currentTarget.dataset.item
-    if (item.orderId) {
-      // 跳转到订单详情
-      wx.navigateTo({
-        url: `/pages/order-detail/order-detail?id=${item.orderId}`
-      })
-    }
+  onActivityTap() {
+    this.onViewAll()
   }
 })

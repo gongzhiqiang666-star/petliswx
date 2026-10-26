@@ -10,15 +10,15 @@
   </view>
 
   <!-- Error State -->
-  <view class="error-state"
+  <view class="error-state petlis-empty"
         role="alert"
         aria-label="加载失败"
         wx:if="{{error}}">
     <view class="error-icon">
-      <image src="/assets/icons/warning-icon.png" class="icon" mode="aspectFit" lazy-load="{{true}}" aria-hidden="true"></image>
+      <image src="/assets/icons/brand-empty.png" class="icon" mode="aspectFit" lazy-load="{{true}}" aria-hidden="true"></image>
     </view>
     <view class="error-text">加载失败</view>
-    <button class="btn-retry"
+    <button class="btn-retry petlis-btn petlis-btn-outline"
             role="button"
             aria-label="重新加载"
             bindtap="loadPetDetail"
@@ -28,8 +28,22 @@
   <!-- Content -->
   <view wx:if="{{!loading && !error}}">
     <scroll-view class="content" scroll-y role="main" aria-label="详细信息">
+      <view class="pet-summary" role="region" aria-label="宠物摘要">
+        <view class="pet-avatar">
+          <image src="/assets/icons/brand-archive.png" mode="aspectFill" lazy-load="{{true}}" aria-hidden="true" />
+        </view>
+        <view class="pet-summary-info">
+          <view class="pet-summary-name-row">
+            <text class="pet-summary-name">{{petData.animalName}}</text>
+            <text class="pet-gender">{{petData.genderText}}</text>
+          </view>
+          <text class="pet-summary-breed">{{petData.speciesText}} · {{petData.animalType}}</text>
+          <text class="pet-summary-meta">{{petData.age}} · 畜主 {{petData.ownerName}}</text>
+        </view>
+      </view>
+
       <!-- Basic Info Card -->
-      <view class="card" role="region" aria-label="宠物基本信息">
+      <view class="card petlis-card" role="region" aria-label="宠物基本信息">
         <view class="card-header">
           <view class="header-line"></view>
           <text class="card-title">宠物基本信息</text>
@@ -109,7 +123,7 @@
       </view>
 
       <!-- Testing History Card -->
-      <view class="card" role="region" aria-label="检测报告">
+      <view class="card petlis-card" role="region" aria-label="检测报告">
         <view class="card-header">
           <view class="header-line"></view>
           <text class="card-title">检测报告</text>
@@ -124,7 +138,7 @@
                 bindtap="onViewReport"
                 data-id="{{item.id}}">
             <view class="test-icon">
-              <image src="/assets/icons/icon-file.png" class="file-icon" mode="aspectFit" lazy-load="{{true}}" aria-hidden="true"></image>
+              <image src="/assets/icons/brand-file.png" class="file-icon" mode="aspectFit" lazy-load="{{true}}" aria-hidden="true"></image>
             </view>
             <view class="test-info">
               <view class="test-name">{{item.testTypeName}}</view>
@@ -134,13 +148,13 @@
                 <text class="status-value">{{item.statusLabel}}</text>
               </view>
             </view>
-            <image src="/assets/icons/arrow-down.png" class="arrow-icon" mode="aspectFit" lazy-load="{{true}}" aria-hidden="true"></image>
+            <image src="/assets/icons/brand-chevron-right.png" class="arrow-icon" mode="aspectFit" lazy-load="{{true}}" aria-hidden="true"></image>
           </view>
         </view>
 
-        <view class="empty-state" wx:if="{{reports.length === 0}}">
+        <view class="empty-state petlis-empty" wx:if="{{reports.length === 0}}">
           <view class="empty-icon">
-            <image src="/assets/icons/empty-file.png" class="icon" mode="aspectFit" lazy-load="{{true}}" aria-hidden="true"></image>
+            <image src="/assets/icons/brand-empty.png" class="icon" mode="aspectFit" lazy-load="{{true}}" aria-hidden="true"></image>
           </view>
           <view class="empty-text">暂无检测报告</view>
           <view class="empty-hint">完成检测后，报告将显示在这里</view>
@@ -150,11 +164,11 @@
 
     <!-- Action Buttons -->
     <view class="bottom-actions">
-      <button class="btn-outline"
+      <button class="btn-outline petlis-btn petlis-btn-outline"
               role="button"
               aria-label="编辑宠物信息"
               bindtap="onEdit">编辑信息</button>
-      <button class="btn-primary"
+      <button class="btn-primary petlis-btn petlis-btn-primary"
               role="button"
               aria-label="预约新的检测"
               bindtap="onBookTest">预约检测</button>

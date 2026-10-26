@@ -1,0 +1,38 @@
+page{--petlis-primary:#0D6E6E;--petlis-primary-dark:#0A5A5A;--petlis-text:#1A1A1A;--petlis-text-2:#666666;--petlis-text-3:#888888;--petlis-text-4:#AAAAAA;--petlis-bg:#FAFAFA;--petlis-bg-soft:#F8F8F8;--petlis-tint:#EBF5F5;--petlis-accent:#E07B54;--petlis-accent-bg:#FFF5F0;--petlis-success:#2E7D32;--petlis-success-bg:#E8F5E9;--petlis-border:#E5E5E5}
+.petlis-card{padding:32rpx;background:#FFFFFF;border:1rpx solid #E7EEEA;border-radius:20rpx;box-sizing:border-box;box-shadow:0 2rpx 4rpx rgba(11,61,58,.04)}
+.petlis-section-title{font-size:32rpx;font-weight:600;color:var(--petlis-text);line-height:1.4}
+.petlis-section-link{font-size:24rpx;color:var(--petlis-text-3)}
+.petlis-icon-badge{width:88rpx;height:88rpx;border-radius:20rpx;background:var(--petlis-tint);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.petlis-icon-badge image{width:44rpx;height:44rpx}
+.petlis-chip{border-radius:16rpx;padding:16rpx 24rpx;display:flex;flex-direction:column;gap:8rpx}
+.petlis-chip .chip-value{font-size:40rpx;font-weight:600;line-height:1.2}
+.petlis-chip .chip-label{font-size:22rpx;color:var(--petlis-text)}
+.petlis-chip-warn{background:var(--petlis-accent-bg)}.petlis-chip-warn .chip-value{color:var(--petlis-accent)}
+.petlis-chip-primary{background:var(--petlis-tint)}.petlis-chip-primary .chip-value{color:var(--petlis-primary)}
+.petlis-menu-item{min-height:96rpx;display:flex;align-items:center;gap:24rpx}
+.petlis-btn{height:88rpx;min-height:88rpx;padding:0 32rpx;margin:0;border:1rpx solid transparent;border-radius:44rpx;box-sizing:border-box;display:flex;align-items:center;justify-content:center;font-size:28rpx;font-weight:400;line-height:1.4}
+.petlis-btn::after{border:0}
+.petlis-btn-primary{background:var(--petlis-primary);color:#FFFFFF}
+.petlis-btn-primary:active{background:var(--petlis-primary-dark)}
+.petlis-btn-outline{background:#FFFFFF;color:var(--petlis-primary);border-color:var(--petlis-primary)}
+.petlis-btn-outline:active{background:var(--petlis-tint)}
+.petlis-btn-danger{background:#FA5151;color:#FFFFFF}
+.petlis-btn-danger:active{background:#D93F3F}
+.petlis-input{width:100%;height:88rpx;padding:0 24rpx;background:#F5F7F6;border:1rpx solid #E5E5E5;border-radius:16rpx;box-sizing:border-box;color:#0B3D3A;font-size:28rpx;font-weight:400;line-height:1.4}
+.petlis-input-icon{width:32rpx;height:32rpx;margin-right:16rpx;flex-shrink:0}
+.petlis-filters{width:100%;padding:4rpx;background:#F5F7F6;border:1rpx solid #E5E5E5;border-radius:16rpx;box-sizing:border-box;display:flex;overflow-x:auto;white-space:nowrap}
+.petlis-filter-item{min-height:64rpx;padding:0 24rpx;margin:0;background:transparent;border:0;border-radius:12rpx;box-sizing:border-box;display:inline-flex;flex:0 0 auto;align-items:center;justify-content:center;color:#666666;font-size:24rpx;font-weight:400;line-height:1.4}
+.petlis-filter-item.active{background:#FFFFFF;color:var(--petlis-primary);box-shadow:0 2rpx 4rpx rgba(11,61,58,.04)}
+.petlis-modal-mask{position:fixed;top:0;right:0;bottom:0;left:0;z-index:1000;padding:32rpx;background:rgba(11,61,58,.45);box-sizing:border-box;display:flex;align-items:center;justify-content:center}
+.petlis-modal{width:620rpx;max-width:100%;padding:36rpx;background:#FFFFFF;border:1rpx solid #E7EEEA;border-radius:28rpx;box-sizing:border-box;box-shadow:0 2rpx 4rpx rgba(11,61,58,.04)}
+.petlis-modal-title{color:#0B3D3A;font-size:32rpx;font-weight:500;line-height:1.4}
+.petlis-modal-content{margin-top:24rpx;color:var(--petlis-text-2);font-size:26rpx;font-weight:400;line-height:1.7}
+.petlis-modal-actions{margin-top:32rpx;display:flex;align-items:center;justify-content:flex-end;gap:20rpx}
+.petlis-empty{padding:64rpx 32rpx;box-sizing:border-box;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
+.petlis-empty image{width:120rpx;height:120rpx}
+.petlis-empty-text{margin-top:24rpx;color:var(--petlis-text-3);font-size:24rpx;font-weight:400;line-height:1.6}
+.petlis-empty-retry{min-width:180rpx;margin-top:32rpx;background:#FFFFFF;color:var(--petlis-primary);border:1rpx solid var(--petlis-primary)}
+.petlis-empty-retry:active{background:var(--petlis-tint)}
+.petlis-skeleton{min-height:24rpx;background:#EDF1EF;border-radius:16rpx;animation:petlis-pulse 1.5s ease-in-out infinite}
+@keyframes petlis-pulse{0%,100%{opacity:1}50%{opacity:.45}}
+.petlis-list-card{margin-bottom:20rpx;padding:28rpx;background:#FFFFFF;border:1rpx solid #E7EEEA;border-radius:20rpx;box-sizing:border-box;box-shadow:0 2rpx 4rpx rgba(11,61,58,.04)}

@@ -1,79 +1,99 @@
-<!--pages/report-view/report-view.wxml-->
 <view class="page">
-  <scroll-view class="content" scroll-y>
-    <!-- Report Info Card -->
-    <view class="card">
-      <view class="card-header">
-        <view class="header-line"></view>
-        <text class="card-title">报告信息</text>
+  <scroll-view class="content {{report && !report.paymentRestricted ? 'with-actions' : ''}}" scroll-y>
+    <block wx:if="{{report}}">
+      <view class="report-header petlis-card">
+        <view class="report-heading">
+          <text class="pet-name">{{report.petName || '未填写宠物名称'}}</text>
+          <text class="report-type">{{report.testTypeName || '检测报告'}}</text>
+        </view>
+        <text wx:if="{{report.paymentRestricted}}" class="payment-badge">待支付解锁</text>
+        <text wx:else class="report-status {{report.diagnosisStatus == 0 ? 'processing' : 'completed'}}">{{report.diagnosisStatus == 0 ? '检测中' : '已完成'}}</text>
       </view>
 
-      <view class="report-info">
-        <view class="info-row">
-          <text class="info-label">报告编号</text>
-          <text class="info-value info-mono">{{report.id}}</text>
+      <view wx:if="{{report.paymentRestricted}}" class="payment-lock">
+        <view class="payment-lock-copy">
+          <image src="/assets/icons/brand-empty.png" class="payment-lock-icon" mode="aspectFit" aria-hidden="true" />
+          <view class="payment-lock-text">
+            <text class="payment-lock-title">报告内容待支付解锁</text>
+            <text class="payment-lock-desc">该现结订单尚未完成支付，报告结果和 PDF 暂未开放。完成支付后即可查看完整报告。</text>
+          </view>
         </view>
-        <view class="info-row">
-          <text class="info-label">宠物名称</text>
-          <text class="info-value">{{report.petName}}</text>
-        </view>
-        <view class="info-row">
-          <text class="info-label">检测日期</text>
-          <text class="info-value">{{report.testDate}}</text>
-        </view>
-        <view class="info-row">
-          <text class="info-label">报告日期</text>
-          <text class="info-value">{{report.reportDate}}</text>
-        </view>
-        <view class="info-row">
-          <text class="info-label">检测结果</text>
-          <view class="status-badge {{report.status === 'normal' ? 'normal' : 'warning'}}">
-            {{report.status === 'normal' ? '正常' : '需注意'}}
+        <button class="payment-lock-button" bindtap="onPayOrder">去支付</button>
+      </view>
+
+      <view class="petlis-card info-card">
+        <view class="petlis-section-title card-title">基础送检信息</view>
+        <view class="info-list">
+          <view class="info-row">
+            <text class="info-label">申请单号</text>
+            <text class="info-value info-mono">{{report.id || '未提供'}}</text>
+          </view>
+          <view class="info-row">
+            <text class="info-label">样本类型</text>
+            <text class="info-value">{{report.sampleTypeName || '未提供'}}</text>
+          </view>
+          <view class="info-row">
+            <text class="info-label">实验室</text>
+            <text class="info-value">{{report.laboratoryName || '未提供'}}</text>
+          </view>
+          <view class="info-row">
+            <text class="info-label">检测项目</text>
+            <text class="info-value">{{report.testTypeName || '未提供'}}</text>
+          </view>
+          <view class="info-row">
+            <text class="info-label">检测日期</text>
+            <text class="info-value">{{report.testDate || '未提供'}}</text>
+          </view>
+          <view class="info-row">
+            <text class="info-label">报告日期</text>
+            <text class="info-value">{{report.reportDate || '未提供'}}</text>
+          </view>
+          <view class="info-row">
+            <text class="info-label">检测状态</text>
+            <text class="info-value">{{report.statusText || '未提供'}}</text>
+          </view>
+          <view class="info-row">
+            <text class="info-label">支付状态</text>
+            <text class="info-value payment-status {{report.paid === true || report.settlementMode === 'monthly' ? 'paid' : 'unpaid'}}">{{report.settlementMode === 'monthly' ? (report.paid === true ? '月结已支付' : '月结挂账') : (report.paid === true ? '已支付' : '待支付')}}</text>
           </view>
         </view>
       </view>
-    </view>
 
-    <!-- PDF Preview Card -->
-    <view class="card">
-      <view class="card-header">
-        <view class="header-line"></view>
-        <text class="card-title">PDF报告</text>
-      </view>
-
-      <view class="pdf-preview">
-        <view class="pdf-icon">
-          <image src="/assets/icons/icon-file.png" class="icon" mode="aspectFit"></image>
+      <view class="petlis-card pdf-card">
+        <view class="petlis-section-title card-title">报告摘要与 PDF</view>
+        <view wx:if="{{!report.paymentRestricted}}" class="report-summary">
+          <text class="summary-text">{{report.reportSummary}}</text>
         </view>
-        <text class="pdf-filename">{{report.fileName}}</text>
-        <text class="pdf-desc">PDF格式 · 详细检测报告</text>
-
-        <view class="view-link" bindtap="onViewPDF">
-          <text>点击查看完整报告 →</text>
+        <view wx:if="{{report.paymentRestricted}}" class="pdf-locked">
+          <view class="petlis-icon-badge pdf-icon">
+            <image src="/assets/icons/brand-file.png" mode="aspectFit" aria-hidden="true" />
+          </view>
+          <view class="pdf-copy">
+            <text class="pdf-title">报告 PDF 已锁定</text>
+            <text class="pdf-desc">支付完成后可查看报告摘要，并预览或下载 PDF 文件。</text>
+          </view>
+        </view>
+        <view wx:else class="pdf-file">
+          <view class="petlis-icon-badge pdf-icon">
+            <image src="/assets/icons/brand-file.png" mode="aspectFit" aria-hidden="true" />
+          </view>
+          <view class="pdf-copy">
+            <text class="pdf-filename">{{report.fileName}}</text>
+            <text class="pdf-desc">PDF 格式 · 完整检测报告</text>
+          </view>
         </view>
       </view>
-    </view>
-
-    <!-- Instructions Card -->
-    <view class="info-card">
-      <view class="info-title">📋 使用说明</view>
-      <view class="info-list">
-        <view class="info-item">• 点击下方"查看PDF"按钮在新窗口中打开报告</view>
-        <view class="info-item">• 点击"下载报告"按钮保存PDF到本地</view>
-        <view class="info-item">• 如有疑问，请联系客服或咨询医生</view>
-      </view>
-    </view>
+    </block>
   </scroll-view>
 
-  <!-- Action Buttons -->
-  <view class="bottom-actions">
+  <view class="bottom-actions" wx:if="{{report && !report.paymentRestricted}}">
     <button class="btn-outline" bindtap="onDownload">
-      <image src="/assets/icons/download.png" class="btn-icon" mode="aspectFit"></image>
-      下载报告
+      <image src="/assets/icons/brand-download.png" class="btn-icon" mode="aspectFit" aria-hidden="true" />
+      <text>下载报告</text>
     </button>
     <button class="btn-primary" bindtap="onViewPDF">
-      <image src="/assets/icons/icon-file.png" class="btn-icon" mode="aspectFit"></image>
-      查看PDF
+      <image src="/assets/icons/brand-file.png" class="btn-icon" mode="aspectFit" aria-hidden="true" />
+      <text>查看 PDF</text>
     </button>
   </view>
 </view>

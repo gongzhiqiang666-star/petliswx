@@ -2,8 +2,8 @@
 <view class="page">
   <!-- 搜索栏 -->
   <view class="search-bar">
-    <image src="/assets/icons/icon-search.png" class="search-icon" mode="aspectFit"></image>
-    <input class="search-input"
+    <image src="/assets/icons/brand-search.png" class="search-icon" mode="aspectFit"></image>
+    <input class="search-input petlis-input"
            placeholder="搜索品种（中文或英文）"
            value="{{searchQuery}}"
            bindinput="onSearchInput" />
@@ -26,7 +26,7 @@
         </view>
 
         <!-- 该分组下的品种 -->
-        <view class="breed-item"
+        <view class="breed-item petlis-list-card"
               wx:for="{{item.items}}"
               wx:for-item="breed"
               wx:key="iid"
@@ -37,7 +37,7 @@
             <text class="breed-name-en">{{breed.varietyEn}}</text>
           </view>
           <view class="breed-check" wx:if="{{selectedId === breed.iid}}">
-            <image src="/assets/icons/check-circle.png" class="check-icon" mode="aspectFit"></image>
+            <image src="/assets/icons/brand-check.png" class="check-icon" mode="aspectFit"></image>
           </view>
         </view>
       </block>
@@ -53,8 +53,8 @@
       </view>
 
       <!-- 空状态 -->
-      <view class="empty-state" wx:if="{{groupedBreeds.length === 0 && !loading}}">
-        <image src="/assets/icons/empty-search.png" class="empty-icon" mode="aspectFit"></image>
+      <view class="empty-state petlis-empty" wx:if="{{groupedBreeds.length === 0 && !loading}}">
+        <image src="/assets/icons/brand-empty.png" class="empty-icon" mode="aspectFit"></image>
         <text class="empty-text">未找到相关品种</text>
         <text class="empty-hint">请尝试其他关键词</text>
       </view>

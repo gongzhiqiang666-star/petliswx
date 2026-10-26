@@ -13,6 +13,7 @@ import lombok.Data;
 @Data
 @Schema(description = "支付响应")
 public class PaymentResponse {
+    private boolean mock;
 
     @Schema(description = "支付订单号")
     private String paymentNo;

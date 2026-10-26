@@ -1,5 +1,6 @@
 // pages/mine/mine.js
 const api = require('../../api/index.js');
+const request = require('../../utils/request');
 const app = getApp();
 
 Page({
@@ -18,6 +19,9 @@ Page({
       tel: ''
     },
     unreadCount: 0,
+    balance: null,
+    financeLoading: true,
+    financeError: '',
     fadeInUp: null,
     fadeInUpDelay: null,
     fadeInUpDelay2: null,
@@ -35,6 +39,7 @@ Page({
   onShow() {
     // 每次显示页面时刷新未读通知数量
     this.loadUnreadCount();
+    this.loadAccount();
 
     // 重新播放动画
     this.playAnimations();
@@ -167,6 +172,23 @@ Page({
     }
   },
 
+  async loadAccount() {
+    const requestId = (this._accountRequestId || 0) + 1;
+    this._accountRequestId = requestId;
+    this.setData({ financeLoading: true, financeError: '' });
+    try {
+      const account = await request.get('/account');
+      if (requestId !== this._accountRequestId) return;
+      if (account.balance === undefined || account.balance === null) throw new Error('余额返回格式异常');
+      this.setData({ balance: account.balance });
+    } catch (error) {
+      if (requestId !== this._accountRequestId) return;
+      this.setData({ balance: null, financeError: '余额暂时无法加载，请稍后重试' });
+    } finally {
+      if (requestId === this._accountRequestId) this.setData({ financeLoading: false });
+    }
+  },
+
   /**
    * 加载未读通知数量
    */
@@ -192,7 +214,7 @@ Page({
 
     switch (action) {
       case 'notifications':
-        wx.navigateTo({
+        wx.switchTab({
           url: '/pages/notifications/notifications'
         });
         break;
@@ -278,6 +300,10 @@ Page({
   /**
    * 设置项点击
    */
+  openArticles(){wx.navigateTo({url:'/pages/articles/articles'})},
+  openAccount(){wx.navigateTo({url:'/pages/account/account'})},
+  onRecharge(){wx.navigateTo({url:'/pages/recharge/recharge'})},
+
   onSettingTap(e) {
     const { setting } = e.currentTarget.dataset;
 
@@ -286,10 +312,7 @@ Page({
 
     switch (setting) {
       case 'profile':
-        wx.showToast({
-          title: '个人资料功能开发中',
-          icon: 'none'
-        });
+        wx.navigateTo({url:'/pages/profile/profile'});
         break;
 
       case 'help':
@@ -317,10 +340,13 @@ Page({
    * 跳转到通知页面
    */
   onNotificationTap() {
-    wx.navigateTo({
+    wx.switchTab({
       url: '/pages/notifications/notifications'
     });
   },
+
+  openPets(){wx.navigateTo({url:'/pages/pets/pets'})},
+  openOrders(){wx.navigateTo({url:'/pages/orders/orders'})},
 
   /**
    * 退出登录

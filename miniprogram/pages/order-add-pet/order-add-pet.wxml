@@ -1,17 +1,63 @@
 <!--pages/order-add-pet/order-add-pet.wxml-->
 <view class="page" role="form" aria-label="预约信息填写">
-  <scroll-view class="content" scroll-y>
+  <view class="content">
+    <view class="flow-header">
+      <view class="flow-steps" aria-label="送检进度：第 1 步，共 3 步">
+        <view class="flow-step active">
+          <view class="flow-step-dot">1</view>
+          <text class="flow-step-label">填写资料</text>
+        </view>
+        <view class="flow-connector"></view>
+        <view class="flow-step">
+          <view class="flow-step-dot">2</view>
+          <text class="flow-step-label">选择项目</text>
+        </view>
+        <view class="flow-connector"></view>
+        <view class="flow-step">
+          <view class="flow-step-dot">3</view>
+          <text class="flow-step-label">确认送检</text>
+        </view>
+      </view>
+    </view>
+    <view wx:if="{{petInfo}}" class="patient-summary petlis-card">
+      <view class="patient-summary-top">
+        <view class="patient-identity">
+          <text class="patient-name">{{petInfo.animalName}}</text>
+          <text class="patient-meta">{{petInfo.infoVarietyName || petInfo.infoAnimalName || '宠物'}} · {{displayAge || '年龄待补充'}} · {{['未知','公','母','其他'][petInfo.dictSexId]}}</text>
+        </view>
+        <text class="patient-tag">已选档案</text>
+      </view>
+      <view class="patient-owner"><text class="patient-owner-label">畜主</text><text class="patient-owner-name">{{petInfo.ownerName || deliveryInfo.masterName}}</text></view>
+    </view>
+    <view wx:if="{{resubmitting}}" class="card petlis-card resubmit-card">
+      <view class="card-header">
+        <view class="header-line"></view>
+        <view class="card-title">修改送检资料</view>
+      </view>
+      <view class="resubmit-note">本次修改保留原单号，提交后需重新审核。</view>
+      <input class="form-input petlis-input resubmit-field" value="{{petInfo.animalName}}" data-key="animalName" bindinput="patientField" placeholder="宠物姓名"/>
+      <input class="form-input petlis-input resubmit-field" value="{{petInfo.animalNameEn}}" data-key="animalNameEn" bindinput="patientField" placeholder="宠物英文名"/>
+      <button class="form-picker petlis-input resubmit-field resubmit-button" bindtap="species">物种：{{petInfo.infoAnimalName || '请选择'}}</button>
+      <button class="form-picker petlis-input resubmit-field resubmit-button" bindtap="breed">品种：{{petInfo.infoVarietyName || '请选择'}}</button>
+      <picker class="form-picker petlis-input resubmit-field" range="{{['未知','公','母','其他']}}" value="{{petInfo.dictSexId}}" bindchange="gender">
+        <view class="picker-value">性别：{{['未知','公','母','其他'][petInfo.dictSexId]}}</view>
+        <image src="/assets/icons/brand-chevron-down.png" class="picker-arrow" mode="aspectFit" aria-hidden="true" />
+      </picker>
+      <input class="form-input petlis-input resubmit-field" value="{{petInfo.chipNO}}" data-key="chipNO" bindinput="patientField" placeholder="芯片号（狂犬检测必填）"/>
+      <picker class="form-picker petlis-input resubmit-field" mode="date" value="{{petInfo.birthday}}" bindchange="birthday">
+        <view class="picker-value">生日：{{petInfo.birthday || '请选择（狂犬检测必填）'}}</view>
+        <image src="/assets/icons/brand-calendar.png" class="picker-arrow" mode="aspectFit" aria-hidden="true" />
+      </picker>
+    </view>
     <!-- 宠物信息补充 -->
-    <view class="card">
+    <view class="card petlis-card">
       <view class="card-header">
         <view class="header-line"></view>
         <text class="card-title">宠物信息</text>
       </view>
 
       <view class="form-group">
-        <view class="form-label">
-          年龄 <text class="required">*</text>
-        </view>
+        <view class="form-label">年龄 <text class="required">*</text></view>
         <age-picker
           value="{{animalInfo.age}}"
           bindchange="onAgeChange"
@@ -25,7 +71,7 @@
 
       <view class="form-group">
         <view class="form-label">体重</view>
-        <input class="form-input"
+        <input class="form-input petlis-input"
                placeholder="请输入体重(如:5kg，选填)"
                value="{{animalInfo.animalWeight}}"
                bindinput="onWeightInput"
@@ -34,7 +80,7 @@
     </view>
 
     <!-- 采样信息 -->
-    <view class="card">
+    <view class="card petlis-card">
       <view class="card-header">
         <view class="header-line"></view>
         <text class="card-title">采样信息</text>
@@ -44,7 +90,7 @@
         <view class="form-label">
           样本类型 <text class="required">*</text>
         </view>
-        <view class="form-picker"
+        <view class="form-picker petlis-input"
               role="button"
               aria-label="选择样本类型"
               aria-required="true"
@@ -52,7 +98,7 @@
           <view class="picker-value">
             {{selectedSampleTypeName || '请选择样本类型'}}
           </view>
-          <image src="/assets/icons/arrow-down.png" class="picker-arrow" mode="aspectFit"></image>
+          <image src="/assets/icons/brand-chevron-down.png" class="picker-arrow" mode="aspectFit"></image>
         </view>
         <text class="form-error" wx:if="{{formErrors.sampleType}}">
           {{formErrors.sampleType}}
@@ -63,7 +109,7 @@
         <view class="form-label">
           采样部位 <text class="required">*</text>
         </view>
-        <input class="form-input"
+        <input class="form-input petlis-input"
                placeholder="请输入采样部位"
                value="{{sampleInfo.sampleArea}}"
                bindinput="onSampleAreaInput"
@@ -78,7 +124,7 @@
         <view class="form-label">
           采样日期 <text class="required">*</text>
         </view>
-        <picker class="form-picker"
+        <picker class="form-picker petlis-input"
                 mode="date"
                 value="{{sampleInfo.collectDt}}"
                 bindchange="onCollectDateChange"
@@ -87,6 +133,7 @@
           <view class="picker-value">
             {{sampleInfo.collectDt || '请选择采样日期'}}
           </view>
+          <image src="/assets/icons/brand-calendar.png" class="picker-arrow" mode="aspectFit" aria-hidden="true"></image>
         </picker>
         <text class="form-error" wx:if="{{formErrors.collectDt}}">
           {{formErrors.collectDt}}
@@ -95,7 +142,7 @@
     </view>
 
     <!-- 送检信息 -->
-    <view class="card">
+    <view class="card petlis-card">
       <view class="card-header">
         <view class="header-line"></view>
         <text class="card-title">送检信息</text>
@@ -105,7 +152,7 @@
         <view class="form-label">
           畜主中文名 <text class="required">*</text>
         </view>
-        <input class="form-input"
+        <input class="form-input petlis-input"
                placeholder="畜主中文名"
                value="{{deliveryInfo.masterName}}"
                bindinput="onMasterNameInput"
@@ -120,7 +167,7 @@
         <view class="form-label">
           畜主英文名 <text class="required">*</text>
         </view>
-        <input class="form-input"
+        <input class="form-input petlis-input"
                placeholder="畜主英文名（国际订单使用）"
                value="{{deliveryInfo.masterNameEn}}"
                bindinput="onMasterNameEnInput"
@@ -135,7 +182,7 @@
         <view class="form-label">
           送检医师 <text class="required">*</text>
         </view>
-        <input class="form-input"
+        <input class="form-input petlis-input"
                placeholder="请输入送检医师姓名"
                value="{{deliveryInfo.doctorName}}"
                bindinput="onDoctorNameInput"
@@ -148,7 +195,7 @@
     </view>
 
     <!-- 其他信息 -->
-    <view class="card">
+    <view class="card petlis-card">
       <view class="card-header">
         <view class="header-line"></view>
         <text class="card-title">其他信息</text>
@@ -156,7 +203,7 @@
 
       <view class="form-group">
         <view class="form-label">备注</view>
-        <textarea class="form-textarea"
+        <textarea class="form-textarea petlis-input"
                   placeholder="请输入备注信息（选填）"
                   value="{{otherInfo.remark}}"
                   bindinput="onRemarkInput"
@@ -165,10 +212,83 @@
         <view class="char-count">{{otherInfo.remark.length}}/200</view>
       </view>
     </view>
-  </scroll-view>
+  </view>
 
   <!-- Bottom Actions -->
-  <view class="bottom-actions">
-    <button class="btn-primary" bindtap="onSelectTestItems" aria-label="选择检测项目">选择检测项目</button>
+  <view class="bottom-actions"><button class="draft-button petlis-btn petlis-btn-outline" bindtap="saveDraft" disabled="{{!petInfo || draftSaving}}" loading="{{draftSaving}}">保存为草稿</button>
+    <button class="btn-primary petlis-btn petlis-btn-primary next-button" disabled="{{!petInfo || draftSaving}}" bindtap="onSelectTestItems" aria-label="选择检测项目">选择检测项目</button>
   </view>
+
+  <view class="sample-picker-mask petlis-modal-mask {{samplePickerVisible ? 'show' : ''}}" role="presentation" bindtap="onCloseSamplePicker">
+    <view class="sample-picker petlis-modal {{samplePickerVisible ? 'show' : ''}}" role="dialog" aria-label="选择样本类型" catchtap>
+      <view class="sample-picker-header">
+        <view class="petlis-modal-title">选择样本类型</view>
+        <view class="sample-picker-close" role="button" aria-label="关闭样本类型选择" bindtap="onCloseSamplePicker">
+          <image src="/assets/icons/brand-close.png" mode="aspectFit" aria-hidden="true"></image>
+        </view>
+      </view>
+      <view class="sample-search" role="search">
+        <image class="sample-search-icon" src="/assets/icons/brand-search.png" mode="aspectFit" aria-hidden="true"></image>
+        <input class="sample-search-input" placeholder="搜索样本类型（中文或英文）" value="{{sampleSearchQuery}}" bindinput="onSampleSearchInput" />
+        <image wx:if="{{sampleSearchQuery}}" class="sample-search-clear" src="/assets/icons/brand-close.png" mode="aspectFit" bindtap="onClearSampleSearch" role="button" aria-label="清空搜索"></image>
+      </view>
+      <scroll-view class="sample-category-scroll" scroll-x enhanced show-scrollbar="{{false}}">
+        <view class="sample-category-tabs petlis-filters" role="tablist" aria-label="样本分类">
+          <view class="sample-category petlis-filter-item {{sampleActiveTab === index ? 'active' : ''}}" wx:for="{{sampleCategories}}" wx:key="filter" bindtap="onSampleTabTap" data-index="{{index}}" role="tab" aria-selected="{{sampleActiveTab === index}}">{{item.name}}</view>
+        </view>
+      </scroll-view>
+      <view class="sample-picker-loading" wx:if="{{samplePickerLoading}}" role="status">正在加载样本类型…</view>
+      <view class="petlis-empty sample-state" wx:elif="{{samplePickerError}}" role="alert">
+        <image src="/assets/icons/brand-warning.png" mode="aspectFit" aria-hidden="true"></image>
+        <view class="petlis-empty-text">{{samplePickerError}}</view>
+        <button class="petlis-btn petlis-btn-outline petlis-empty-retry" bindtap="onRetrySamples">重新加载</button>
+      </view>
+      <scroll-view class="sample-list" wx:else scroll-y role="list" aria-label="样本类型列表">
+        <view class="sample-item {{sampleInfo.infoSampleTypeId === item.infoSampleTypeId ? 'selected' : ''}}" wx:for="{{sampleFilteredTypes}}" wx:key="infoSampleTypeId" bindtap="onSelectSample" data-sample="{{item}}" role="listitem">
+          <view class="sample-item-copy">
+            <view class="sample-name-cn">{{item.sampleName}}</view>
+            <view class="sample-name-en">{{item.sampleNameEn}}</view>
+          </view>
+          <image wx:if="{{sampleInfo.infoSampleTypeId === item.infoSampleTypeId}}" class="sample-check" src="/assets/icons/brand-check.png" mode="aspectFit" aria-hidden="true"></image>
+        </view>
+        <view class="petlis-empty sample-state" wx:if="{{!sampleFilteredTypes.length}}">
+          <image src="/assets/icons/brand-empty.png" mode="aspectFit" aria-hidden="true"></image>
+          <view class="petlis-empty-text">未找到相关样本类型</view>
+        </view>
+      </scroll-view>
+    </view>
+  </view>
+
+  <popup-selector
+    visible="{{speciesPickerVisible}}"
+    title="选择物种"
+    items="{{speciesOptions}}"
+    selectedId="{{petInfo.infoAnimalId}}"
+    itemIdKey="infoAnimalId"
+    itemNameKey="animalName"
+    itemNameEnKey="animalNameEn"
+    searchPlaceholder="搜索物种（中文或英文）"
+    emptyText="暂无物种数据"
+    loading="{{speciesLoading}}"
+    errorMessage="{{speciesError}}"
+    bindselect="onSpeciesSelect"
+    bindclose="onCloseSpeciesPicker"
+    bindretry="onRetrySpecies"
+  />
+  <popup-selector
+    visible="{{breedPickerVisible}}"
+    title="选择品种"
+    items="{{breedOptions}}"
+    selectedId="{{petInfo.infoVarietyId}}"
+    itemIdKey="iid"
+    itemNameKey="varietyCn"
+    itemNameEnKey="varietyEn"
+    searchPlaceholder="搜索品种（中文或英文）"
+    emptyText="暂无品种数据"
+    loading="{{breedLoading}}"
+    errorMessage="{{breedError}}"
+    bindselect="onBreedSelect"
+    bindclose="onCloseBreedPicker"
+    bindretry="onRetryBreed"
+  />
 </view>

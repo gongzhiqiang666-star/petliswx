@@ -276,7 +276,7 @@ const notifications = {
   /**
    * 获取未读通知数量
    */
-  getUnreadCount: () => request.get('/notifications/hospitals/my/unread-count'),
+  getUnreadCount: () => request.get('/inbox/unread-count'),
 
   /**
    * 获取通知详情

@@ -92,6 +92,11 @@ Page({
     selectedAnimalName: '',
     speciesList: [],
     showSpeciesSelector: false,
+    showBreedSelector: false,
+    breedList: [],
+    breedAnimalId: null,
+    breedLoading: false,
+    breedError: '',
 
     // UI状态
     keyboardShown: false,
@@ -517,8 +522,10 @@ Page({
   },
 
   onGenderChange(e) {
-    // 原生 radio-group 组件：从 e.detail.value 获取选中的值
-    const genderId = parseInt(e.detail.value);
+    const value = e.currentTarget && e.currentTarget.dataset.id !== undefined
+      ? e.currentTarget.dataset.id
+      : e.detail.value;
+    const genderId = parseInt(value);
     this.setData({
       'formData.dictSexId': genderId
     });
@@ -534,21 +541,48 @@ Page({
 
   onSelectBreed() {
     const animalId = this.data.formData.infoAnimalId;
-
     if (!animalId || animalId === 0) {
-      wx.showToast({
-        title: '请先选择物种',
-        icon: 'none',
-        duration: 2000
-      });
+      wx.showToast({ title: '请先选择物种', icon: 'none', duration: 2000 });
       return;
     }
+    this.setData({ showBreedSelector: true });
+    if (this.data.breedAnimalId !== animalId) {
+      this.setData({ breedList: [], breedAnimalId: animalId });
+    }
+    if (!this.data.breedList.length && !this.data.breedLoading) {
+      return this.loadBreedList();
+    }
+  },
 
-    const animalName = this.data.selectedAnimalName || '';
+  hideBreedSelector() {
+    this.setData({ showBreedSelector: false });
+  },
 
-    wx.navigateTo({
-      url: `/pages/breed-select/breed-select?animalId=${animalId}&animalName=${encodeURIComponent(animalName)}`
+  onRetryBreed() {
+    return this.loadBreedList();
+  },
+
+  async loadBreedList() {
+    this.setData({ breedLoading: true, breedError: '' });
+    try {
+      const result = await api.dictionary.getVarieties(this.data.breedAnimalId);
+      const breedList = Array.isArray(result) ? result : (result.data || []);
+      this.setData({ breedList, breedLoading: false });
+    } catch (error) {
+      this.setData({ breedLoading: false, breedError: error.message || '品种加载失败，请重试' });
+    }
+  },
+
+  onBreedSelect(e) {
+    const item = e.detail.item;
+    this.setData({
+      selectedBreed: item,
+      'formData.infoVarietyId': item.iid || item.infoVarietyId || 0,
+      'formErrors.infoVarietyId': '',
+      showBreedSelector: false
     });
+    this.updateProgress();
+    this.saveDraftDebounced();
   },
 
   onBirthdayChange(e) {

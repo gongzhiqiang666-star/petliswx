@@ -8,8 +8,10 @@ Page({
     activeTab: 'all',
     tabs: [
       { id: 'all', label: '全部' },
-      { id: 'draft', label: '草稿' },  // 合并 -3（待支付）和 -2（草稿）
+      { id: 'draft', label: '草稿' },
+      { id: -3, label: '待支付' },
       { id: '0', label: '待审核' },
+      { id: '1', label: '未通过' },
       { id: '2', label: '等待报告' },
       { id: '3', label: '已完成' }
     ],
@@ -22,28 +24,24 @@ Page({
     hasMore: true,
     isLoadingMore: false,
     hospitalId: null,  // 当前医院ID
-    searchKeyword: ''  // 搜索关键字
+    startDate:'',endDate:'',errorMessage:'',
+    searchKeyword: '',  // 搜索关键字
+    showFilters: false
   },
 
   onLoad() {
     // 获取当前医院ID
     const hospitalId = app.getHospitalId()
     this.setData({ hospitalId })
-    this.loadOrders()
     this._lastLoadTime = Date.now() // 记录首次加载时间
   },
 
-  onShow() {
-    // 性能优化：只在距离上次加载超过5分钟时才刷新
-    const lastLoadTime = this._lastLoadTime || 0
-    const now = Date.now()
-    const REFRESH_INTERVAL = 5 * 60 * 1000 // 5分钟
-
-    if (now - lastLoadTime > REFRESH_INTERVAL || this.data.orders.length === 0) {
-      this.resetAndLoadOrders()
-      this._lastLoadTime = now
-    }
-  },
+  onShow() {this.resetAndLoadOrders()},
+  onUnload(){clearTimeout(this._searchTimer)},
+  query(page){const tab=this.data.activeTab;return {page,size:this.data.pageSize,...(tab==='all'?{}:{status:tab==='draft'?-2:Number(tab)}),keyword:this.data.searchKeyword,startDate:this.data.startDate,endDate:this.data.endDate}},
+  dateChange(e){this.setData({[e.currentTarget.dataset.key]:e.detail.value});this.resetAndLoadOrders()},
+  clearDates(){this.setData({startDate:'',endDate:''});this.resetAndLoadOrders()},
+  toggleFilters(){this.setData({showFilters:!this.data.showFilters})},
 
   /**
    * 重置并加载订单列表
@@ -51,6 +49,7 @@ Page({
   resetAndLoadOrders() {
     this.setData({
       pageNum: 1,
+      isLoadingMore:false,
       orders: [],
       hasMore: true
     })
@@ -61,27 +60,15 @@ Page({
    * 加载订单列表（第一页）
    */
   async loadOrders() {
-    // 防止重复加载
-    if (this.data.loading) {
-      return
-    }
+    const version=(this._queryVersion || 0)+1;this._queryVersion=version;
 
-    this.setData({ loading: true })
+    this.setData({ loading: true,errorMessage:'' })
 
     try {
-      // 构建查询参数，添加医院ID过滤
-      const params = {
-        page: 0,  // Spring Data JPA page starts from 0
-        size: this.data.pageSize
-      }
-
-      // 如果有医院ID，添加到查询参数
-      if (this.data.hospitalId) {
-        params.hospitalId = this.data.hospitalId
-        logger.log('Orders', '加载医院订单', { hospitalId: this.data.hospitalId })
-      }
+      const params=this.query(0)
 
       const result = await api.orders.getList(params)
+      if(version!==this._queryVersion)return
 
       // 处理返回的数据
       const orderList = result.content || result.list || result || []
@@ -106,6 +93,8 @@ Page({
       // 根据当前选中的tab筛选订单
       this.filterOrders()
     } catch (err) {
+      if(version!==this._queryVersion)return
+      this.setData({errorMessage:err.message || '加载失败，请重试'})
       logger.error('Orders', '加载订单列表失败', err)
       this.setData({
         loading: false,
@@ -129,23 +118,17 @@ Page({
       return
     }
 
+    if(this.data.loading)return
+    const version=this._queryVersion;
     this.setData({ isLoadingMore: true })
 
     try {
       const nextPage = this.data.pageNum + 1
 
-      // 构建查询参数，添加医院ID过滤
-      const params = {
-        page: nextPage - 1,  // Spring Data JPA page starts from 0
-        size: this.data.pageSize
-      }
-
-      // 如果有医院ID，添加到查询参数
-      if (this.data.hospitalId) {
-        params.hospitalId = this.data.hospitalId
-      }
+      const params=this.query(nextPage-1)
 
       const result = await api.orders.getList(params)
+      if(version!==this._queryVersion)return
 
       // 处理返回的数据
       const newOrders = result.content || result.list || result || []
@@ -167,6 +150,8 @@ Page({
       // 重新筛选订单
       this.filterOrders()
     } catch (err) {
+      if(version!==this._queryVersion)return
+      this.setData({errorMessage:err.message || '加载失败，请重试'})
       logger.error('Orders', '加载更多订单失败', err)
       this.setData({ isLoadingMore: false })
 
@@ -196,23 +181,12 @@ Page({
   filterOrders() {
     const { activeTab, orders, searchKeyword } = this.data
 
-    // 性能优化：只在tab切换或订单数量变化或搜索关键字变化时重新筛选
-    if (this._lastActiveTab === activeTab &&
-        this._lastOrdersLength === orders.length &&
-        this._lastSearchKeyword === searchKeyword) {
-      return
-    }
-
-    this._lastActiveTab = activeTab
-    this._lastOrdersLength = orders.length
-    this._lastSearchKeyword = searchKeyword
-
     // 性能优化：直接过滤，不复制对象
     let filtered = activeTab === 'all'
       ? orders
       : activeTab === 'draft'
-        ? orders.filter(order => order.sampleStatus === -3 || order.sampleStatus === -2)
-        : orders.filter(order => String(order.sampleStatus) === activeTab)
+        ? orders.filter(order => order.sampleStatus === -2)
+        : orders.filter(order => String(order.sampleStatus) === String(activeTab))
 
     // 如果有搜索关键字，进行搜索过滤
     if (searchKeyword && searchKeyword.trim()) {
@@ -244,21 +218,14 @@ Page({
 
     // 只设置必要的数据
     this.setData({
-      filteredOrders: filtered
+      filteredOrders: filtered,isEmpty:filtered.length===0
     })
   },
 
   /**
    * 搜索输入处理
    */
-  onSearchInput(e) {
-    const keyword = e.detail.value
-    this.setData({
-      searchKeyword: keyword
-    })
-    // 重新筛选订单
-    this.filterOrders()
-  },
+  onSearchInput(e) {this.setData({searchKeyword:e.detail.value});clearTimeout(this._searchTimer);this._searchTimer=setTimeout(()=>this.resetAndLoadOrders(),300)},
 
   /**
    * 格式化日期时间（显示创建时间）
@@ -337,7 +304,7 @@ Page({
    */
   getStatusLabel(status) {
     const labels = {
-      '-3': '草稿',  // 待支付改为草稿
+      '-3': '待支付',
       '-2': '草稿',
       '0': '待审核',
       '1': '审核不通过',
@@ -356,12 +323,13 @@ Page({
     this.setData({
       activeTab: tabId
     })
-    this.filterOrders()
+    this.resetAndLoadOrders()
   },
 
   /**
    * 查看详情
    */
+  openDrafts(){wx.navigateTo({url:'/pages/drafts/drafts'})},
   onViewDetail(e) {
     const orderId = e.currentTarget.dataset.id
     wx.navigateTo({
@@ -372,148 +340,22 @@ Page({
   /**
    * 报告预览
    */
-  async onPreviewReport(e) {
-    const orderId = e.currentTarget.dataset.id
-
-    wx.showLoading({ title: '加载中...' })
-
-    try {
-      // 获取PDF URL
-      const result = await api.reports.getPdfUrl(orderId)
-      const pdfUrl = result.pdfUrl || result.url || result
-
-      if (!pdfUrl) {
-        throw new Error('未获取到报告地址')
-      }
-
-      wx.hideLoading()
-
-      // 下载文件到本地临时目录
-      wx.downloadFile({
-        url: pdfUrl,
-        success: (res) => {
-          if (res.statusCode === 200) {
-            const filePath = res.tempFilePath
-            // 打开文档预览
-            wx.openDocument({
-              filePath: filePath,
-              fileType: 'pdf',
-              success: () => {
-                logger.log('Orders', '报告预览成功')
-              },
-              fail: (err) => {
-                logger.error('Orders', '打开报告失败', err)
-                wx.showToast({
-                  title: '打开报告失败',
-                  icon: 'none'
-                })
-              }
-            })
-          } else {
-            wx.showToast({
-              title: '下载报告失败',
-              icon: 'none'
-            })
-          }
-        },
-        fail: (err) => {
-          logger.error('Orders', '下载报告失败', err)
-          wx.showToast({
-            title: '下载报告失败',
-            icon: 'none'
-          })
-        }
-      })
-    } catch (err) {
-      logger.error('Orders', '获取报告URL失败', err)
-      wx.hideLoading()
-      wx.showToast({
-        title: err.message || '获取报告失败',
-        icon: 'none'
-      })
-    }
+  onPreviewReport(e) {
+    wx.navigateTo({url:'/pages/order-detail/order-detail?id='+e.currentTarget.dataset.id})
   },
 
   /**
    * 报告下载
    */
-  async onDownloadReport(e) {
-    const orderId = e.currentTarget.dataset.id
-
-    wx.showLoading({ title: '下载中...' })
-
-    try {
-      // 获取PDF URL
-      const result = await api.reports.getPdfUrl(orderId)
-      const pdfUrl = result.pdfUrl || result.url || result
-
-      if (!pdfUrl) {
-        throw new Error('未获取到报告地址')
-      }
-
-      // 下载文件到本地临时目录
-      wx.downloadFile({
-        url: pdfUrl,
-        success: (res) => {
-          if (res.statusCode === 200) {
-            wx.hideLoading()
-
-            // 获取订单信息用于文件名
-            const order = this.data.filteredOrders.find(o => o.orderId === orderId)
-            const petName = order ? order.animalName : '宠物'
-            const collectDate = order ? order.collectDt : new Date().toISOString().slice(0, 10)
-            const fileName = `检测报告_${petName}_${collectDate}.pdf`
-
-            // 保存文件到本地
-            wx.saveFile({
-              tempFilePath: res.tempFilePath,
-              success: (saveRes) => {
-                wx.showToast({
-                  title: '下载成功',
-                  icon: 'success'
-                })
-                logger.log('Orders', '报告下载成功', { savedFilePath: saveRes.savedFilePath })
-              },
-              fail: (err) => {
-                logger.error('Orders', '保存报告失败', err)
-                wx.showToast({
-                  title: '保存失败',
-                  icon: 'none'
-                })
-              }
-            })
-          } else {
-            wx.hideLoading()
-            wx.showToast({
-              title: '下载报告失败',
-              icon: 'none'
-            })
-          }
-        },
-        fail: (err) => {
-          logger.error('Orders', '下载报告失败', err)
-          wx.hideLoading()
-          wx.showToast({
-            title: '下载报告失败',
-            icon: 'none'
-          })
-        }
-      })
-    } catch (err) {
-      logger.error('Orders', '获取报告URL失败', err)
-      wx.hideLoading()
-      wx.showToast({
-        title: err.message || '下载失败',
-        icon: 'none'
-      })
-    }
+  onDownloadReport(e) {
+    wx.navigateTo({url:'/pages/order-detail/order-detail?id='+e.currentTarget.dataset.id})
   },
 
   /**
    * 新建订单
    */
   onNewOrder() {
-    wx.navigateTo({
+    wx.switchTab({
       url: '/pages/order-select-pet/order-select-pet'
     })
   },
@@ -522,88 +364,8 @@ Page({
    * 去支付（重新发起支付）
    */
   async onPayOrder(e) {
-    const { id, amount } = e.currentTarget.dataset;
-
-    logger.log('Orders', '发起支付', { orderId: id, amount })
-
-    try {
-      wx.showLoading({ title: '加载中...' });
-
-      // 获取用户openid
-      const app = getApp();
-      const userInfo = app.globalData.userInfo;
-
-      if (!userInfo || !userInfo.openid) {
-        wx.hideLoading();
-        wx.showModal({
-          title: '支付失败',
-          content: '用户信息异常，请重新登录',
-          showCancel: false
-        });
-        return;
-      }
-
-      // 创建支付订单
-      const paymentData = {
-        orderId: id,
-        amount: amount,
-        openid: userInfo.openid
-      };
-
-      const paymentResult = await api.payment.create(paymentData);
-      const paymentParams = paymentResult.data || paymentResult;
-
-      logger.log('Orders', '支付参数', paymentParams);
-
-      wx.hideLoading();
-
-      // 调起微信支付
-      wx.requestPayment({
-        timeStamp: paymentParams.timeStamp,
-        nonceStr: paymentParams.nonceStr,
-        package: paymentParams.package,
-        signType: paymentParams.signType || 'MD5',
-        paySign: paymentParams.paySign,
-        success: (res) => {
-          logger.log('Orders', '微信支付成功', res);
-          wx.showToast({
-            title: '支付成功',
-            icon: 'success',
-            duration: 1500
-          });
-
-          // 刷新订单列表
-          setTimeout(() => {
-            this.resetAndLoadOrders();
-          }, 1500);
-        },
-        fail: (err) => {
-          logger.error('Orders', '微信支付失败', err);
-          // 用户取消支付
-          if (err.errMsg.includes('cancel')) {
-            wx.showToast({
-              title: '已取消支付',
-              icon: 'none',
-              duration: 1500
-            });
-          } else {
-            wx.showModal({
-              title: '支付失败',
-              content: err.errMsg || '支付失败，请重试',
-              showCancel: false
-            });
-          }
-        }
-      });
-    } catch (error) {
-      logger.error('Orders', '创建支付订单失败', error);
-      wx.hideLoading();
-      wx.showModal({
-        title: '支付失败',
-        content: error.message || '创建支付订单失败，请重试',
-        showCancel: false
-      });
-    }
+    if(this._paying)return;this._paying=true;wx.showLoading({title:'正在获取支付信息',mask:true});
+    try{const confirmed=await require('../../utils/payment').payOrder(e.currentTarget.dataset.id);wx.showToast({title:confirmed?'支付已确认':'支付结果确认中',icon:confirmed?'success':'none'});this.resetAndLoadOrders()}catch(error){wx.showModal({title:'付款提示',content:error.message || '支付未完成，请稍后重试',showCancel:false})}finally{wx.hideLoading();this._paying=false}
   },
 
   /**

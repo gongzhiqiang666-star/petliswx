@@ -14,6 +14,7 @@ import org.springframework.stereotype.Component;
  * @since 1.0.0
  */
 @Slf4j
+@org.springframework.boot.autoconfigure.condition.ConditionalOnProperty(name="app.notifications.scheduler-enabled", havingValue="true")
 @Component
 @RequiredArgsConstructor
 public class NotificationScheduler {

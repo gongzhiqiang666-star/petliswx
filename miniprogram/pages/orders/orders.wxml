@@ -1,100 +1,124 @@
-<!--pages/orders/orders.wxml-->
 <view class="page" role="main" aria-label="订单列表">
-  <!-- Tabs -->
-  <view class="tabs" role="tablist" aria-label="订单筛选">
-    <view class="tab-item {{activeTab === item.id ? 'active' : ''}}"
-          role="tab"
-          aria-selected="{{activeTab === item.id}}"
-          aria-label="{{item.label}}"
-          wx:for="{{tabs}}"
-          wx:key="id"
-          bindtap="onTabChange"
-          data-id="{{item.id}}">
-      {{item.label}}
+  <view class="filter-panel petlis-card filter-card">
+    <view class="filter-main-row">
+      <scroll-view class="tabs-scroll" scroll-x enhanced show-scrollbar="{{false}}">
+        <view class="tabs petlis-filters" role="tablist" aria-label="订单筛选">
+          <view class="tab-item petlis-filter-item {{activeTab === item.id ? 'active' : ''}}"
+                role="tab"
+                aria-selected="{{activeTab === item.id}}"
+                aria-label="{{item.label}}"
+                wx:for="{{tabs}}"
+                wx:key="id"
+                bindtap="onTabChange"
+                data-id="{{item.id}}">{{item.label}}</view>
+        </view>
+      </scroll-view>
+      <view class="search-bar petlis-input" role="search" aria-label="搜索订单">
+        <search-input
+          placeholder="搜索订单"
+          value="{{searchKeyword}}"
+          bindinput="onSearchInput"
+        />
+      </view>
+      <view class="filter-toggle" role="button" aria-label="展开或收起日期筛选" aria-expanded="{{showFilters}}" bindtap="toggleFilters">
+        <image src="/assets/icons/brand-calendar.png" mode="aspectFit" aria-hidden="true"></image>
+        <text>筛选</text>
+      </view>
+    </view>
+    <view class="date-filter" wx:if="{{showFilters}}">
+      <picker class="date-picker" mode="date" value="{{startDate}}" data-key="startDate" bindchange="dateChange">
+        <view class="date-value petlis-input {{startDate ? '' : 'placeholder'}}">
+          <image class="date-calendar" src="/assets/icons/brand-calendar.png" mode="aspectFit" aria-hidden="true"></image>
+          <text>{{startDate || '开始日期'}}</text>
+          <image class="date-chevron" src="/assets/icons/brand-chevron-down.png" mode="aspectFit" aria-hidden="true"></image>
+        </view>
+      </picker>
+      <text class="date-separator">至</text>
+      <picker class="date-picker" mode="date" value="{{endDate}}" data-key="endDate" bindchange="dateChange">
+        <view class="date-value petlis-input {{endDate ? '' : 'placeholder'}}">
+          <image class="date-calendar" src="/assets/icons/brand-calendar.png" mode="aspectFit" aria-hidden="true"></image>
+          <text>{{endDate || '结束日期'}}</text>
+          <image class="date-chevron" src="/assets/icons/brand-chevron-down.png" mode="aspectFit" aria-hidden="true"></image>
+        </view>
+      </picker>
+      <text class="clear-dates" bindtap="clearDates">清除</text>
     </view>
   </view>
 
-  <!-- Search Bar -->
-  <view class="search-bar" role="search" aria-label="搜索订单">
-    <search-input
-      placeholder="搜索订单号/宠物名/畜主名"
-      value="{{searchKeyword}}"
-      bindinput="onSearchInput"
-    />
+  <view class="error-state petlis-empty" wx:if="{{errorMessage}}">
+    <image src="/assets/icons/brand-empty.png" mode="aspectFit" />
+    <view class="petlis-empty-text">{{errorMessage}}</view>
+    <button class="petlis-btn petlis-btn-outline" bindtap="resetAndLoadOrders">重新加载</button>
   </view>
 
-  <!-- Order List -->
   <scroll-view class="order-list"
-              scroll-y
-              bindscrolltolower="onReachBottom"
-              role="list"
-              aria-label="订单列表">
-    <view class="order-card"
+               scroll-y
+               bindscrolltolower="onReachBottom"
+               role="list"
+               aria-label="订单列表">
+    <view class="order-card petlis-list-card"
           role="listitem"
           aria-label="{{item.animalName}}的订单，状态{{item.statusLabel}}，金额¥{{item.totalPrice || item.testFee || '0.00'}}"
           wx:for="{{filteredOrders}}"
           wx:key="orderId"
           bindtap="onViewDetail"
           data-id="{{item.orderId}}">
-      <!-- Status Badge -->
-      <view class="status-badge status-{{item.sampleStatus}}">
-        {{item.statusLabel}}
+      <view class="order-card-head">
+        <view class="pet-info">
+          <view class="pet-name">{{item.animalName}}</view>
+          <view class="pet-breed">{{item.animalType}}</view>
+        </view>
+        <view class="status-badge status-{{item.sampleStatus}}">{{item.statusLabel}}</view>
       </view>
 
-      <!-- Pet Info -->
-      <view class="pet-info">
-        <view class="pet-name">{{item.animalName}}</view>
-        <view class="pet-breed">{{item.animalType}}</view>
-      </view>
-
-      <!-- Order Details -->
       <view class="order-details">
         <view class="detail-item">
-          <image src="/assets/icons/icon-monthly.png" class="detail-icon" mode="aspectFit" lazy-load="{{true}}" aria-hidden="true"></image>
-          <text>采样日期：{{item.collectDt}}</text>
+          <view class="detail-dot"></view>
+          <text class="detail-label">采样</text>
+          <text class="detail-value">{{item.collectDt}}</text>
         </view>
         <view class="detail-item">
-          <image src="/assets/icons/icon-time.png" class="detail-icon" mode="aspectFit" lazy-load="{{true}}" aria-hidden="true"></image>
-          <text>创建时间：{{item.createDtText}}</text>
+          <view class="detail-dot"></view>
+          <text class="detail-label">创建</text>
+          <text class="detail-value">{{item.createDtText}}</text>
         </view>
       </view>
 
-      <!-- Price and Actions -->
       <view class="order-footer">
-        <view class="price" aria-label="订单金额¥{{item.totalPrice || item.testFee || '0.00'}}">¥{{item.totalPrice || item.testFee || '0.00'}}</view>
+        <view class="price-wrap">
+          <text class="price-label">订单金额</text>
+          <view class="price" aria-label="订单金额¥{{item.totalPrice || item.testFee || '0.00'}}">¥{{item.totalPrice || item.testFee || '0.00'}}</view>
+        </view>
         <view class="actions">
-          <!-- 草稿订单（-3待支付、-2草稿）显示去支付按钮 -->
-          <button class="btn-action btn-pay"
+          <button class="petlis-btn petlis-btn-primary btn-action btn-pay"
                   role="button"
                   aria-label="支付订单，金额¥{{item.totalPrice || item.testFee || '0.00'}}"
                   catchtap="onPayOrder"
                   data-id="{{item.orderId}}"
                   data-amount="{{item.totalPrice || item.testFee}}"
                   wx:if="{{item.sampleStatus == -3}}">
-            <image src="/assets/icons/icon-pay.png" class="btn-icon" mode="aspectFit" aria-hidden="true"></image>
+            <image src="/assets/icons/brand-wallet.png" class="btn-icon" mode="aspectFit" aria-hidden="true"></image>
             <text>去支付</text>
           </button>
-          <!-- 已完成订单显示报告按钮 -->
           <block wx:elif="{{item.sampleStatus == 3}}">
-            <button class="btn-action btn-preview"
+            <button class="petlis-btn petlis-btn-primary btn-action btn-preview"
                     role="button"
                     aria-label="预览检测报告"
                     catchtap="onPreviewReport"
                     data-id="{{item.orderId}}">
-              <image src="/assets/icons/icon-file.png" class="btn-icon" mode="aspectFit" aria-hidden="true"></image>
+              <image src="/assets/icons/brand-file.png" class="btn-icon" mode="aspectFit" aria-hidden="true"></image>
               <text>预览</text>
             </button>
-            <button class="btn-action btn-download"
+            <button class="petlis-btn petlis-btn-primary btn-action btn-download"
                     role="button"
                     aria-label="下载检测报告"
                     catchtap="onDownloadReport"
                     data-id="{{item.orderId}}">
-              <image src="/assets/icons/download.png" class="btn-icon" mode="aspectFit" aria-hidden="true"></image>
+              <image src="/assets/icons/brand-download.png" class="btn-icon" mode="aspectFit" aria-hidden="true"></image>
               <text>下载</text>
             </button>
           </block>
-          <!-- 其他状态显示查看详情 -->
-          <button class="btn-detail"
+          <button class="btn-detail petlis-btn petlis-btn-outline"
                   role="button"
                   aria-label="查看订单详情"
                   catchtap="onViewDetail"
@@ -104,22 +128,21 @@
       </view>
     </view>
 
-    <!-- Empty State -->
-    <view class="empty-state"
+    <view class="empty-state petlis-empty"
           role="region"
           aria-label="暂无订单"
           wx:if="{{filteredOrders.length === 0 && !loading}}">
       <view class="empty-icon">
-        <image src="/assets/icons/info-icon.png" class="icon" mode="aspectFit" lazy-load="{{true}}" aria-hidden="true"></image>
+        <image src="/assets/icons/brand-empty.png" class="icon" mode="aspectFit" lazy-load="{{true}}" aria-hidden="true"></image>
       </view>
-      <view class="empty-text">暂无订单</view>
-      <button class="btn-primary"
+      <view class="empty-text">暂无符合条件的送检记录</view>
+      <view class="empty-hint">调整筛选条件，或发起一次新送检</view>
+      <button class="btn-primary petlis-btn petlis-btn-primary"
               role="button"
               aria-label="创建新预约"
               bindtap="onNewOrder">去预约</button>
     </view>
 
-    <!-- Loading More Indicator -->
     <view class="loading-more"
           role="status"
           aria-live="polite"
@@ -128,13 +151,11 @@
       <view class="loading-spinner"></view>
       <text class="loading-text">加载中...</text>
     </view>
-
-    <!-- No More Indicator -->
     <view class="no-more"
           role="status"
           aria-label="已加载全部订单"
           wx:if="{{!hasMore && filteredOrders.length > 0 && !isLoadingMore}}">
-      <text class="no-more-text">没有更多了</text>
+      <text class="no-more-text">已展示全部订单</text>
     </view>
   </scroll-view>
 </view>

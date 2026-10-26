@@ -132,6 +132,9 @@ public class UserServiceImpl implements UserService {
     public UserInfoResponse updateUserProfile(UserUpdateRequest request) {
         log.info("开始更新用户信息");
 
+        if (request.getNickname()!=null || request.getMobile()!=null || request.getAvatarUrl()!=null) {
+            throw new BusinessException("姓名和头像请提交资料审核，手机号请通过验证码修改");
+        }
         // 从SecurityContext获取当前用户ID
         Integer userId = SecurityUtils.getCurrentUserId();
         log.debug("当前用户ID: {}", userId);
@@ -239,13 +242,14 @@ public class UserServiceImpl implements UserService {
         }
 
         try {
-            // 生成唯一文件名
-            String originalFilename = file.getOriginalFilename();
-            String extension = originalFilename.substring(originalFilename.lastIndexOf("."));
-            String filename = UUID.randomUUID().toString() + extension;
+            byte[] image=file.getBytes();
+            boolean png=image.length>=8 && image[0]==(byte)0x89 && image[1]=='P' && image[2]=='N' && image[3]=='G' && image[4]==13 && image[5]==10 && image[6]==26 && image[7]==10;
+            boolean jpg=image.length>=3 && image[0]==(byte)0xff && image[1]==(byte)0xd8 && image[2]==(byte)0xff;
+            if(!png && !jpg)throw new BusinessException("头像内容需为 PNG 或 JPG 图片");
+            String filename=UUID.randomUUID().toString()+(png?".png":".jpg");
 
             // 创建上传目录
-            File uploadDir = new File(uploadPath);
+            File uploadDir = new File(uploadPath, "avatars").getAbsoluteFile();
             if (!uploadDir.exists()) {
                 boolean created = uploadDir.mkdirs();
                 log.debug("创建上传目录: {}, 结果: {}", uploadPath, created);
@@ -260,15 +264,7 @@ public class UserServiceImpl implements UserService {
             String avatarUrl = accessUrl + "/avatars/" + filename;
             log.info("头像URL: {}", avatarUrl);
 
-            // 更新用户头像
-            Integer userId = SecurityUtils.getCurrentUserId();
-            User user = userRepository.findById(userId)
-                    .orElseThrow(() -> new ResourceNotFoundException("用户", userId));
-            user.setAvatar(avatarUrl);
-            user.setUpdatetime((int) Instant.now().getEpochSecond());
-            userRepository.save(user);
-
-            log.info("头像上传成功, userId: {}, avatarUrl: {}", userId, avatarUrl);
+            // Avatar becomes active only after profile review.
             return avatarUrl;
 
         } catch (IOException e) {

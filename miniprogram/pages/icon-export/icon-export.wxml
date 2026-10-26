@@ -1,9 +1,9 @@
 <!--pages/icon-export/icon-export.wxml-->
 <view class="page">
   <!-- Info Card -->
-  <view class="info-card">
+  <view class="info-card petlis-card">
     <view class="info-icon-wrapper">
-      <image src="/assets/icons/download.png" class="info-icon" mode="aspectFit"></image>
+      <image src="/assets/icons/brand-download.png" class="info-icon" mode="aspectFit"></image>
     </view>
     <view class="info-content">
       <text class="info-title">微信小程序TabBar图标规范</text>
@@ -14,16 +14,16 @@
   <!-- Format Selection -->
   <view class="format-section">
     <view class="format-header">
-      <image src="/assets/icons/filter.png" class="format-icon" style="width: 32rpx; height: 32rpx;" mode="aspectFit"></image>
+      <image src="/assets/icons/brand-settings.png" class="format-icon" style="width: 32rpx; height: 32rpx;" mode="aspectFit"></image>
       <text class="format-label">导出格式</text>
     </view>
-    <view class="format-options">
-      <view class="format-option {{exportFormat === 'png' ? 'active' : ''}}"
+    <view class="format-options petlis-filters">
+      <view class="format-option petlis-filter-item {{exportFormat === 'png' ? 'active' : ''}}"
             bindtap="onFormatChange"
             data-format="png">
         PNG
       </view>
-      <view class="format-option {{exportFormat === 'jpg' ? 'active' : ''}}"
+      <view class="format-option petlis-filter-item {{exportFormat === 'jpg' ? 'active' : ''}}"
             bindtap="onFormatChange"
             data-format="jpg">
         JPG
@@ -32,8 +32,8 @@
   </view>
 
   <!-- Select All Button -->
-  <view class="select-all-btn" bindtap="onToggleSelectAll">
-    <image src="/assets/icons/check-circle.png" class="check-icon" mode="aspectFit"></image>
+  <view class="select-all-btn petlis-btn petlis-btn-outline" bindtap="onToggleSelectAll">
+    <image src="/assets/icons/brand-check.png" class="check-icon" mode="aspectFit"></image>
     <text>{{isAllSelected ? '取消全选' : '全选'}}</text>
   </view>
 
@@ -41,7 +41,7 @@
   <view class="icons-section">
     <text class="section-title">选择要导出的图标 ({{selectedCount}}/{{tabIcons.length}})</text>
     <view class="icons-grid">
-      <view class="icon-card {{item.selected ? 'selected' : ''}}"
+      <view class="icon-card petlis-list-card {{item.selected ? 'selected' : ''}}"
             wx:for="{{tabIcons}}"
             wx:key="name"
             bindtap="onToggleIcon"
@@ -51,7 +51,7 @@
         </view>
         <text class="icon-name">{{item.name}}</text>
         <text class="icon-label">{{item.label}}</text>
-        <image src="/assets/icons/check-circle.png"
+        <image src="/assets/icons/brand-check.png"
                class="check-badge {{item.selected ? 'show' : ''}}"
                mode="aspectFit"></image>
       </view>
@@ -64,21 +64,21 @@
       <text class="stats-text">已选择</text>
       <text class="stats-count">{{selectedCount}} 个图标</text>
     </view>
-    <button class="btn-primary" bindtap="onExport" disabled="{{selectedCount === 0}}">
-      <image src="/assets/icons/download.png" class="btn-icon" mode="aspectFit"></image>
+    <button class="btn-primary petlis-btn petlis-btn-primary" bindtap="onExport" disabled="{{selectedCount === 0}}">
+      <image src="/assets/icons/brand-download.png" class="btn-icon" mode="aspectFit"></image>
       导出选中图标
     </button>
-    <button class="btn-outline" bindtap="onDownloadAll">
-      <image src="/assets/icons/search.png" class="btn-icon" mode="aspectFit"></image>
+    <button class="btn-outline petlis-btn petlis-btn-outline" bindtap="onDownloadAll">
+      <image src="/assets/icons/brand-download.png" class="btn-icon" mode="aspectFit"></image>
       下载全部 ({{tabIcons.length}})
     </button>
   </view>
 </view>
 
 <!-- Preview Modal -->
-<view class="preview-modal" wx:if="{{showPreview}}" bindtap="onClosePreview">
-  <view class="preview-content" catchtap>
-    <image src="/assets/icons/close-icon.png" class="preview-close" mode="aspectFit" bindtap="onClosePreview"></image>
+<view class="preview-modal petlis-modal-mask" wx:if="{{showPreview}}" bindtap="onClosePreview">
+  <view class="preview-content petlis-modal" catchtap>
+    <image src="/assets/icons/brand-close.png" class="preview-close" mode="aspectFit" bindtap="onClosePreview"></image>
     <view class="preview-icon-wrapper">
       <image src="/assets/icons/{{currentPreview.iconFile}}" class="preview-icon-img" mode="aspectFit"></image>
     </view>

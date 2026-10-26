@@ -16,16 +16,16 @@
   <!-- 表单内容 -->
   <scroll-view class="nature-scroll" scroll-y enhanced show-scrollbar="{{false}}">
     <!-- 有机卡片 - 基本信息 -->
-    <view class="organic-card">
+    <view class="organic-card petlis-card">
       <view class="organic-header">
-        <view class="organic-icon">🌱</view>
+        <view class="organic-icon"><image src="/assets/icons/brand-archive.png" mode="aspectFit" aria-hidden="true" /></view>
         <text class="organic-title">基本信息</text>
       </view>
 
       <view class="field-row">
         <text class="field-key">宠物中文名</text>
         <input
-          class="organic-input"
+          class="organic-input petlis-input"
           placeholder="例如：旺旺"
           value="{{formData.animalName}}"
           bindinput="onInputChange"
@@ -36,7 +36,7 @@
       <view class="field-row">
         <text class="field-key">英文名</text>
         <input
-          class="organic-input"
+          class="organic-input petlis-input"
           placeholder="例如：Wangwang"
           value="{{formData.animalNameEn}}"
           bindinput="onInputChange"
@@ -46,48 +46,40 @@
 
       <view class="field-row">
         <text class="field-key">物种</text>
-        <view class="organic-btn" bindtap="showSpeciesSelector">
+        <view class="organic-btn petlis-input" bindtap="showSpeciesSelector">
           <text class="organic-btn-text {{selectedAnimalName ? '' : 'btn-placeholder'}}">
             {{selectedAnimalName || '选择物种'}}
           </text>
-          <text class="btn-arrow">→</text>
+          <image class="btn-arrow" src="/assets/icons/brand-chevron-right.png" mode="aspectFit" aria-hidden="true" />
         </view>
       </view>
 
       <view class="field-row">
         <text class="field-key">品种</text>
-        <view class="organic-btn" bindtap="onSelectBreed">
+        <view class="organic-btn petlis-input" bindtap="onSelectBreed">
           <text class="organic-btn-text {{selectedBreed ? '' : 'btn-placeholder'}}">
             {{selectedBreed ? selectedBreed.varietyCn : '选择品种'}}
           </text>
-          <text class="btn-arrow">→</text>
+          <image class="btn-arrow" src="/assets/icons/brand-chevron-right.png" mode="aspectFit" aria-hidden="true" />
         </view>
       </view>
     </view>
 
     <!-- 有机卡片 - 特征信息 -->
-    <view class="organic-card card-green">
+    <view class="organic-card petlis-card card-green">
       <view class="organic-header">
-        <view class="organic-icon">🍃</view>
+        <view class="organic-icon"><image src="/assets/icons/brand-test.png" mode="aspectFit" aria-hidden="true" /></view>
         <text class="organic-title">特征信息</text>
       </view>
 
       <view class="field-row">
         <text class="field-key">性别</text>
-        <view class="nature-chips">
-          <view
-            class="nature-chip {{formData.dictSexId === 1 ? 'chip-selected' : ''}}"
-            bindtap="onGenderChange"
-            data-id="1"
-          >
-            <text class="chip-text">♂ 公</text>
+        <view class="nature-chips petlis-filters" role="radiogroup" aria-label="选择性别">
+          <view class="nature-chip petlis-filter-item {{formData.dictSexId === 1 ? 'chip-selected active' : ''}}" bindtap="onGenderChange" data-id="1" role="radio" aria-checked="{{formData.dictSexId === 1}}">
+            <text class="chip-text">公</text>
           </view>
-          <view
-            class="nature-chip {{formData.dictSexId === 2 ? 'chip-selected' : ''}}"
-            bindtap="onGenderChange"
-            data-id="2"
-          >
-            <text class="chip-text">♀ 母</text>
+          <view class="nature-chip petlis-filter-item {{formData.dictSexId === 2 ? 'chip-selected active' : ''}}" bindtap="onGenderChange" data-id="2" role="radio" aria-checked="{{formData.dictSexId === 2}}">
+            <text class="chip-text">母</text>
           </view>
         </view>
       </view>
@@ -95,11 +87,11 @@
       <view class="field-row">
         <text class="field-key">出生日期</text>
         <picker mode="date" value="{{formData.birthday}}" bindchange="onBirthdayChange">
-          <view class="organic-btn">
+          <view class="organic-btn petlis-input">
             <text class="organic-btn-text {{formData.birthday ? '' : 'btn-placeholder'}}">
               {{formData.birthday || '选择日期'}}
             </text>
-            <text class="btn-arrow">→</text>
+            <image class="btn-arrow" src="/assets/icons/brand-calendar.png" mode="aspectFit" aria-hidden="true" />
           </view>
         </picker>
       </view>
@@ -107,7 +99,7 @@
       <view class="field-row">
         <text class="field-key">年龄</text>
         <input
-          class="organic-input input-readonly"
+          class="organic-input petlis-input input-readonly"
           placeholder="自动计算"
           value="{{formData.age}}"
           disabled
@@ -117,7 +109,7 @@
       <view class="field-row">
         <text class="field-key">芯片号</text>
         <input
-          class="organic-input"
+          class="organic-input petlis-input"
           placeholder="选填"
           value="{{formData.chipNo}}"
           bindinput="onInputChange"
@@ -127,16 +119,16 @@
     </view>
 
     <!-- 有机卡片 - 主人信息 -->
-    <view class="organic-card card-warm">
+    <view class="organic-card petlis-card card-warm">
       <view class="organic-header">
-        <view class="organic-icon">🌻</view>
+        <view class="organic-icon"><image src="/assets/icons/brand-mine.png" mode="aspectFit" aria-hidden="true" /></view>
         <text class="organic-title">主人信息</text>
       </view>
 
       <view class="field-row">
         <text class="field-key">姓名</text>
         <input
-          class="organic-input"
+          class="organic-input petlis-input"
           placeholder="请输入姓名"
           value="{{formData.ownerName}}"
           bindinput="onInputChange"
@@ -147,7 +139,7 @@
       <view class="field-row">
         <text class="field-key">拼音</text>
         <input
-          class="organic-input input-readonly"
+          class="organic-input petlis-input input-readonly"
           placeholder="自动生成"
           value="{{formData.ownerNameEn}}"
           disabled
@@ -161,10 +153,10 @@
 
   <!-- 自然底部栏 -->
   <view class="nature-bar">
-    <button class="nature-btn btn-ghost" bindtap="onBack">
+    <button class="nature-btn petlis-btn petlis-btn-outline btn-ghost" bindtap="onBack">
       <text class="nature-btn-text">取消</text>
     </button>
-    <button class="nature-btn btn-nature {{isSubmitting ? 'btn-loading' : ''}}" bindtap="onSave">
+    <button class="nature-btn petlis-btn petlis-btn-primary btn-nature {{isSubmitting ? 'btn-loading' : ''}}" bindtap="onSave">
       <text class="nature-btn-text">{{isSubmitting ? '保存中...' : '保存档案'}}</text>
     </button>
   </view>
@@ -182,5 +174,21 @@
     emptyText="暂无物种数据"
     bindselect="onSpeciesSelect"
     bindclose="hideSpeciesSelector"
+  />
+  <popup-selector
+    visible="{{showBreedSelector}}"
+    title="选择品种"
+    items="{{breedList}}"
+    selectedId="{{formData.infoVarietyId}}"
+    itemIdKey="iid"
+    itemNameKey="varietyCn"
+    itemNameEnKey="varietyEn"
+    searchPlaceholder="搜索品种（中文或英文）"
+    emptyText="暂无品种数据"
+    loading="{{breedLoading}}"
+    errorMessage="{{breedError}}"
+    bindselect="onBreedSelect"
+    bindclose="hideBreedSelector"
+    bindretry="onRetryBreed"
   />
 </view>

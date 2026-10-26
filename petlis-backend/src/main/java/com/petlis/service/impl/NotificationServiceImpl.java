@@ -36,6 +36,8 @@ import org.springframework.transaction.annotation.Transactional;
 public class NotificationServiceImpl implements NotificationService {
 
     private final NotificationRepository notificationRepository;
+    private final org.springframework.jdbc.core.JdbcTemplate jdbc;
+    private final com.petlis.common.security.ReviewPermission permission;
     private final InfoHospitalRepository infoHospitalRepository;
     private final UserRepository userRepository;
     private final NotificationMapper notificationMapper;
@@ -52,6 +54,7 @@ public class NotificationServiceImpl implements NotificationService {
     public Page<NotificationResponse> getOrderNotifications(Integer orderId) {
         log.info("查询订单通知记录, orderId: {}", orderId);
 
+        requireOrder(orderId);
         // 构建分页参数
         Sort sort = Sort.by(Sort.Direction.DESC, "operationTime");
         Pageable pageable = PageRequest.of(0, 100, sort); // 默认返回前100条
@@ -62,7 +65,8 @@ public class NotificationServiceImpl implements NotificationService {
         // 转换为DTO
         List<NotificationResponse> responses = records.stream()
             .map(record -> {
-                NotificationResponse response = notificationMapper.toResponse(record);
+                requireHospital(record.getHospitalId());
+        NotificationResponse response = notificationMapper.toResponse(record);
                 loadRelatedInfo(response, record);
                 return response;
             })
@@ -87,6 +91,7 @@ public class NotificationServiceImpl implements NotificationService {
     @Override
     @Transactional(readOnly = true)
     public Page<NotificationResponse> getHospitalNotifications(Integer hospitalId, Integer pageNum, Integer pageSize) {
+        requireHospital(hospitalId);
         log.info("查询医院通知记录, hospitalId: {}, pageNum: {}, pageSize: {}", hospitalId, pageNum, pageSize);
 
         // 构建分页参数
@@ -122,6 +127,7 @@ public class NotificationServiceImpl implements NotificationService {
         NotificationRecord record = notificationRepository.findById(notificationId)
                 .orElseThrow(() -> new BusinessException("通知记录不存在"));
 
+        requireHospital(record.getHospitalId());
         NotificationResponse response = notificationMapper.toResponse(record);
         loadRelatedInfo(response, record);
 
@@ -137,6 +143,7 @@ public class NotificationServiceImpl implements NotificationService {
     @Override
     @Transactional
     public Integer processPendingNotifications() {
+        permission.requireReviewer();
         log.info("开始处理待发送的微信通知");
 
         // 查询待发送的通知
@@ -188,6 +195,7 @@ public class NotificationServiceImpl implements NotificationService {
     @Override
     @Transactional
     public Boolean retryNotification(Integer notificationId) {
+        permission.requireReviewer();
         log.info("重试发送通知, notificationId: {}", notificationId);
 
         NotificationRecord record = notificationRepository.findById(notificationId)
@@ -238,14 +246,9 @@ public class NotificationServiceImpl implements NotificationService {
         NotificationRecord record = notificationRepository.findById(notificationId)
                 .orElseThrow(() -> new BusinessException("通知记录不存在"));
 
-        // 更新状态为已读
-        if (record.getWechatSentStatus() != 1) {
-            record.setWechatSentStatus(1);
-            notificationRepository.save(record);
-            log.info("通知已成功标记为已读, notificationId: {}", notificationId);
-        } else {
-            log.info("通知已经是已读状态, notificationId: {}", notificationId);
-        }
+        requireHospital(record.getHospitalId());
+        jdbc.update("INSERT IGNORE INTO lin_notification_receipt(user_id,notification_id) VALUES(?,?)",com.petlis.common.security.SecurityUtils.getCurrentUserId(),notificationId);
+
     }
 
     /**
@@ -257,7 +260,8 @@ public class NotificationServiceImpl implements NotificationService {
     @Override
     @Transactional(readOnly = true)
     public Long countUnreadNotifications(Integer hospitalId) {
-        return notificationRepository.countUnreadNotifications(hospitalId);
+        requireHospital(hospitalId);
+        return jdbc.queryForObject("SELECT COUNT(*) FROM lin_lb_notification n LEFT JOIN lin_notification_receipt r ON r.notification_id=n.id AND r.user_id=? WHERE n.hospital_id=? AND r.user_id IS NULL",Long.class,com.petlis.common.security.SecurityUtils.getCurrentUserId(),hospitalId);
     }
 
     /**
@@ -266,6 +270,14 @@ public class NotificationServiceImpl implements NotificationService {
      * @param response 响应对象
      * @param record   通知记录
      */
+    private void requireHospital(Integer hospitalId) {
+        if(hospitalId==null || !java.util.Objects.equals(hospitalId,com.petlis.common.security.SecurityUtils.getCurrentHospitalId()))throw new BusinessException(403,"无权访问此通知");
+    }
+    private void requireOrder(Integer orderId) {
+        Boolean allowed=jdbc.queryForObject("SELECT EXISTS(SELECT 1 FROM lin_lb_listdiagnosisproject WHERE ListDiagnosisProjectId=? AND InfoHospitalId=?)",Boolean.class,orderId,com.petlis.common.security.SecurityUtils.getCurrentHospitalId());
+        if(!Boolean.TRUE.equals(allowed))throw new BusinessException(403,"无权访问此订单通知");
+    }
+
     private void loadRelatedInfo(NotificationResponse response, NotificationRecord record) {
         // 加载医院名称
         if (record.getHospitalId() != null) {
@@ -292,6 +304,7 @@ public class NotificationServiceImpl implements NotificationService {
         if (record.getNewStatus() != null) {
             OrderStatusEnum newStatus = OrderStatusEnum.fromCode(record.getNewStatus());
             response.setNewStatusLabel(newStatus != null ? newStatus.getDescription() : "");
+            response.setNotificationMessage("送检单 #"+record.getOrderId()+" 状态："+(newStatus!=null?newStatus.getDescription():"已更新"));
         }
 
         // 加载微信发送状态描述

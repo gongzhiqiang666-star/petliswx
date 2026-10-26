@@ -3,7 +3,6 @@ package com.petlis;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.cache.annotation.EnableCaching;
-import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
 
 /**
  * PETLIS后端应用主启动类
@@ -16,7 +15,7 @@ import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
  */
 @SpringBootApplication
 @EnableCaching
-@EnableJpaAuditing
+@org.springframework.scheduling.annotation.EnableScheduling
 public class PetlisApplication {
 
     public static void main(String[] args) {

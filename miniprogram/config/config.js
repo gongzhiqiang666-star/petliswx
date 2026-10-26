@@ -9,11 +9,11 @@
 const getBaseURL = () => {
   // 开发环境 - 后端服务地址
   // 模拟器调试使用 localhost
-  // return 'http://192.168.1.103:8082/api'
+  // return 'http://127.0.0.1:8082/api'
 
   // 真机调试时使用局域网IP（自动获取本机IP）
   // 如果真机仍无法访问，请手动修改IP为您的电脑局域网IP
-  return 'http://192.168.1.103:8082/api'
+  return 'http://192.168.0.3:8082/api'
 
   // 生产环境（部署时取消注释）
   // return 'https://your-domain.com/api'

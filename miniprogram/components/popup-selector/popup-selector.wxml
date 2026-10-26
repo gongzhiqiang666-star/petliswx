@@ -1,29 +1,36 @@
 <!--components/popup-selector/popup-selector.wxml-->
-<view class="popup-selector {{visible ? 'show' : ''}}" catchtap="onMaskTap">
-  <view class="selector-content" catchtap="onContentTap">
+<view class="popup-selector petlis-modal-mask {{visible ? 'show' : ''}}" catchtap="onMaskTap">
+  <view class="selector-content petlis-modal" catchtap="onContentTap">
     <!-- 标题栏 -->
     <view class="selector-header">
       <text class="header-title">{{title}}</text>
       <image class="close-icon"
-             src="/assets/icons/close-icon.png"
+             src="/assets/icons/brand-close.png"
              bindtap="onClose"></image>
     </view>
 
     <!-- 搜索框 -->
     <view class="search-bar" wx:if="{{showSearch}}">
-      <image class="search-icon" src="/assets/icons/search-icon.png"></image>
+      <image class="search-icon" src="/assets/icons/brand-search.png"></image>
       <input class="search-input"
              placeholder="{{searchPlaceholder}}"
              value="{{searchKeyword}}"
              bindinput="onSearch" />
       <image class="clear-icon"
-             src="/assets/icons/close-icon.png"
+             src="/assets/icons/brand-close.png"
              wx:if="{{searchKeyword}}"
              bindtap="onClearSearch"></image>
     </view>
 
     <!-- 列表 -->
     <scroll-view class="selector-list" scroll-y bindscrolltolower="onScrollToLower">
+      <view class="selector-loading" wx:if="{{loading}}" role="status">正在加载…</view>
+      <view class="empty-state petlis-empty selector-error" wx:elif="{{errorMessage}}" role="alert">
+        <image src="/assets/icons/brand-warning.png" class="empty-icon" mode="aspectFit" aria-hidden="true"></image>
+        <text class="empty-text">{{errorMessage}}</text>
+        <button class="petlis-btn petlis-btn-outline petlis-empty-retry" bindtap="onRetry">重新加载</button>
+      </view>
+      <block wx:else>
       <view class="list-item {{selectedId === item[itemIdKey] ? 'active' : ''}}"
             wx:for="{{filteredItems}}"
             wx:key="itemIdKey"
@@ -34,7 +41,7 @@
           <view class="item-name-en" wx:if="{{item[itemNameEnKey]}}">{{item[itemNameEnKey]}}</view>
         </view>
         <view class="item-check" wx:if="{{selectedId === item[itemIdKey]}}">
-          <image src="/assets/icons/check-circle.png" class="check-icon"></image>
+          <image src="/assets/icons/brand-check.png" class="check-icon"></image>
         </view>
       </view>
 
@@ -50,10 +57,11 @@
       </view>
 
       <!-- 空状态 -->
-      <view class="empty-state" wx:if="{{filteredItems.length === 0 && !loading}}">
-        <image src="/assets/icons/info-icon.png" class="empty-icon"></image>
+      <view class="empty-state petlis-empty" wx:if="{{filteredItems.length === 0 && !loading}}">
+        <image src="/assets/icons/brand-empty.png" class="empty-icon"></image>
         <text class="empty-text">{{emptyText}}</text>
       </view>
+      </block>
     </scroll-view>
   </view>
 </view>

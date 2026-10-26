@@ -1,6 +1,9 @@
 {
-  "navigationBarTitleText": "预约信息填写",
+  "navigationBarTitleText": "填写资料",
   "usingComponents": {
-    "age-picker": "/components/age-picker/age-picker"
-  }
+    "age-picker": "/components/age-picker/age-picker",
+    "popup-selector": "/components/popup-selector/popup-selector"
+  },
+  "navigationBarBackgroundColor": "#fafafa",
+  "navigationBarTextStyle": "black"
 }

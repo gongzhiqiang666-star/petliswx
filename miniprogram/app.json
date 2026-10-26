@@ -1,5 +1,8 @@
 {
   "pages": [
+    "pages/login/login",
+    "pages/register/register",
+    "pages/review/review",
     "pages/home/home",
     "pages/network-test/network-test",
     "pages/pets/pets",
@@ -22,7 +25,19 @@
     "pages/pdf-view/pdf-view",
     "pages/icon-download/icon-download",
     "pages/icon-export/icon-export",
-    "pages/error-page/error-page"
+    "pages/error-page/error-page",
+    "pages/account/account",
+    "pages/transactions/transactions",
+    "pages/coupons/coupons",
+    "pages/preferences/preferences",
+    "pages/mall/mall",
+    "pages/invoices/invoices",
+    "pages/articles/articles",
+    "pages/article-detail/article-detail",
+    "pages/profile/profile",
+    "pages/drafts/drafts",
+    "pages/recharge/recharge",
+    "pages/security/security"
   ],
   "window": {
     "backgroundTextStyle": "light",
@@ -32,33 +47,39 @@
   },
   "tabBar": {
     "color": "#64748B",
-    "selectedColor": "#2563EB",
+    "selectedColor": "#0D6E6E",
     "backgroundColor": "#FFFFFF",
     "borderStyle": "white",
     "list": [
       {
         "pagePath": "pages/home/home",
         "text": "首页",
-        "iconPath": "assets/icons/home.png",
-        "selectedIconPath": "assets/icons/home-active.png"
+        "iconPath": "assets/icons/tab/home.png",
+        "selectedIconPath": "assets/icons/tab/home-active.png"
       },
       {
-        "pagePath": "pages/pets/pets",
-        "text": "宠物",
-        "iconPath": "assets/icons/pet.png",
-        "selectedIconPath": "assets/icons/pet-active.png"
+        "pagePath": "pages/order-select-pet/order-select-pet",
+        "text": "检测",
+        "iconPath": "assets/icons/tab/test.png",
+        "selectedIconPath": "assets/icons/tab/test-active.png"
       },
       {
-        "pagePath": "pages/orders/orders",
-        "text": "订单",
-        "iconPath": "assets/icons/order.png",
-        "selectedIconPath": "assets/icons/order-active.png"
+        "pagePath": "pages/report-list/report-list",
+        "text": "报告",
+        "iconPath": "assets/icons/tab/report.png",
+        "selectedIconPath": "assets/icons/tab/report-active.png"
+      },
+      {
+        "pagePath": "pages/notifications/notifications",
+        "text": "消息",
+        "iconPath": "assets/icons/tab/message.png",
+        "selectedIconPath": "assets/icons/tab/message-active.png"
       },
       {
         "pagePath": "pages/mine/mine",
         "text": "我的",
-        "iconPath": "assets/icons/profile.png",
-        "selectedIconPath": "assets/icons/profile-active.png"
+        "iconPath": "assets/icons/tab/mine.png",
+        "selectedIconPath": "assets/icons/tab/mine-active.png"
       }
     ]
   },

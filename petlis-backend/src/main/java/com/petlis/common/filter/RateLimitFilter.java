@@ -34,10 +34,11 @@ public class RateLimitFilter implements Filter {
     private static final Logger log = LoggerFactory.getLogger(RateLimitFilter.class);
 
     /**
-     * 限制数量:每分钟120次请求（开发环境）
-     * 生产环境建议保持60次/分钟
+     * 限制数量:默认每分钟120次请求，可用 app.rate-limit.per-minute 调整。
+     * 生产环境建议保持60次/分钟；本机联调可放宽避免自动化验收误伤。
      */
-    private static final int RATE_LIMIT = 120;
+    @org.springframework.beans.factory.annotation.Value("${app.rate-limit.per-minute:120}")
+    private int rateLimit;
 
     /**
      * 时间窗口:60秒
@@ -59,7 +60,7 @@ public class RateLimitFilter implements Filter {
      */
     @Override
     public void init(FilterConfig filterConfig) throws ServletException {
-        log.info("请求频率限制过滤器初始化成功 - 限制: {}次/分钟", RATE_LIMIT);
+        log.info("请求频率限制过滤器初始化成功 - 限制: {}次/分钟", rateLimit);
 
         // 启动清理过期数据的定时任务
         startCleanupTask();
@@ -87,7 +88,7 @@ public class RateLimitFilter implements Filter {
 
         // 检查请求频率
         if (isRateLimited(clientIp)) {
-            log.warn("请求频率超限 - IP: {}, 限制: {}次/分钟", clientIp, RATE_LIMIT);
+            log.warn("请求频率超限 - IP: {}, 限制: {}次/分钟", clientIp, rateLimit);
 
             // 返回429错误
             httpResponse.setStatus(429); // HTTP 429 Too Many Requests
@@ -126,7 +127,7 @@ public class RateLimitFilter implements Filter {
         info.lastRequestTime = currentTime;
 
         // 检查是否超过限制
-        return currentCount > RATE_LIMIT;
+        return currentCount > rateLimit;
     }
 
     /**

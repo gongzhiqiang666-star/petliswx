@@ -1,122 +1,106 @@
-<!--pages/mine/mine.wxml-->
-<view class="page" role="main" aria-label="我的">
-  <scroll-view class="content" scroll-y>
-    <!-- User Info Card -->
-    <view class="user-card" role="region" aria-label="用户信息">
-      <view class="user-main">
-        <view class="user-avatar-container">
-          <view class="user-avatar">
-            <image src="{{userInfo.avatarUrl || '/assets/icons/profile.png'}}" class="avatar-icon" mode="aspectFill"></image>
-          </view>
-          <view class="avatar-badge"></view>
-        </view>
-        <view class="user-info">
-          <view class="user-name">{{userInfo.nickname || '宠物医生'}}</view>
-          <view class="user-meta">
-            <text class="user-id">ID: {{userInfo.id}}</text>
-            <text class="user-divider" aria-hidden="true">|</text>
-            <text class="user-mobile">{{userInfo.mobile}}</text>
-          </view>
-        </view>
+<view class="mine-page" role="main" aria-label="我的">
+  <view class="mine-hero">
+    <image class="hero-bg" src="/assets/brand/pet-cat.webp" mode="aspectFill" aria-hidden="true" />
+    <view class="mine-eyebrow">纳博科临 · LABOKLIN</view>
+    <view class="profile-row" role="region" aria-label="用户信息">
+      <image class="user-avatar" src="{{userInfo.avatarUrl || '/assets/icons/brand-mine.png'}}" mode="aspectFill" />
+      <view class="user-info">
+        <view class="user-name">{{userInfo.nickname || '宠物医生'}}</view>
+        <view class="user-meta">ID {{userInfo.id || '--'}}<text wx:if="{{userInfo.mobile}}" class="meta-divider">·</text>{{userInfo.mobile || '未绑定手机号'}}</view>
+        <view class="user-hospital">{{hospitalInfo.hospitalName || userInfo.hospital.hospitalName || '医院信息加载中'}}</view>
       </view>
     </view>
+  </view>
 
-    <!-- 快捷操作入口 -->
-    <view class="quick-entry"
-          role="button"
-          aria-label="消息通知，{{unreadCount > 0 ? unreadCount + '条未读消息' : '暂无未读消息'}}"
-          bindtap="onQuickAction"
-          data-action="notifications">
-      <view class="quick-entry-left">
-        <view class="quick-entry-icon-wrapper">
-          <image src="/assets/icons/notification.png" class="quick-entry-icon" mode="aspectFit" aria-hidden="true"></image>
-          <view class="quick-badge" wx:if="{{unreadCount > 0}}" aria-label="{{unreadCount}}条未读">{{unreadCount > 99 ? '99+' : unreadCount}}</view>
-        </view>
-        <view class="quick-entry-info">
-          <text class="quick-entry-title">消息通知</text>
-          <text class="quick-entry-desc">查看订单状态更新通知</text>
-        </view>
+  <view class="wallet-card">
+    <view class="wallet-main">
+      <view class="wallet-label">个人账户余额</view>
+      <view wx:if="{{financeLoading}}" class="wallet-state">正在加载…</view>
+      <view wx:elif="{{financeError}}" class="wallet-state wallet-error petlis-empty">
+        <image src="/assets/icons/brand-empty.png" mode="aspectFit" /><view class="petlis-empty-text">{{financeError}}</view><button class="petlis-btn petlis-btn-outline" bindtap="loadAccount">重试</button>
       </view>
-      <text class="quick-entry-arrow" aria-hidden="true">›</text>
+      <view wx:else class="wallet-balance">¥{{balance}}</view>
+    </view>
+    <view class="recharge-button" role="button" bindtap="onRecharge">去充值</view>
+  </view>
+
+  <view class="menu-card" role="list" aria-label="我的功能">
+    <view class="petlis-menu-item menu-item" role="listitem button" aria-label="消息通知，{{unreadCount > 0 ? unreadCount + '条未读消息' : '暂无未读消息'}}" bindtap="onQuickAction" data-action="notifications">
+      <view class="petlis-icon-badge menu-icon">
+        <image src="/assets/icons/brand-message.png" mode="aspectFit" aria-hidden="true" />
+        <view wx:if="{{unreadCount > 0}}" class="unread-badge" aria-label="{{unreadCount}}条未读">{{unreadCount > 99 ? '99+' : unreadCount}}</view>
+      </view>
+      <text class="menu-label">消息通知</text>
+      <image class="menu-chevron" src="/assets/icons/brand-chevron-right.png" mode="aspectFit" aria-hidden="true" />
     </view>
 
-    <!-- 医院信息卡片 -->
-    <view class="section hospital-section" role="region" aria-label="医院信息">
-      <view class="hospital-card" bindtap="onHospitalTap">
-        <view class="hospital-main">
-          <view class="hospital-icon-wrapper">
-            <image src="/assets/icons/support.png" class="hospital-icon" mode="aspectFit" aria-hidden="true"></image>
-          </view>
-          <view class="hospital-info">
-            <view class="hospital-name">{{hospitalInfo.hospitalName || '未知医院'}}</view>
-            <view class="hospital-meta">
-              <text class="hospital-place">{{hospitalInfo.place}}</text>
-            </view>
-          </view>
-          <view class="hospital-arrow">
-            <text class="arrow-icon" aria-hidden="true">›</text>
-          </view>
-        </view>
-      </view>
+    <view class="petlis-menu-item menu-item quick-entry" role="listitem button" aria-label="宠物档案" bindtap="openPets">
+      <view class="petlis-icon-badge menu-icon"><image src="/assets/icons/brand-archive.png" mode="aspectFit" aria-hidden="true" /></view>
+      <text class="menu-label">宠物档案</text>
+      <image class="menu-chevron" src="/assets/icons/brand-chevron-right.png" mode="aspectFit" aria-hidden="true" />
     </view>
 
-    <!-- 设置和其他功能 -->
-    <view class="section settings-section" role="list" aria-label="设置列表">
-      <view class="setting-item"
-            role="listitem"
-            bindtap="onSettingTap"
-            data-setting="profile">
-        <view class="setting-left">
-          <view class="setting-icon-wrapper setting-icon-blue">
-            <image src="/assets/icons/user.png" class="setting-icon" mode="aspectFit" aria-hidden="true"></image>
-          </view>
-          <text class="setting-label">个人资料</text>
-        </view>
-        <text class="setting-arrow" aria-hidden="true">›</text>
-      </view>
-
-      <view class="setting-item"
-            role="listitem"
-            bindtap="onSettingTap"
-            data-setting="help">
-        <view class="setting-left">
-          <view class="setting-icon-wrapper setting-icon-green">
-            <image src="/assets/icons/help.png" class="setting-icon" mode="aspectFit" aria-hidden="true"></image>
-          </view>
-          <text class="setting-label">帮助与反馈</text>
-        </view>
-        <text class="setting-arrow" aria-hidden="true">›</text>
-      </view>
-
-      <view class="setting-item"
-            role="listitem"
-            bindtap="onSettingTap"
-            data-setting="about">
-        <view class="setting-left">
-          <view class="setting-icon-wrapper setting-icon-purple">
-            <image src="/assets/icons/about.png" class="setting-icon" mode="aspectFit" aria-hidden="true"></image>
-          </view>
-          <text class="setting-label">关于我们</text>
-        </view>
-        <text class="setting-arrow" aria-hidden="true">›</text>
-      </view>
+    <view class="petlis-menu-item menu-item quick-entry" role="listitem button" aria-label="送检记录" bindtap="openOrders">
+      <view class="petlis-icon-badge menu-icon"><image src="/assets/icons/brand-records.png" mode="aspectFit" aria-hidden="true" /></view>
+      <text class="menu-label">送检记录</text>
+      <image class="menu-chevron" src="/assets/icons/brand-chevron-right.png" mode="aspectFit" aria-hidden="true" />
     </view>
 
-    <!-- 退出登录按钮 -->
-    <view class="logout-section">
-      <view class="logout-btn"
-            role="button"
-            aria-label="退出登录"
-            bindtap="onLogout">
-        <image src="/assets/icons/logout.png" class="logout-icon" mode="aspectFit" aria-hidden="true"></image>
-        <text class="logout-text">退出登录</text>
-      </view>
+    <view class="petlis-menu-item menu-item" role="listitem button" aria-label="我的账户" bindtap="openAccount">
+      <view class="petlis-icon-badge menu-icon"><image src="/assets/icons/brand-wallet.png" mode="aspectFit" aria-hidden="true" /></view>
+      <text class="menu-label">我的账户</text>
+      <image class="menu-chevron" src="/assets/icons/brand-chevron-right.png" mode="aspectFit" aria-hidden="true" />
     </view>
 
-    <!-- Version Info -->
-    <view class="version-info" role="contentinfo">
-      <view class="version-text">宠物检测管理系统</view>
-      <view class="version-number">v1.0.0</view>
+    <navigator class="petlis-menu-item menu-item" url="/pages/mall/mall" hover-class="menu-item-active" role="listitem button" aria-label="积分商城">
+      <view class="petlis-icon-badge menu-icon"><image src="/assets/icons/brand-gift.png" mode="aspectFit" aria-hidden="true" /></view>
+      <text class="menu-label">积分商城</text>
+      <image class="menu-chevron" src="/assets/icons/brand-chevron-right.png" mode="aspectFit" aria-hidden="true" />
+    </navigator>
+
+    <navigator class="petlis-menu-item menu-item" url="/pages/coupons/coupons" hover-class="menu-item-active" role="listitem button" aria-label="优惠券">
+      <view class="petlis-icon-badge menu-icon"><image src="/assets/icons/brand-coupon.png" mode="aspectFit" aria-hidden="true" /></view>
+      <text class="menu-label">优惠券</text>
+      <image class="menu-chevron" src="/assets/icons/brand-chevron-right.png" mode="aspectFit" aria-hidden="true" />
+    </navigator>
+
+    <navigator class="petlis-menu-item menu-item" url="/pages/invoices/invoices" hover-class="menu-item-active" role="listitem button" aria-label="开票管理">
+      <view class="petlis-icon-badge menu-icon"><image src="/assets/icons/brand-invoice.png" mode="aspectFit" aria-hidden="true" /></view>
+      <text class="menu-label">开票管理</text>
+      <image class="menu-chevron" src="/assets/icons/brand-chevron-right.png" mode="aspectFit" aria-hidden="true" />
+    </navigator>
+
+    <view class="petlis-menu-item menu-item" role="listitem button" aria-label="资讯与活动" bindtap="openArticles">
+      <view class="petlis-icon-badge menu-icon"><image src="/assets/icons/brand-article.png" mode="aspectFit" aria-hidden="true" /></view>
+      <text class="menu-label">资讯与活动</text>
+      <image class="menu-chevron" src="/assets/icons/brand-chevron-right.png" mode="aspectFit" aria-hidden="true" />
     </view>
-  </scroll-view>
+
+    <navigator class="petlis-menu-item menu-item" url="/pages/preferences/preferences" hover-class="menu-item-active" role="listitem button" aria-label="通知偏好">
+      <view class="petlis-icon-badge menu-icon"><image src="/assets/icons/brand-settings.png" mode="aspectFit" aria-hidden="true" /></view>
+      <text class="menu-label">通知偏好</text>
+      <image class="menu-chevron" src="/assets/icons/brand-chevron-right.png" mode="aspectFit" aria-hidden="true" />
+    </navigator>
+
+    <view class="petlis-menu-item menu-item" role="listitem button" aria-label="个人资料" bindtap="onSettingTap" data-setting="profile">
+      <view class="petlis-icon-badge menu-icon"><image src="/assets/icons/brand-mine.png" mode="aspectFit" aria-hidden="true" /></view>
+      <text class="menu-label">个人资料</text>
+      <image class="menu-chevron" src="/assets/icons/brand-chevron-right.png" mode="aspectFit" aria-hidden="true" />
+    </view>
+
+    <view class="petlis-menu-item menu-item" role="listitem button" aria-label="医院信息，{{hospitalInfo.hospitalName || '未知医院'}}" bindtap="onHospitalTap">
+      <view class="petlis-icon-badge menu-icon"><image src="/assets/icons/brand-hospital.png" mode="aspectFit" aria-hidden="true" /></view>
+      <view class="menu-hospital">
+        <text class="menu-label">医院信息</text>
+        <text class="menu-description">{{hospitalInfo.hospitalName || '未知医院'}}</text>
+      </view>
+      <image class="menu-chevron" src="/assets/icons/brand-chevron-right.png" mode="aspectFit" aria-hidden="true" />
+    </view>
+
+    <view class="petlis-menu-item menu-item logout-item" role="listitem button" aria-label="退出登录" bindtap="onLogout">
+      <view class="petlis-icon-badge menu-icon logout-icon"><image src="/assets/icons/brand-logout.png" mode="aspectFit" aria-hidden="true" /></view>
+      <text class="menu-label">退出登录</text>
+      <image class="menu-chevron" src="/assets/icons/brand-chevron-right.png" mode="aspectFit" aria-hidden="true" />
+    </view>
+  </view>
 </view>

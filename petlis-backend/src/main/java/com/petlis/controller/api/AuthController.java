@@ -41,7 +41,7 @@ public class AuthController {
     @Operation(summary = "微信登录", description = "使用微信code进行登录,返回JWT token")
     @OperationLog(module = "认证管理", operation = "微信登录", description = "用户使用微信code登录系统")
     public Result<WechatLoginResponse> wechatLogin(@Valid @RequestBody WechatLoginRequest request) {
-        log.info("收到微信登录请求, code: {}", request.getCode());
+        log.info("收到微信登录请求");
 
         try {
             WechatLoginResponse response = authService.wechatLogin(request);

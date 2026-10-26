@@ -47,6 +47,10 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 public class OrderServiceImpl implements OrderService {
+ private final BusinessNotifications notifications;
+ private final DraftService drafts;
+ private final FeatureStore store;
+
 
     private final ListDiagnosisProjectRepository projectRepository;
     private final DiagnosisDetailRepository detailRepository;
@@ -55,6 +59,8 @@ public class OrderServiceImpl implements OrderService {
     private final InfoTestTypeRepository infoTestTypeRepository;
     private final OrderMapper orderMapper;
     private final InfoHospitalRepository hospitalRepository;
+    private final com.petlis.common.security.ReviewPermission reviewPermission;
+    private final CouponService couponService;
 
     /**
      * 创建检测申请
@@ -67,6 +73,7 @@ public class OrderServiceImpl implements OrderService {
     public Integer createOrder(OrderCreateRequest request) {
         log.info("创建检测申请, 宠物姓名: {}", request.getAnimalName());
 
+        if(request.getDraftId()!=null)drafts.validateForSubmission(request.getDraftId(),request.getDraftVersion());
         // 从当前登录用户获取hospitalId和cityId（统一从token获取）
         Integer hospitalId = getCurrentHospitalId();
         Integer cityId = getCurrentCityId();
@@ -79,10 +86,11 @@ public class OrderServiceImpl implements OrderService {
             throw new BusinessException("账号信息不完整，城市ID未设置，请联系管理员");
         }
 
-        // 生成UserNO: 查询最大ID+1, 格式"55550-{id}"
-        Integer maxId = projectRepository.findMaxId();
-        Integer newId = (maxId == null ? 0 : maxId) + 1;
-        String userNO = String.format("55550-%d", newId);
+        CouponService.Quote quote = couponService.lockQuote(request.getLaboratoryId(),
+                request.getDiagnosisDetails() == null ? null : request.getDiagnosisDetails().stream()
+                        .map(OrderCreateRequest.DiagnosisDetailItem::getInfoTestTypeId).toList(), request.getUserCouponId());
+
+        String userNO = "PENDING-" + java.util.UUID.randomUUID().toString().replace("-", "");
 
         // 创建申请单实体
         ListDiagnosisProject project = new ListDiagnosisProject();
@@ -97,7 +105,7 @@ public class OrderServiceImpl implements OrderService {
         project.setAnimalTypeId(request.getAnimalTypeId());
         project.setAnimalType(request.getAnimalType());
         project.setAnimalTypeEn(request.getAnimalTypeEn());
-        project.setAnimalWeight(request.getAnimalWeight());
+        project.setAnimalWeight(request.getAnimalWeight()==null?"":request.getAnimalWeight());
         project.setChipNO(request.getChipNO() != null ? request.getChipNO() : "");
         project.setAge(request.getAge());
         project.setBirthday(request.getBirthday());
@@ -120,39 +128,36 @@ public class OrderServiceImpl implements OrderService {
         project.setRemark(request.getRemark() != null ? request.getRemark() : "");
         project.setIsSendNoticeMail(0);
 
-        // 根据医院支付类型设置订单初始状态
-        // PayType == 1: 月结客户 → 待审核(0)
-        // PayType != 1: 次结客户 → 待支付(-3)
-        Integer initialStatus;
-        try {
-            InfoHospital hospital = hospitalRepository.findById(hospitalId)
-                    .orElse(null);
-            if (hospital != null && hospital.getPayType() != null && hospital.getPayType() == 1) {
-                // 月结客户，直接进入待审核状态
-                initialStatus = OrderStatusEnum.PENDING_REVIEW.getCode();
-                log.info("月结客户订单, hospitalId: {}, 初始状态: 待审核", hospitalId);
-            } else {
-                // 次结客户，进入待支付状态
-                initialStatus = OrderStatusEnum.PENDING_PAYMENT.getCode();
-                log.info("次结客户订单, hospitalId: {}, 初始状态: 待支付", hospitalId);
-            }
-        } catch (Exception e) {
-            log.error("查询医院信息失败, hospitalId: {}, 默认使用待支付状态", hospitalId, e);
-            initialStatus = OrderStatusEnum.PENDING_PAYMENT.getCode();
-        }
-
-        project.setSampleStatus(initialStatus);
+        // 无论现结还是月结，提交后先审核，不提前收费。
+        project.setSampleStatus(OrderStatusEnum.PENDING_REVIEW.getCode());
         project.setCreateDt(new Date());
         project.setDoctorName(request.getDoctorName() != null ? request.getDoctorName() : "");
         project.setMarketingName(request.getMarketingName() != null ? request.getMarketingName() : "");
         project.setCreateSampleId(getCurrentUserId());
-        project.setReportNO(generateReportNO(newId)); // 生成德国报告编号
+        project.setReportNO(userNO); // 生成德国报告编号
         // 病例诊断结果字段(数据库允许为空,但实体类要求非空)
         project.setDiagnosticResults("");
 
         // 保存申请单
-        project = projectRepository.save(project);
+        project = projectRepository.saveAndFlush(project);
+        project.setUserNO(String.format("55550-%d", project.getListDiagnosisProjectId()));
+        project.setReportNO(generateReportNO(project.getListDiagnosisProjectId()));
 
+        saveItems(project, request, quote, 0);
+
+        project.setTestFee(quote.payableAmount().doubleValue());
+        projectRepository.save(project);
+        InfoHospital hospital = hospitalRepository.findById(hospitalId)
+                .orElseThrow(() -> new BusinessException("医院不存在"));
+        couponService.recordOrder(project.getListDiagnosisProjectId(), quote, Integer.valueOf(1).equals(hospital.getPayType()));
+
+        log.info("检测申请创建成功, 申请单ID: {}, UserNO: {}", project.getListDiagnosisProjectId(), userNO);
+        if(request.getDraftId()!=null)drafts.consume(request.getDraftId(),request.getDraftVersion());
+        notifications.order(project.getListDiagnosisProjectId(),getCurrentUserId(),project.getSampleStatus());
+        return project.getListDiagnosisProjectId();
+    }
+
+    private void saveItems(ListDiagnosisProject project, OrderCreateRequest request, CouponService.Quote quote, long sequenceBase) {
         // 保存检测明细
         if (request.getDiagnosisDetails() != null && !request.getDiagnosisDetails().isEmpty()) {
             log.info("开始保存检测明细, 数量: {}", request.getDiagnosisDetails().size());
@@ -174,23 +179,11 @@ public class OrderServiceImpl implements OrderService {
                     }
                 }
 
-                // 从InfoTestTypePrice获取价格
-                List<InfoTestTypePrice> prices = priceRepository.findByInfoTestTypeid(testTypeId.longValue());
-                if (prices == null || prices.isEmpty()) {
-                    throw new BusinessException("未找到检测项目价格信息, 检测项ID: " + testTypeId);
-                }
-
-                // 使用启用的价格
-                InfoTestTypePrice priceInfo = prices.stream()
-                        .filter(p -> p.getIsActive() != null && p.getIsActive().equals(1))
-                        .findFirst()
-                        .orElseThrow(() -> new BusinessException("检测项目价格未启用, 检测项ID: " + testTypeId));
-
-                BigDecimal price = BigDecimal.valueOf(priceInfo.getPrice());
+                BigDecimal price = quote.prices().get(testTypeId);
                 BigDecimal originalDiscount = BigDecimal.valueOf(10); // 默认折扣10
 
                 // 生成GenterNO: 格式"{orderId}-{序号}"
-                String genterNO = String.format("%d-%d", project.getListDiagnosisProjectId(), i + 1);
+                String genterNO = String.format("%d-%d", project.getListDiagnosisProjectId(), sequenceBase + i + 1);
 
                 // 创建明细实体
                 DiagnosisDetail detail = new DiagnosisDetail();
@@ -225,8 +218,57 @@ public class OrderServiceImpl implements OrderService {
             log.info("所有检测明细保存完成, 申请单ID: {}", project.getListDiagnosisProjectId());
         }
 
-        log.info("检测申请创建成功, 申请单ID: {}, UserNO: {}", project.getListDiagnosisProjectId(), userNO);
-        return project.getListDiagnosisProjectId();
+    }
+
+    @Override
+    @Transactional(rollbackOn = Exception.class)
+    public void resubmit(Integer orderId, OrderCreateRequest request) {
+        ListDiagnosisProject project=projectRepository.findLockedById(orderId)
+                .orElseThrow(()->new ResourceNotFoundException("申请单",orderId));
+        if(!java.util.Objects.equals(project.getInfoHospitalId(),getCurrentHospitalId())
+                || !java.util.Objects.equals(project.getCreateSampleId(),getCurrentUserId()))throw new BusinessException(403,"仅原申请医生可重新提交此送检单");
+        if((!Integer.valueOf(1).equals(project.getSampleStatus()) && !Integer.valueOf(-2).equals(project.getSampleStatus()))
+                || Integer.valueOf(1).equals(project.getIsPayMoney()))throw new BusinessException(409,"仅未支付的驳回单或草稿可编辑重提");
+        if(Boolean.TRUE.equals(store.jdbc().queryForObject("SELECT EXISTS(SELECT 1 FROM lin_wechat_payment WHERE order_id=? AND status IN (0,1))",Boolean.class,orderId)))throw new BusinessException("请先核对并关闭原支付记录");
+        if(Boolean.TRUE.equals(store.jdbc().queryForObject("SELECT EXISTS(SELECT 1 FROM lin_lb_diagnosisdetail WHERE ListDiagnosisProjectId=? AND (IsSendMail=1 OR DiagnosisStatus>0 OR PayStatus2<>0))",Boolean.class,orderId)))throw new BusinessException("已有检测、报告或结算记录，请联系实验室处理");
+        if(request.getDraftId()!=null)drafts.validateForSubmission(request.getDraftId(),request.getDraftVersion());
+        couponService.release(orderId);
+        CouponService.Quote quote=couponService.lockQuote(request.getLaboratoryId(),request.getDiagnosisDetails()==null?null:request.getDiagnosisDetails().stream().map(OrderCreateRequest.DiagnosisDetailItem::getInfoTestTypeId).toList(),request.getUserCouponId());
+        // Existing details remain as void history; a new serial number is never reused.
+        if(Boolean.TRUE.equals(store.jdbc().queryForObject("SELECT EXISTS(SELECT 1 FROM lin_invoice_order WHERE order_id=?)",Boolean.class,orderId)))throw new BusinessException("已有开票记录，请联系实验室处理");
+        long count=store.jdbc().queryForObject("SELECT COUNT(*) FROM lin_lb_diagnosisdetail WHERE ListDiagnosisProjectId=?",Long.class,orderId);
+        var oldItems=detailRepository.findActiveDetailsByProjectId(orderId);
+        for(var item:oldItems){item.setIsCheckPass(1);detailRepository.save(item);}
+        project.setInfoAnimalId(request.getInfoAnimalId());
+        project.setInfoSampleTypeId(request.getInfoSampleTypeId());
+        project.setAnimalName(request.getAnimalName());
+        project.setAnimalNameEn(request.getAnimalNameEn());
+        project.setAnimalTypeId(request.getAnimalTypeId());
+        project.setAnimalType(request.getAnimalType());
+        project.setAnimalTypeEn(request.getAnimalTypeEn());
+        project.setAnimalWeight(request.getAnimalWeight()==null?"":request.getAnimalWeight());
+        project.setChipNO(request.getChipNO() != null ? request.getChipNO() : "");
+        project.setAge(request.getAge());
+        project.setBirthday(request.getBirthday());
+        project.setDictSexId(request.getDictSexId());
+        project.setSampleArea(request.getSampleArea());
+        project.setMasterName(request.getMasterName());
+        project.setMasterNameEn(request.getMasterNameEn());
+        project.setCollectDt(request.getCollectDt());
+
+        project.setCityId(getCurrentCityId());
+        project.setReceiveSampleDt(request.getReceiveSampleDt()==null?getDefaultDate():request.getReceiveSampleDt());
+        project.setDoctorName(request.getDoctorName()==null?"":request.getDoctorName());
+        project.setMarketingName(request.getMarketingName()==null?"":request.getMarketingName());
+        project.setRemark(request.getRemark()==null?"":request.getRemark());
+        saveItems(project,request,quote,count);
+        project.setTestFee(quote.payableAmount().doubleValue());
+        project.setSampleStatus(OrderStatusEnum.PENDING_REVIEW.getCode());
+        projectRepository.save(project);
+        var hospital=hospitalRepository.findById(project.getInfoHospitalId()).orElseThrow(()->new BusinessException("医院不存在"));
+        couponService.reviseOrder(orderId,quote,Integer.valueOf(1).equals(hospital.getPayType()));
+        if(request.getDraftId()!=null)drafts.consume(request.getDraftId(),request.getDraftVersion());
+        notifications.order(orderId,getCurrentUserId(),0);
     }
 
     /**
@@ -396,7 +438,7 @@ public class OrderServiceImpl implements OrderService {
         }
 
         // 更新字段
-        project.setCityId(request.getCityId());
+        project.setCityId(getCurrentCityId());
         project.setInfoAnimalId(request.getInfoAnimalId());
         project.setInfoSampleTypeId(request.getInfoSampleTypeId());
         project.setAnimalName(request.getAnimalName());
@@ -404,7 +446,7 @@ public class OrderServiceImpl implements OrderService {
         project.setAnimalTypeId(request.getAnimalTypeId());
         project.setAnimalType(request.getAnimalType());
         project.setAnimalTypeEn(request.getAnimalTypeEn());
-        project.setAnimalWeight(request.getAnimalWeight());
+        project.setAnimalWeight(request.getAnimalWeight()==null?"":request.getAnimalWeight());
         project.setChipNO(request.getChipNO() != null ? request.getChipNO() : "");
         project.setAge(request.getAge());
         project.setBirthday(request.getBirthday());
@@ -436,15 +478,13 @@ public class OrderServiceImpl implements OrderService {
         log.info("更新申请状态, 申请单ID: {}, 目标状态: {}", orderId, targetStatus);
 
         // 验证申请单存在
-        ListDiagnosisProject project = projectRepository.findById(orderId)
+        ListDiagnosisProject project = projectRepository.findLockedById(orderId)
                 .orElseThrow(() -> new ResourceNotFoundException("申请单", orderId));
 
-        // 验证权限
-        Integer currentHospitalId = getCurrentHospitalId();
-        if (!project.getInfoHospitalId().equals(currentHospitalId)) {
+        boolean reviewer = reviewPermission.isReviewer();
+        if (!reviewer && !java.util.Objects.equals(project.getInfoHospitalId(), getCurrentHospitalId())) {
             throw new BusinessException(403, "无权操作此申请单");
         }
-
         // 获取当前状态和目标状态枚举
         OrderStatusEnum currentStatusEnum = OrderStatusEnum.fromCode(project.getSampleStatus());
         OrderStatusEnum targetStatusEnum = OrderStatusEnum.fromCode(targetStatus);
@@ -462,7 +502,35 @@ public class OrderServiceImpl implements OrderService {
             );
         }
 
+        if((currentStatusEnum==OrderStatusEnum.DRAFT || currentStatusEnum==OrderStatusEnum.REVIEW_FAILED) && targetStatusEnum==OrderStatusEnum.PENDING_REVIEW)throw new BusinessException("请编辑资料并重新核价后提交");
+        // 医生仅可提交草稿/驳回单或取消未结算订单；审核和出报告由审核人员完成。
+        boolean submit = (currentStatusEnum == OrderStatusEnum.DRAFT || currentStatusEnum == OrderStatusEnum.REVIEW_FAILED)
+                && targetStatusEnum == OrderStatusEnum.PENDING_REVIEW;
+        boolean cancel = targetStatusEnum == OrderStatusEnum.CANCELLED && !Integer.valueOf(1).equals(project.getIsPayMoney());
+        if (!reviewer && !submit && !cancel) {
+            throw new BusinessException(403, "不能自行审核、确认支付或发布报告");
+        }
+        if (currentStatusEnum == OrderStatusEnum.PENDING_PAYMENT && targetStatusEnum == OrderStatusEnum.WAITING_REPORT) {
+            throw new BusinessException("请通过已核验的支付回调完成结算");
+        }
+        if (currentStatusEnum == OrderStatusEnum.PENDING_REVIEW
+                && (targetStatusEnum == OrderStatusEnum.PENDING_PAYMENT || targetStatusEnum == OrderStatusEnum.WAITING_REPORT)) {
+            InfoHospital hospital = hospitalRepository.findById(project.getInfoHospitalId())
+                    .orElseThrow(() -> new BusinessException("医院不存在"));
+            boolean monthly = Integer.valueOf(1).equals(hospital.getPayType());
+            boolean noPayment = project.getTestFee() != null && project.getTestFee() == 0d;
+            if ((monthly || noPayment) != (targetStatusEnum == OrderStatusEnum.WAITING_REPORT)) {
+                throw new BusinessException(monthly ? "月结客户审核后挂账" : "现结客户审核后应进入待支付");
+            }
+        }
+
         // 更新状态
+        if (targetStatusEnum == OrderStatusEnum.CANCELLED || targetStatusEnum == OrderStatusEnum.REVIEW_FAILED) couponService.release(orderId);
+        if (currentStatusEnum == OrderStatusEnum.PENDING_REVIEW && targetStatusEnum == OrderStatusEnum.WAITING_REPORT) couponService.consume(orderId);
+
+        if (currentStatusEnum == OrderStatusEnum.PENDING_REVIEW && targetStatusEnum == OrderStatusEnum.WAITING_REPORT
+                && project.getTestFee()!=null && project.getTestFee()==0d) project.setIsPayMoney(1);
+        if(currentStatusEnum!=OrderStatusEnum.PENDING_REVIEW || targetStatusEnum==OrderStatusEnum.CANCELLED)notifications.order(orderId,project.getCreateSampleId(),targetStatus);
         project.setSampleStatus(targetStatus);
         projectRepository.save(project);
 
@@ -481,35 +549,17 @@ public class OrderServiceImpl implements OrderService {
         log.info("查询检测申请列表, 参数: {}", request);
 
         // 使用请求参数中的hospitalId,如果未提供则使用当前用户的医院ID
-        Integer hospitalId = request.getHospitalId() != null
-                ? request.getHospitalId()
-                : getCurrentHospitalId();
+        Integer hospitalId = getCurrentHospitalId();
 
-        // 构建分页参数
-        Pageable pageable = PageRequest.of(
-                request.getPage() != null ? request.getPage() : 0,
-                request.getSize() != null ? request.getSize() : 10,
-                Sort.by(Sort.Direction.DESC, "createDt")
-        );
+        int page=Math.max(0,request.getPage()==null?0:request.getPage());
+        int size=Math.max(1,Math.min(100,request.getSize()==null?10:request.getSize()));
+        Integer status=Integer.valueOf(-1).equals(request.getStatus())?null:request.getStatus();
+        if(status!=null && OrderStatusEnum.fromCode(status)==null)throw new BusinessException("订单状态无效");
+        String keyword=request.getKeyword()==null || request.getKeyword().isBlank()?null:request.getKeyword().trim();
+        if(keyword!=null && keyword.length()>100)throw new BusinessException("搜索词过长");
+        var pageable=PageRequest.of(page,size,Sort.by(Sort.Direction.DESC,"createDt").and(Sort.by(Sort.Direction.DESC,"listDiagnosisProjectId")));
+        return projectRepository.findPagedOrders(hospitalId,status,request.getStartDate(),request.getEndDate(),keyword,pageable).map(orderMapper::toResponse);
 
-        // 查询数据
-        List<ListDiagnosisProject> projects = projectRepository.findByInfoHospitalIdWithFilters(
-                hospitalId,
-                request.getStatus(),
-                request.getStartDate(),
-                request.getEndDate()
-        );
-
-        // 手动分页(由于使用自定义查询,不支持直接返回Page对象)
-        int start = (int) pageable.getOffset();
-        int end = Math.min((start + pageable.getPageSize()), projects.size());
-        List<ListDiagnosisProject> pagedProjects = projects.subList(start, end);
-
-        // 转换为DTO
-        List<OrderResponse> responses = orderMapper.toResponseList(pagedProjects);
-
-        // 构建Page对象(简化版)
-        return new org.springframework.data.domain.PageImpl<>(responses, pageable, projects.size());
     }
 
     /**
@@ -550,12 +600,17 @@ public class OrderServiceImpl implements OrderService {
             }
         }
 
+        var extensions=store.jdbc().queryForList("SELECT e.laboratory_id,l.name,e.user_coupon_id,e.review_reason FROM lin_order_extension e JOIN lin_laboratory l ON l.id=e.laboratory_id WHERE e.order_id=?",orderId);
+        if(!extensions.isEmpty()){var e=extensions.get(0);response.setLaboratoryId(((Number)e.get("laboratory_id")).intValue());response.setLaboratoryName((String)e.get("name"));response.setUserCouponId(e.get("user_coupon_id")==null?null:((Number)e.get("user_coupon_id")).longValue());response.setReviewReason((String)e.get("review_reason"));}
+        response.setCanResubmit(java.util.Objects.equals(project.getCreateSampleId(),getCurrentUserId()) && (Integer.valueOf(1).equals(project.getSampleStatus()) || Integer.valueOf(-2).equals(project.getSampleStatus())) && !Integer.valueOf(1).equals(project.getIsPayMoney()));
+        response.setReviewHistory(store.jdbc().queryForList("SELECT id,title,message,created_at AS createdAt FROM lin_notification_event WHERE user_id=? AND event_type='order' AND JSON_EXTRACT(template_data,'$.orderId')=? ORDER BY id DESC LIMIT 20",getCurrentUserId(),orderId));
+
         // 计算并设置总费用（汇总所有检测明细的TestPrice）
         BigDecimal totalFee = details.stream()
                 .map(DiagnosisDetail::getTestPrice)
                 .filter(java.util.Objects::nonNull)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
-        response.setTestFee(totalFee.doubleValue());
+        response.setTestFee(project.getTestFee() == null ? totalFee.doubleValue() : project.getTestFee());
 
         log.info("获取申请详情成功, 申请单ID: {}, 明细数量: {}, 总费用: {}", orderId, details.size(), totalFee);
         return response;

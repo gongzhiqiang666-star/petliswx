@@ -1,3 +1,4 @@
+@import "../../styles/petlis-3-overrides.wxss";
 /* pages/icon-export/icon-export.wxss */
 
 /* Header */
@@ -37,7 +38,7 @@
 .info-card {
   margin: 32rpx 24rpx;
   padding: 32rpx;
-  background: linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%);
+  background: linear-gradient(135deg, #0D6E6E 0%, #0A5A5A 100%);
   border-radius: 16rpx;
   display: flex;
   align-items: center;
@@ -115,7 +116,7 @@
 }
 
 .format-option.active {
-  background: linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%);
+  background: linear-gradient(135deg, #0D6E6E 0%, #0A5A5A 100%);
   color: #fff;
   border-color: transparent;
 }
@@ -171,7 +172,7 @@
 }
 
 .icon-card.selected {
-  border-color: #2563EB;
+  border-color: #0D6E6E;
   background: #eef2ff;
 }
 
@@ -188,7 +189,7 @@
 }
 
 .icon-preview.selected {
-  background: #DBEAFE;
+  background: #D5EAE4;
 }
 
 .tab-icon-img {
@@ -300,7 +301,7 @@
 
 .stats-count {
   font-size: 28rpx;
-  color: #2563EB;
+  color: #0D6E6E;
   font-weight: 600;
 }
 

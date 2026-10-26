@@ -14,12 +14,12 @@
 
   <!-- Search Bar -->
   <view class="search-bar">
-    <image src="/assets/icons/icon-search.png" class="search-icon" mode="aspectFit"></image>
-    <input class="search-input"
+    <image src="/assets/icons/brand-search.png" class="search-icon" mode="aspectFit"></image>
+    <input class="search-input petlis-input"
            placeholder="搜索检测项目"
            value="{{searchQuery}}"
            bindinput="onSearchInput" />
-    <image src="/assets/icons/clear.png"
+    <image src="/assets/icons/brand-close.png"
            class="clear-icon {{searchQuery ? 'show' : ''}}"
            mode="aspectFit"
            bindtap="onClearSearch"></image>
@@ -27,8 +27,8 @@
 
   <!-- Category Tabs -->
   <scroll-view class="category-scroll" scroll-x>
-    <view class="category-list">
-      <view class="category-item {{selectedCategory === item ? 'active' : ''}}"
+    <view class="category-list petlis-filters">
+      <view class="category-item petlis-filter-item {{selectedCategory === item ? 'active' : ''}}"
             wx:for="{{categories}}"
             wx:key="*this"
             bindtap="onCategoryChange"
@@ -40,14 +40,14 @@
 
   <!-- Test Items List -->
   <scroll-view class="test-list" scroll-y>
-    <view class="test-card {{selectedTests.includes(item.InfoTestTypeId) ? 'selected' : ''}}"
+    <view class="test-card petlis-list-card {{selectedTests.includes(item.InfoTestTypeId) ? 'selected' : ''}}"
           wx:for="{{filteredTests}}"
           wx:key="InfoTestTypeId"
           bindtap="onToggleTest"
           data-id="{{item.InfoTestTypeId}}">
       <view class="checkbox">
         <view class="checkbox-inner" wx:if="{{selectedTests.includes(item.InfoTestTypeId)}}">
-          <image src="/assets/icons/check-circle.png" class="check-icon" mode="aspectFit"></image>
+          <image src="/assets/icons/brand-check.png" class="check-icon" mode="aspectFit"></image>
         </view>
       </view>
 
@@ -65,14 +65,15 @@
         <text class="test-meta">{{item.category}} · {{item.duration}}</text>
         <text class="test-desc">{{item.description}}</text>
         <view class="warning-tag" wx:if="{{item.requiresChipAndBirthday}}">
-          ⚠️ 需要芯片号、出生日期和快递单号
+          <image class="warning-icon" src="/assets/icons/brand-empty.png" mode="aspectFit" aria-hidden="true"></image>
+          <text>需要芯片号、出生日期和快递单号</text>
         </view>
       </view>
     </view>
 
     <!-- Empty State -->
-    <view class="empty-state" wx:if="{{filteredTests.length === 0}}">
-      <image src="/assets/icons/error.png" class="empty-icon" mode="aspectFit"></image>
+    <view class="empty-state petlis-empty" wx:if="{{filteredTests.length === 0}}">
+      <image src="/assets/icons/brand-empty.png" class="empty-icon" mode="aspectFit"></image>
       <text class="empty-text">未找到相关检测项目</text>
       <text class="empty-hint">尝试使用其他关键词搜索</text>
     </view>
@@ -89,6 +90,6 @@
         <text class="final-price">¥{{calculateTotal()}}</text>
       </view>
     </view>
-    <button class="submit-btn" bindtap="onSubmit">提交预约</button>
+    <button class="submit-btn petlis-btn petlis-btn-primary" bindtap="onSubmit">提交预约</button>
   </view>
 </view>

@@ -1,2 +1,10 @@
-<!--pages/pdf-view/pdf-view.wxml-->
-<web-view src="{{pdfUrl}}"></web-view>
+<view class="pdf-page petlis-card">
+  <view class="pdf-content">
+    <image class="pdf-icon" src="/assets/icons/brand-file.png" mode="aspectFit" aria-hidden="true" />
+    <view class="pdf-description">报告通过当前医生账号验证后下载，支持预览和保存。</view>
+    <view wx:if="{{error}}" class="pdf-error">{{error}}</view>
+  </view>
+  <view class="bottom-actions">
+    <button class="pdf-open petlis-btn petlis-btn-primary" bindtap="open" loading="{{busy}}" disabled="{{busy}}">{{busy ? '报告加载中' : '打开报告'}}</button>
+  </view>
+</view>

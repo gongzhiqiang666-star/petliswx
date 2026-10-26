@@ -3,7 +3,7 @@
 <view class="pet-add-page">
   <!-- 柔和头部 -->
   <view class="page-header">
-    <view class="header-icon">🐾</view>
+    <image class="header-icon" src="/assets/icons/brand-archive.png" mode="aspectFit" aria-hidden="true" />
     <text class="page-title">宠物档案</text>
     <text class="page-desc">创建爱宠的专属档案</text>
   </view>
@@ -11,13 +11,13 @@
   <!-- 表单内容 -->
   <scroll-view class="form-scroll" scroll-y enhanced show-scrollbar="{{false}}">
     <!-- 软卡片组 -->
-    <view class="soft-card">
+    <view class="soft-card petlis-card">
       <view class="card-label">基本信息</view>
 
       <view class="input-group">
         <text class="input-label">宠物中文名</text>
         <input
-          class="soft-input"
+          class="soft-input petlis-input"
           placeholder="例如：旺旺"
           value="{{formData.animalName}}"
           bindinput="onInputChange"
@@ -28,7 +28,7 @@
       <view class="input-group">
         <text class="input-label">英文名</text>
         <input
-          class="soft-input"
+          class="soft-input petlis-input"
           placeholder="例如：Wangwang"
           value="{{formData.animalNameEn}}"
           bindinput="onInputChange"
@@ -38,45 +38,37 @@
 
       <view class="input-group">
         <text class="input-label">物种</text>
-        <view class="soft-selector" bindtap="showSpeciesSelector">
+        <view class="soft-selector petlis-input" bindtap="showSpeciesSelector">
           <text class="selector-value {{selectedAnimalName ? '' : 'placeholder'}}">
             {{selectedAnimalName || '选择物种'}}
           </text>
-          <text class="chevron">›</text>
+          <image class="chevron" src="/assets/icons/brand-chevron-right.png" mode="aspectFit" aria-hidden="true" />
         </view>
       </view>
 
       <view class="input-group">
         <text class="input-label">品种</text>
-        <view class="soft-selector" bindtap="onSelectBreed">
+        <view class="soft-selector petlis-input" bindtap="onSelectBreed">
           <text class="selector-value {{selectedBreed ? '' : 'placeholder'}}">
             {{selectedBreed ? selectedBreed.varietyCn : '选择品种'}}
           </text>
-          <text class="chevron">›</text>
+          <image class="chevron" src="/assets/icons/brand-chevron-right.png" mode="aspectFit" aria-hidden="true" />
         </view>
       </view>
     </view>
 
     <!-- 特征卡片 -->
-    <view class="soft-card">
+    <view class="soft-card petlis-card">
       <view class="card-label">特征信息</view>
 
       <view class="input-group">
         <text class="input-label">性别</text>
-        <view class="soft-tabs">
-          <view
-            class="soft-tab {{formData.dictSexId === 1 ? 'tab-active' : ''}}"
-            bindtap="onGenderChange"
-            data-id="1"
-          >
-            <text class="tab-text">♂ 公</text>
+        <view class="soft-tabs petlis-filters" role="radiogroup" aria-label="选择性别">
+          <view class="soft-tab petlis-filter-item {{formData.dictSexId === 1 ? 'tab-active active' : ''}}" bindtap="onGenderChange" data-id="1" role="radio" aria-checked="{{formData.dictSexId === 1}}">
+            <text class="tab-text">公</text>
           </view>
-          <view
-            class="soft-tab {{formData.dictSexId === 2 ? 'tab-active' : ''}}"
-            bindtap="onGenderChange"
-            data-id="2"
-          >
-            <text class="tab-text">♀ 母</text>
+          <view class="soft-tab petlis-filter-item {{formData.dictSexId === 2 ? 'tab-active active' : ''}}" bindtap="onGenderChange" data-id="2" role="radio" aria-checked="{{formData.dictSexId === 2}}">
+            <text class="tab-text">母</text>
           </view>
         </view>
       </view>
@@ -84,11 +76,11 @@
       <view class="input-group">
         <text class="input-label">出生日期</text>
         <picker mode="date" value="{{formData.birthday}}" bindchange="onBirthdayChange">
-          <view class="soft-selector">
+          <view class="soft-selector petlis-input">
             <text class="selector-value {{formData.birthday ? '' : 'placeholder'}}">
               {{formData.birthday || '选择日期'}}
             </text>
-            <text class="chevron">›</text>
+            <image class="chevron" src="/assets/icons/brand-calendar.png" mode="aspectFit" aria-hidden="true" />
           </view>
         </picker>
       </view>
@@ -96,7 +88,7 @@
       <view class="input-group">
         <text class="input-label">年龄</text>
         <input
-          class="soft-input input-disabled"
+          class="soft-input petlis-input input-disabled"
           placeholder="自动计算"
           value="{{formData.age}}"
           disabled
@@ -106,7 +98,7 @@
       <view class="input-group">
         <text class="input-label">芯片号</text>
         <input
-          class="soft-input"
+          class="soft-input petlis-input"
           placeholder="选填"
           value="{{formData.chipNo}}"
           bindinput="onInputChange"
@@ -116,13 +108,13 @@
     </view>
 
     <!-- 主人卡片 -->
-    <view class="soft-card">
+    <view class="soft-card petlis-card">
       <view class="card-label">主人信息</view>
 
       <view class="input-group">
         <text class="input-label">姓名</text>
         <input
-          class="soft-input"
+          class="soft-input petlis-input"
           placeholder="请输入姓名"
           value="{{formData.ownerName}}"
           bindinput="onInputChange"
@@ -133,7 +125,7 @@
       <view class="input-group">
         <text class="input-label">拼音</text>
         <input
-          class="soft-input input-disabled"
+          class="soft-input petlis-input input-disabled"
           placeholder="自动生成"
           value="{{formData.ownerNameEn}}"
           disabled
@@ -147,10 +139,10 @@
 
   <!-- 底部按钮 -->
   <view class="bottom-bar">
-    <button class="bar-btn btn-secondary" bindtap="onBack">
+    <button class="bar-btn petlis-btn petlis-btn-outline btn-secondary" bindtap="onBack">
       <text class="btn-text">取消</text>
     </button>
-    <button class="bar-btn btn-primary {{isSubmitting ? 'btn-loading' : ''}}" bindtap="onSave">
+    <button class="bar-btn petlis-btn petlis-btn-primary btn-primary {{isSubmitting ? 'btn-loading' : ''}}" bindtap="onSave">
       <text class="btn-text">{{isSubmitting ? '保存中...' : '保存档案'}}</text>
     </button>
   </view>
@@ -168,5 +160,21 @@
     emptyText="暂无物种数据"
     bindselect="onSpeciesSelect"
     bindclose="hideSpeciesSelector"
+  />
+  <popup-selector
+    visible="{{showBreedSelector}}"
+    title="选择品种"
+    items="{{breedList}}"
+    selectedId="{{formData.infoVarietyId}}"
+    itemIdKey="iid"
+    itemNameKey="varietyCn"
+    itemNameEnKey="varietyEn"
+    searchPlaceholder="搜索品种（中文或英文）"
+    emptyText="暂无品种数据"
+    loading="{{breedLoading}}"
+    errorMessage="{{breedError}}"
+    bindselect="onBreedSelect"
+    bindclose="hideBreedSelector"
+    bindretry="onRetryBreed"
   />
 </view>

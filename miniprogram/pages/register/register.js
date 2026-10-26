@@ -1,0 +1,15 @@
+const request=require('../../utils/request')
+Page({
+ data:{username:'',password:'',confirmPassword:'',nickname:'',title:'',mobile:'',code:'',hospitals:[],hospital:null,search:'',files:[],busy:false,error:'',sent:false,submitted:false,countdown:0,smsConfigured:false},
+ onLoad(){this.searchHospitals();request.get('/auth/capabilities',{},false).then(r=>this.setData({smsConfigured:r.smsConfigured})).catch(()=>{})},
+ onUnload(){clearInterval(this.timer)},
+ field(e){this.setData({[e.currentTarget.dataset.field]:e.detail.value,error:''})},
+ async searchHospitals(){this.setData({error:''});try{this.setData({hospitals:await request.get('/auth/hospitals',{q:this.data.search},false)})}catch(e){this.setData({error:e.message})}},
+ hospital(e){this.setData({hospital:this.data.hospitals[Number(e.detail.value)]})},
+ async sms(){if(this.data.countdown || this.data.busy)return;if(!/^1[0-9]{10}$/.test(this.data.mobile)){this.setData({error:'请填写有效手机号'});return}this.setData({busy:true,error:''});try{await request.post('/auth/sms/send',{mobile:this.data.mobile,scene:'register'},false);this.setData({sent:true,countdown:60});this.timer=setInterval(()=>{const n=this.data.countdown-1;this.setData({countdown:n});if(n<=0)clearInterval(this.timer)},1000)}catch(e){this.setData({error:e.message})}finally{this.setData({busy:false})}},
+ async upload(){if(this.data.busy || this.data.files.length>=5)return;this.setData({error:''});try{const chosen=await wx.chooseMessageFile({count:5-this.data.files.length,type:'file',extension:['pdf','png','jpg','jpeg']});this.setData({busy:true});for(const file of chosen.tempFiles){if(file.size>2*1024*1024)throw new Error('每份资质需小于2MB');const result=await request.uploadFile('/auth/qualifications',file.path);this.setData({files:this.data.files.concat({name:file.name,url:result.url})})}}catch(e){if(!String(e.errMsg || '').includes('cancel'))this.setData({error:e.message || '资质上传失败，请重试'})}finally{this.setData({busy:false})}},
+ remove(e){this.setData({files:this.data.files.filter((_,i)=>i!==Number(e.currentTarget.dataset.index))})},
+ async submit(){if(this.data.busy)return;const d=this.data;let error='';if(!/^[A-Za-z0-9_]{4,32}$/.test(d.username))error='用户名需4–32位字母、数字或下划线';else if(!d.nickname.trim() || !d.title.trim() || !d.hospital)error='请填写姓名、职称并选择医院';else if(d.password.length<8 || !/[A-Za-z]/.test(d.password) || !/[0-9]/.test(d.password))error='密码需至少8位，包含字母和数字';else if(d.password!==d.confirmPassword)error='两次密码不一致';else if(!/^1[0-9]{10}$/.test(d.mobile) || !/^[0-9]{6}$/.test(d.code))error='请填写手机号和6位验证码';else if(!d.files.length)error='请上传至少一份医生资质';if(error){this.setData({error});return}
+ this.setData({busy:true,error:''});try{await request.post('/auth/register',{username:d.username,password:d.password,mobile:d.mobile,code:d.code,hospitalId:d.hospital.hospitalId,nickname:d.nickname.trim(),title:d.title.trim(),qualificationFiles:d.files.map(x=>x.url)},false);this.setData({submitted:true,password:'',confirmPassword:'',code:''})}catch(e){this.setData({error:e.message})}finally{this.setData({busy:false})}},
+ login(){wx.reLaunch({url:'/pages/login/login'})}
+})

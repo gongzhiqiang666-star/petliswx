@@ -1,6 +1,8 @@
 // app.js
 const api = require('./api/index.js')
 const config = require('./config/config.js')
+const {installUpdates} = require('./utils/updates')
+const diagnostics = require('./utils/diagnostics')
 
 App({
   globalData: {
@@ -33,11 +35,15 @@ App({
     DEBUG: true  // 开发版和体验版开启日志，正式版关闭
   },
 
+  onError(error){diagnostics.capture('error',error)},
+  onUnhandledRejection(event){diagnostics.capture('rejection',event && event.reason)},
+
   // 登录重试计数器
   loginRetryCount: 0,
   maxLoginRetry: 3,
 
   onLaunch() {
+    installUpdates()
     // 根据小程序版本自动设置DEBUG模式
     const accountInfo = wx.getAccountInfoSync()
     const envVersion = accountInfo.miniProgram.envVersion // develop, trial, release
@@ -107,7 +113,8 @@ App({
       }
 
       // 获取最新的用户信息
-      this.refreshUserInfo()
+      if (userInfo && userInfo.reviewer) wx.reLaunch({url: '/pages/review/review'})
+      else this.refreshUserInfo()
     } else {
       // 未登录，执行登录
       this.login()
@@ -118,102 +125,21 @@ App({
    * 微信登录
    */
   async login() {
-    // 检查重试次数，避免无限重试
-    if (this.loginRetryCount >= this.maxLoginRetry) {
-      this.logError('Login', '登录重试次数已达上限')
-      // 不再显示 toast，避免阻塞
-      this.logWarn('Login', '登录失败，但允许继续使用应用')
-      return
+    const pages = getCurrentPages()
+    if (!pages.length || pages[pages.length - 1].route !== 'pages/login/login') {
+      wx.reLaunch({url: '/pages/login/login'})
     }
+  },
 
-    try {
-      // 优化：移除 mask: true，避免阻塞UI渲染
-      wx.showLoading({
-        title: '登录中...',
-        mask: false  // 改为 false，允许用户操作
-      })
-
-      // 1. 获取微信code
-      const res = await wx.login()
-      const code = res.code
-
-      if (!code) {
-        throw new Error('获取微信code失败')
-      }
-
-
-      // 2. 调用后端登录接口
-      const result = await api.auth.wechatLogin(code)
-
-
-      // 3. 保存token和用户信息
-      wx.setStorageSync(config.storageKeys.TOKEN, result.token)
-      wx.setStorageSync(config.storageKeys.USER_INFO, result)
-      wx.setStorageSync(config.storageKeys.HOSPITAL_ID, result.hospitalId)
-
-      this.globalData.token = result.token
-      this.globalData.userInfo = result
-      this.globalData.hospitalId = result.hospitalId
-
-      // 保存城市ID（从医院信息中获取）- 必须字段
-      if (result.hospital && result.hospital.cityId) {
-        this.globalData.cityId = result.hospital.cityId
-        this.log('Login', '城市ID已设置', this.globalData.cityId)
-      } else {
-        // cityId 为空，记录警告
-        this.logError('Login', '城市ID未维护，请联系管理员')
-        wx.showModal({
-          title: '账号信息不完整',
-          content: '您的账号城市信息未维护，无法提交检测申请，请联系管理员',
-          showCancel: false,
-          confirmText: '我知道了'
-        })
-      }
-
-      // 登录成功，重置重试计数
-      this.loginRetryCount = 0
-
-      wx.hideLoading()
-      wx.showToast({
-        title: '登录成功',
-        icon: 'success',
-        duration: 1500
-      })
-    } catch (err) {
-      this.logError('Login', '登录失败', err)
-      wx.hideLoading()  // 确保隐藏 loading
-
-      // 增加重试计数
-      this.loginRetryCount++
-
-      // 判断错误类型
-      let errorMessage = '登录失败，请重试'
-      if (err.message) {
-        errorMessage = err.message
-      } else if (err.errMsg && err.errMsg.includes('url not in domain list')) {
-        errorMessage = '请在开发工具中关闭域名校验'
-      } else if (err.errMsg && err.errMsg.includes('fail')) {
-        errorMessage = '后端服务未启动，请先启动后端服务'
-      } else if (err.errMsg) {
-        errorMessage = '网络错误，请检查网络连接'
-      }
-
-      this.logWarn('Login', `${errorMessage} (${this.loginRetryCount}/${this.maxLoginRetry})`)
-
-      // 如果还有重试机会，2秒后重试
-      if (this.loginRetryCount < this.maxLoginRetry) {
-        setTimeout(() => {
-          this.login()
-        }, 2000)
-      } else {
-        // 最后一次失败后，显示简短提示但不阻塞
-        wx.showToast({
-          title: '登录失败',
-          icon: 'none',
-          duration: 1500
-        })
-      }
-    }
+  acceptSession(result,remember=true) {
+    this.globalData.rememberSession=remember
+    if(remember){wx.setStorageSync(config.storageKeys.TOKEN,result.token);wx.setStorageSync(config.storageKeys.USER_INFO,result);wx.setStorageSync(config.storageKeys.HOSPITAL_ID,result.hospitalId || '')}else{wx.removeStorageSync(config.storageKeys.TOKEN);wx.removeStorageSync(config.storageKeys.USER_INFO);wx.removeStorageSync(config.storageKeys.HOSPITAL_ID)}
+    this.globalData.token = result.token
+    this.globalData.userInfo = result
+    this.globalData.hospitalId = result.hospitalId || null
+    this.globalData.cityId = result.hospital ? result.hospital.cityId : null
+    if (result.reviewer) wx.reLaunch({url: '/pages/review/review'})
+    else wx.switchTab({url: '/pages/home/home'})
   },
 
   /**
@@ -224,7 +150,7 @@ App({
       const userInfo = await api.user.getProfile()
 
       this.globalData.userInfo = userInfo
-      wx.setStorageSync(config.storageKeys.USER_INFO, userInfo)
+      if(this.globalData.rememberSession!==false)wx.setStorageSync(config.storageKeys.USER_INFO,userInfo)
 
       // 更新城市ID（必须字段）
       if (userInfo.hospital && userInfo.hospital.cityId) {
@@ -243,29 +169,18 @@ App({
   /**
    * 退出登录
    */
-  logout() {
-
-    // 清除本地存储
+  clearSession(){
     wx.removeStorageSync(config.storageKeys.TOKEN)
     wx.removeStorageSync(config.storageKeys.USER_INFO)
     wx.removeStorageSync(config.storageKeys.HOSPITAL_ID)
-
-    // 清空全局数据
-    this.globalData.token = null
-    this.globalData.userInfo = null
-    this.globalData.hospitalId = null
-
-    // 提示用户
-    wx.showToast({
-      title: '已退出登录',
-      icon: 'none'
-    })
-
-    // 重新登录
-    setTimeout(() => {
-      this.loginRetryCount = 0 // 重置重试计数
-      this.login()
-    }, 1500)
+    wx.removeStorageSync('order_form')
+    this.globalData.token=null;this.globalData.userInfo=null;this.globalData.hospitalId=null;this.globalData.cityId=null
+    this.clearCachedOrderForm()
+    wx.reLaunch({url:'/pages/login/login'})
+  },
+  async logout() {
+    try { await require('./utils/request').post('/auth/logout', {}) } catch (e) { this.logWarn('Logout', '服务端会话撤销失败，已清除本地登录') }
+    this.clearSession()
   },
 
   /**

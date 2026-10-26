@@ -34,6 +34,11 @@ public class Result<T> implements Serializable {
      */
     private T data;
 
+    public static <T> Result<T> fromException(Exception error) {
+        if (error instanceof com.petlis.common.exception.BusinessException business) return Result.fail(business.getCode(), business.getMessage());
+        return Result.fail(500, "操作失败，请稍后重试");
+    }
+
     public Result() {
     }
 

@@ -14,34 +14,45 @@
 
 .picker-item {
   display: flex;
+  flex: 1;
   flex-direction: row;
   align-items: center;
-  flex: 1;
+  height: 88rpx;
+  padding: 0 20rpx;
+  box-sizing: border-box;
+  border: 1rpx solid #E5E5E5;
+  border-radius: 16rpx;
+  background: #F8F8F8;
 }
 
 .picker-item:first-child {
   margin-right: 24rpx;
 }
 
+.picker-item picker {
+  flex: 1;
+  min-width: 0;
+}
+
 .picker-label {
-  font-size: 28rpx;
-  color: #333;
-  margin-right: 16rpx;
+  flex-shrink: 0;
+  margin-right: 12rpx;
+  color: #666666;
+  font-size: 26rpx;
   white-space: nowrap;
 }
 
 .picker-value {
-  flex: 1;
-  font-size: 28rpx;
-  color: #666;
-  padding: 20rpx 24rpx;
-  background: #f5f5f5;
-  border-radius: 8rpx;
-  text-align: center;
   display: flex;
+  position: relative;
+  height: 86rpx;
   align-items: center;
   justify-content: center;
-  position: relative;
+  box-sizing: border-box;
+  background: transparent;
+  color: #1A1A1A;
+  font-size: 28rpx;
+  text-align: center;
 }
 
 .picker-clickable {
@@ -70,8 +81,8 @@
 }
 
 .picker-arrow {
-  font-size: 20rpx;
-  color: #999;
+  flex-shrink: 0;
+  width: 24rpx;
+  height: 24rpx;
   margin-left: 8rpx;
-  transform: scale(0.8);
 }
