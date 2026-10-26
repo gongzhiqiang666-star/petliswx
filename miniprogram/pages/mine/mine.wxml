@@ -1,6 +1,6 @@
 <view class="mine-page" role="main" aria-label="我的">
   <view class="mine-hero">
-    <image class="hero-bg" src="/assets/brand/pet-cat.webp" mode="aspectFill" aria-hidden="true" />
+    <image class="hero-bg" src="/assets/brand/pet-cat.jpg" mode="aspectFill" aria-hidden="true" />
     <view class="mine-eyebrow">纳博科临 · LABOKLIN</view>
     <view class="profile-row" role="region" aria-label="用户信息">
       <image class="user-avatar" src="{{userInfo.avatarUrl || '/assets/icons/brand-mine.png'}}" mode="aspectFill" />

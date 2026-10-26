@@ -1,5 +1,5 @@
 <view class="login-page">
-  <image class="hero-bg" src="/assets/brand/pet-dog-face.webp" mode="aspectFill" aria-hidden="true" />
+  <image class="hero-bg" src="/assets/brand/pet-dog-face.jpg" mode="aspectFill" aria-hidden="true" />
   <view class="hero">
     <view class="hero-wordmark">纳博科临</view>
     <view class="hero-latin">LABOKLIN</view>
