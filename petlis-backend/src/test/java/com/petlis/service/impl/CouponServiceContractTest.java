@@ -46,9 +46,11 @@ class CouponServiceContractTest {
 
     @Test void orderSnapshotUsesContractSettlementInsteadOfMutableHospitalFlag() {
         CouponService.Quote quote = new CouponService.Quote(2, Map.of(91, new BigDecimal("85.00")), new BigDecimal("85.00"),
-                BigDecimal.ZERO, new BigDecimal("85.00"), null, 11L, true, Map.of());
+                BigDecimal.ZERO, new BigDecimal("85.00"), null, 11L, true, Map.of(91, 101L));
         service.recordOrder(8, quote, false);
         verify(jdbc).update(contains("lin_order_extension"), eq(8), eq(5), eq(2), isNull(), eq(new BigDecimal("85.00")),
                 eq(BigDecimal.ZERO), eq(new BigDecimal("85.00")), eq("monthly"));
+        verify(jdbc).update(contains("lin_order_pricing_snapshot"), eq(8), eq(11L), eq(7), eq(2), eq("monthly"),
+                eq(new BigDecimal("85.00")), eq(BigDecimal.ZERO), eq(new BigDecimal("85.00")), any());
     }
 }

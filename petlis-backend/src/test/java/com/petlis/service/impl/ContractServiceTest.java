@@ -23,6 +23,7 @@ class ContractServiceTest {
         store = mock(FeatureStore.class);
         jdbc = mock(JdbcTemplate.class);
         when(store.jdbc()).thenReturn(jdbc);
+        lenient().when(store.one(contains("lin_lab_test"), any(), any())).thenReturn(Map.of("test_type_id", 91));
         service = new ContractService(store, mock(AccessService.class), mock(AuditService.class));
     }
 
@@ -59,7 +60,7 @@ class ContractServiceTest {
 
     @Test void concurrentCreditReservationLocksContractAndRejectsOverflow() {
         when(store.one(contains("lin_contract"), eq(8))).thenReturn(Map.of("id", 11L, "credit_amount", new BigDecimal("100.00")));
-        when(jdbc.queryForObject(contains("COALESCE(SUM(e.payable_amount),0)"), eq(BigDecimal.class), eq(11L), eq(8)))
+        when(jdbc.queryForObject(contains("COALESCE(SUM(s.payable_amount),0)"), eq(BigDecimal.class), eq(11L), eq(8)))
                 .thenReturn(new BigDecimal("60.00"));
         assertThrows(BusinessException.class, () -> service.reserveCredit(8, new BigDecimal("40.01")));
         verify(store).one(contains("FOR UPDATE"), eq(8));
@@ -67,7 +68,7 @@ class ContractServiceTest {
 
     @Test void creditBoundaryAllowsExactRemainingAmount() {
         when(store.one(contains("lin_contract"), eq(8))).thenReturn(Map.of("id", 11L, "credit_amount", new BigDecimal("100.00")));
-        when(jdbc.queryForObject(contains("COALESCE(SUM(e.payable_amount),0)"), eq(BigDecimal.class), eq(11L), eq(8)))
+        when(jdbc.queryForObject(contains("COALESCE(SUM(s.payable_amount),0)"), eq(BigDecimal.class), eq(11L), eq(8)))
                 .thenReturn(new BigDecimal("60.00"));
         assertDoesNotThrow(() -> service.reserveCredit(8, new BigDecimal("40.00")));
     }

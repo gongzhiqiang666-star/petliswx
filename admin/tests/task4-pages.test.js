@@ -37,6 +37,15 @@ test('签约运营系统页全部调用统一后端真实接口', async () => {
   }
 });
 
+test('优惠券编辑加载并展示真实库存而不使用默认数量覆盖', async () => {
+  const page = await source('components/coupons.js');
+  assert.ok(page.includes('data-total-quantity'));
+  assert.ok(page.includes('data-issued-quantity'));
+  assert.ok(page.includes('current.totalQuantity'));
+  assert.ok(page.includes('current.issuedQuantity'));
+  assert.ok(page.includes('已发 / 总量'));
+});
+
 test('订单与报告提供真实鉴权打印入口且没有待接入', async () => {
   const orders = await source('pages/orders.js');
   const reports = await source('pages/reports.js');

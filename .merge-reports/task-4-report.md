@@ -31,6 +31,21 @@
 - `cd integration && python3 -m unittest discover -s tests -v`：**9/9 通过**；`python3 -m py_compile schema_guard.py` 通过。
 - `git diff --check` 通过；旧迁移与平台 DDL 无差异。
 
+## 审查 2 修复（2 Critical + 5 Important）
+
+- 每项先新增反例并观察失败：当前/未来账期、生成后补单、已确认账单调整、快照缺失、越权重放、无请求体发券、未逾期/空账单提醒、目录停用和 admin 默认库存均先 RED 后 GREEN。
+- 月账单禁止未结束账期；未对账账单锁内重算，已确认/已结算账单对补录订单追加审计调整并重新对账，不再静默漏单。逾期提醒要求真实到期且未结清，空账单返回明确业务错误。
+- 新增独立工作流快照表 `lin_order_pricing_snapshot`（仅追加 CREATE TABLE，未执行 DDL），订单创建/重提保存 contractId、合同项目价 ID、结算和项目价格 JSON。信用占用与账项均读订单快照，不随合同医院、实验室、结算或价格修改而重算历史。
+- 退款先校验订单归属再读幂等/状态；无请求体旧发券兼容入口已移除，统一要求 requestKey、库存和审计。签约核价及协议价保存都校验实验室目录和项目 active。
+- admin 券列表和编辑表单读取、展示真实 totalQuantity/issuedQuantity，不再默认以 1 覆盖库存。
+
+## 审查 2 最终验证
+
+- `cd petlis-backend && mvn test`：**285 tests，0 failures，0 errors，5 skipped，BUILD SUCCESS**。
+- `cd admin && npm test`：**83 tests，83 pass，0 fail**。
+- `cd integration && python3 -m unittest discover -s tests -v`：**9/9 通过**；`python3 -m py_compile schema_guard.py` 通过。
+- `git diff --check` 通过；旧迁移和旧表未改，平台 DDL 仅新增订单定价快照表及对应 schema 白名单守护。
+
 ## 注意事项
 
 - 本阶段使用 JDBC mock、MockMvc 与管理端 Node 契约测试，没有执行真实 MySQL 全链路 HTTP、浏览器 Playwright 或微信开发者工具；这些属于 Task 6。

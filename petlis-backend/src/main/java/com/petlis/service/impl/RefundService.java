@@ -25,6 +25,8 @@ public class RefundService {
     @Transactional
     public Map<String, Object> refund(int orderId, String reason, String requestKey) {
         if (reason == null || reason.isBlank() || reason.length() > 500 || requestKey == null || !requestKey.matches("[A-Za-z0-9_-]{8,100}")) throw new BusinessException("退款原因或请求编号无效");
+        Map<String, Object> ownership = store.one("SELECT o.ListDiagnosisProjectId AS order_id,o.InfoHospitalId AS hospital_id,e.laboratory_id,1 AS ownership FROM lin_lb_listdiagnosisproject o LEFT JOIN lin_order_extension e ON e.order_id=o.ListDiagnosisProjectId WHERE o.ListDiagnosisProjectId=?", orderId);
+        authorize(ownership);
         var existing = store.jdbc().queryForList("SELECT id,resource_id,action,after_json FROM lin_audit_record WHERE resource_type='MOCK_REFUND' AND resource_id=? ORDER BY id DESC", String.valueOf(orderId));
         if (!existing.isEmpty()) return Map.of("orderId", orderId, "status", "REFUNDED", "mock", true, "auditId", ((Number) existing.get(0).get("id")).longValue());
         if (!Boolean.TRUE.equals(config.getMockEnabled())) throw new BusinessException("真实支付退款已禁用，仅允许 mock 退款");

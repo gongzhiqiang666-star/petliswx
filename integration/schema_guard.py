@@ -12,7 +12,7 @@ PLATFORM_TABLES = {
     "lin_report_workflow", "lin_report_template", "lin_order_clinical",
     "lin_order_idempotency", "lin_contract", "lin_contract_item_price",
     "lin_monthly_bill", "lin_monthly_bill_item", "lin_file",
-    "lin_audit_record", "lin_operational_config",
+    "lin_audit_record", "lin_operational_config", "lin_order_pricing_snapshot",
 }
 
 

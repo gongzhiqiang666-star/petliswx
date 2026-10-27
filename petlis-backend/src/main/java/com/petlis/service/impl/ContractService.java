@@ -78,6 +78,7 @@ public class ContractService {
                 || command.effectiveFrom() == null || command.effectiveTo() != null && !command.effectiveTo().isAfter(command.effectiveFrom())
                 || !Set.of("ACTIVE", "INACTIVE").contains(command.status())) throw new BusinessException("项目协议价无效");
         Map<String, Object> contract = store.one("SELECT laboratory_id FROM lin_contract WHERE id=?", contractId);
+        store.one("SELECT lt.test_type_id FROM lin_lab_test lt JOIN lin_lb_infotesttype t ON t.InfoTestTypeId=lt.test_type_id WHERE lt.laboratory_id=? AND lt.test_type_id=? AND lt.active=1 AND t.IsActive=1", contract.get("laboratory_id"), command.infoTestTypeId());
         long id = store.insert("INSERT INTO lin_contract_item_price(contract_id,laboratory_id,info_test_type_id,list_price,discount_rate,agreed_price,effective_from,effective_to,status,created_by) VALUES(?,?,?,?,?,?,?,?,?,?)",
                 contractId, contract.get("laboratory_id"), command.infoTestTypeId(), command.listPrice(), command.discountRate(), command.agreedPrice(),
                 command.effectiveFrom(), command.effectiveTo(), command.status(), access.current().userId());
@@ -92,6 +93,7 @@ public class ContractService {
         long contractId = ((Number) contracts.get(0).get("id")).longValue();
         Map<Integer, ItemPrice> result = new LinkedHashMap<>();
         for (int testTypeId : testTypeIds) {
+            store.one("SELECT lt.test_type_id FROM lin_lab_test lt JOIN lin_lb_infotesttype t ON t.InfoTestTypeId=lt.test_type_id WHERE lt.laboratory_id=? AND lt.test_type_id=? AND lt.active=1 AND t.IsActive=1", laboratoryId, testTypeId);
             var rows = store.jdbc().queryForList("SELECT id,list_price,discount_rate,agreed_price FROM lin_contract_item_price WHERE contract_id=? AND laboratory_id=? AND info_test_type_id=? AND status='ACTIVE' AND effective_from<=CURDATE() AND (effective_to IS NULL OR effective_to>=CURDATE()) ORDER BY id DESC LIMIT 2", contractId, laboratoryId, testTypeId);
             if (rows.size() != 1) throw new BusinessException(rows.isEmpty() ? "签约缺少检测项目协议价" : "检测项目存在重叠协议价");
             Map<String, Object> row = rows.get(0);
@@ -106,14 +108,14 @@ public class ContractService {
 
     @Transactional
     public void reserveCredit(int orderId, BigDecimal additionalAmount) {
-        Map<String, Object> contract = store.one("SELECT c.id,c.credit_amount FROM lin_contract c JOIN lin_order_extension e ON e.laboratory_id=c.laboratory_id JOIN lin_lb_listdiagnosisproject o ON o.ListDiagnosisProjectId=e.order_id AND o.InfoHospitalId=c.hospital_id WHERE e.order_id=? AND c.settlement_type='MONTHLY' AND c.status='ACTIVE' FOR UPDATE", orderId);
+        Map<String, Object> contract = store.one("SELECT c.id,c.credit_amount FROM lin_order_pricing_snapshot s JOIN lin_contract c ON c.id=s.contract_id WHERE s.order_id=? AND s.settlement_type='MONTHLY' FOR UPDATE", orderId);
         long contractId = ((Number) contract.get("id")).longValue();
         BigDecimal used = usedCredit(contractId, orderId);
         if (used.add(additionalAmount).compareTo(decimal(contract.get("credit_amount"))) > 0) throw new BusinessException("医院月结信用额度不足");
     }
 
     private BigDecimal usedCredit(long contractId, int excludedOrderId) {
-        BigDecimal value = store.jdbc().queryForObject("SELECT COALESCE(SUM(e.payable_amount),0) FROM lin_order_extension e JOIN lin_lb_listdiagnosisproject o ON o.ListDiagnosisProjectId=e.order_id JOIN lin_contract c ON c.hospital_id=o.InfoHospitalId AND c.laboratory_id=e.laboratory_id WHERE c.id=? AND e.settlement_mode='monthly' AND o.ListDiagnosisProjectId<>? AND o.SampleStatus IN (2,3) AND NOT EXISTS(SELECT 1 FROM lin_monthly_bill_item i JOIN lin_monthly_bill b ON b.id=i.bill_id WHERE i.order_id=o.ListDiagnosisProjectId AND b.status='SETTLED')", BigDecimal.class, contractId, excludedOrderId);
+        BigDecimal value = store.jdbc().queryForObject("SELECT COALESCE(SUM(s.payable_amount),0) FROM lin_order_pricing_snapshot s JOIN lin_lb_listdiagnosisproject o ON o.ListDiagnosisProjectId=s.order_id WHERE s.contract_id=? AND s.settlement_type='monthly' AND s.order_id<>? AND o.SampleStatus IN (2,3) AND NOT EXISTS(SELECT 1 FROM lin_monthly_bill_item i JOIN lin_monthly_bill b ON b.id=i.bill_id WHERE i.order_id=s.order_id AND b.status='SETTLED')", BigDecimal.class, contractId, excludedOrderId);
         return value == null ? BigDecimal.ZERO : value;
     }
 

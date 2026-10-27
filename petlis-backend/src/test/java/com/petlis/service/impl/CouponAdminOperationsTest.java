@@ -76,6 +76,12 @@ class CouponAdminOperationsTest {
         verify(jdbc).update(contains("coupon-stock:9"), eq("{\"total\":3,\"issued\":2}"), eq(5));
     }
 
+    @Test void templateListIncludesTotalAndIssuedStockQuantities() {
+        service.templates(0, 20);
+        verify(store).page(contains("lin_coupon"), contains("totalQuantity"), eq(0), eq(20), any(Object[].class));
+        verify(store).page(contains("lin_coupon"), contains("issuedQuantity"), eq(0), eq(20), any(Object[].class));
+    }
+
     @Test void templateCrudRetainsOldCouponMasterAndAudits() {
         CouponService.Coupon coupon = new CouponService.Coupon("复查券", new BigDecimal("10.00"), BigDecimal.ZERO, null,
                 LocalDateTime.now(), LocalDateTime.now().plusDays(1));

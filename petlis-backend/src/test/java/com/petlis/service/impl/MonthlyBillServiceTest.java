@@ -38,7 +38,7 @@ class MonthlyBillServiceTest {
     @Test void generationUsesOrderSnapshotsWithoutCrossHospitalItems() {
         when(store.one(contains("FOR UPDATE"), eq(7), eq(2))).thenReturn(Map.of("id", 11L, "billing_cycle_days", 30));
         when(jdbc.queryForList(contains("FROM lin_monthly_bill WHERE contract_id"), any(Object[].class))).thenReturn(List.of());
-        when(jdbc.queryForList(contains("e.settlement_mode='monthly'"), eq(7), eq(2), any(), any())).thenReturn(List.of(Map.of(
+        when(jdbc.queryForList(contains("SELECT s.order_id,s.original_amount"), any(Object[].class))).thenReturn(List.of(Map.of(
                 "order_id", 8, "payable_amount", new BigDecimal("90.00"), "original_amount", new BigDecimal("100.00"))));
         when(jdbc.queryForList(contains("lin_lb_diagnosisdetail d"), eq(8))).thenReturn(List.of(
                 Map.of("detail_id", 81, "description", "血常规", "unit_price", new BigDecimal("60.00"), "contract_item_price_id", 101L),
@@ -57,7 +57,7 @@ class MonthlyBillServiceTest {
     @Test void zeroPricedMonthlyItemsDoNotDivideByZero() {
         when(store.one(contains("FOR UPDATE"), eq(7), eq(2))).thenReturn(Map.of("id", 11L, "billing_cycle_days", 30));
         when(jdbc.queryForList(contains("FROM lin_monthly_bill WHERE contract_id"), any(Object[].class))).thenReturn(List.of());
-        when(jdbc.queryForList(contains("e.settlement_mode='monthly'"), eq(7), eq(2), any(), any())).thenReturn(List.of(Map.of(
+        when(jdbc.queryForList(contains("SELECT s.order_id,s.original_amount"), any(Object[].class))).thenReturn(List.of(Map.of(
                 "order_id", 8, "payable_amount", BigDecimal.ZERO, "original_amount", BigDecimal.ZERO)));
         when(jdbc.queryForList(contains("lin_lb_diagnosisdetail d"), eq(8))).thenReturn(List.of(Map.of("detail_id", 81, "description", "复查", "unit_price", BigDecimal.ZERO, "contract_item_price_id", 101L)));
         when(store.insert(contains("INSERT INTO lin_monthly_bill("), any(Object[].class))).thenReturn(21L);
@@ -67,7 +67,7 @@ class MonthlyBillServiceTest {
 
     @Test void existingBillIsReturnedWithoutDuplicatingItems() {
         when(store.one(contains("FOR UPDATE"), eq(7), eq(2))).thenReturn(Map.of("id", 11L, "billing_cycle_days", 30));
-        when(jdbc.queryForList(contains("FROM lin_monthly_bill WHERE contract_id"), any(Object[].class))).thenReturn(List.of(Map.of("id", 21L)));
+        when(jdbc.queryForList(contains("FROM lin_monthly_bill WHERE contract_id"), any(Object[].class))).thenReturn(List.of(Map.of("id", 21L, "status", "PENDING_RECONCILIATION", "paid_amount", BigDecimal.ZERO)));
         when(jdbc.queryForList(contains("FROM lin_monthly_bill b"), eq(21L))).thenReturn(List.of(Map.of("id", 21L, "hospital_id", 7, "laboratory_id", 2, "status", "PENDING_RECONCILIATION")));
         service.generate(7, 2, "2026-09");
         verify(store, never()).insert(contains("INSERT INTO lin_monthly_bill("), any(Object[].class));

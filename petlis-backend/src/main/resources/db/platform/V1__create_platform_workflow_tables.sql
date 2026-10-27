@@ -343,3 +343,21 @@ CREATE TABLE IF NOT EXISTS `lin_operational_config` (
   UNIQUE KEY `uk_operational_config_scope` (`config_key`, `scope_type`, `scope_id`),
   KEY `idx_operational_config_status` (`status`, `config_key`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `lin_order_pricing_snapshot` (
+  `id` BIGINT NOT NULL AUTO_INCREMENT,
+  `order_id` INT NOT NULL,
+  `contract_id` BIGINT NULL,
+  `hospital_id` INT NOT NULL,
+  `laboratory_id` INT NOT NULL,
+  `settlement_type` VARCHAR(16) NOT NULL,
+  `original_amount` DECIMAL(18,2) NOT NULL,
+  `discount_amount` DECIMAL(18,2) NOT NULL,
+  `payable_amount` DECIMAL(18,2) NOT NULL,
+  `items_json` JSON NOT NULL,
+  `created_at` DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+  `updated_at` DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_order_pricing_snapshot_order` (`order_id`),
+  KEY `idx_order_pricing_contract` (`contract_id`, `settlement_type`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

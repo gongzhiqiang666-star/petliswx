@@ -14,6 +14,6 @@ public class CouponController {
  @PostMapping public Result<Long> create(@RequestBody CouponService.Coupon r){return Result.success(service.create(r));}
  @PutMapping("/{id}") public Result<Void> update(@PathVariable long id,@RequestParam int totalQuantity,@RequestParam(required=false)String reason,@RequestBody CouponService.Coupon r){service.updateCoupon(id,r,totalQuantity,reason);return Result.success();}
  @DeleteMapping("/{id}") public Result<Void> deactivate(@PathVariable long id){service.deactivateCoupon(id);return Result.success();}
- @PostMapping("/{id}/users/{userId}") public Result<Long> grant(@PathVariable long id,@PathVariable int userId,@RequestBody(required=false)GrantRequest r){return Result.success(r==null?service.grant(id,userId):service.grant(id,userId,r.requestKey()));}
+ @PostMapping("/{id}/users/{userId}") public Result<Long> grant(@PathVariable long id,@PathVariable int userId,@RequestBody GrantRequest r){return Result.success(service.grant(id,userId,r.requestKey()));}
  public record GrantRequest(String requestKey){}
 }
