@@ -597,3 +597,6 @@ page {
   line-height: 88rpx;
   box-shadow: 0 10rpx 24rpx rgba(11, 61, 58, 0.12);
 }
+
+.logistics-brief { display: flex; flex-direction: column; gap: 8rpx; padding: 20rpx 0; border-top: 1rpx solid #E7EEEA; color: #66766f; font-size: 24rpx; }
+.logistics-brief-error { color: #C96F45; }

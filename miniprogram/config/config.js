@@ -3,25 +3,30 @@
  * 用于配置不同环境下的API地址和其他参数
  */
 
-// 检测当前环境
-// 开发环境：使用localhost
-// 生产环境：使用实际域名
+const getEnvironment = () => {
+  try {
+    return wx.getAccountInfoSync().miniProgram.envVersion || 'develop'
+  } catch (e) {
+    return 'develop'
+  }
+}
+
+const normalizeBaseURL = value => String(value || '').replace(/\/+$/, '').replace(/\/api$/, '') + '/api'
+
 const getBaseURL = () => {
-  // 开发环境 - 后端服务地址
-  // 模拟器调试使用 localhost
-  // return 'http://127.0.0.1:8082/api'
-
-  // 真机调试时使用局域网IP（自动获取本机IP）
-  // 如果真机仍无法访问，请手动修改IP为您的电脑局域网IP
-  return 'http://192.168.0.3:8082/api'
-
-  // 生产环境（部署时取消注释）
-  // return 'https://your-domain.com/api'
+  const environment = getEnvironment()
+  let extConfig = {}
+  try { extConfig = wx.getExtConfigSync() || {} } catch (e) {}
+  if (extConfig.baseURL) return normalizeBaseURL(extConfig.baseURL)
+  if (environment === 'release') throw new Error('请在小程序 ext.json 配置生产环境 baseURL')
+  return 'http://127.0.0.1:8082/api'
 }
 
 module.exports = {
   // 后端API基础地址
   baseURL: getBaseURL(),
+  environment: getEnvironment(),
+  allowMockPayment: getEnvironment() === 'develop',
 
   // API版本
   apiVersion: 'v1',

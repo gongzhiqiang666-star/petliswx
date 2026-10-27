@@ -1,0 +1,2 @@
+@import "../../styles/native-theme.wxss";
+page{background:#F5F7F6}.page{padding:24rpx 32rpx}.card{background:#fff;padding:28rpx;margin-bottom:24rpx}.line{display:flex;justify-content:space-between;gap:24rpx;align-items:center}.amount{font-size:48rpx;margin:20rpx 0}.meta{font-size:24rpx;color:#66766f;line-height:1.6}.badge{color:#0D6E6E;font-size:24rpx}.petlis-filters{margin-bottom:24rpx}.petlis-filter-item{flex:1}.error{color:#C96F45}.loading-text{text-align:center;padding:32rpx;color:#66766f}

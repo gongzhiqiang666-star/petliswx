@@ -84,6 +84,12 @@
         </view>
       </view>
 
+      <view class="logistics-brief" wx:if="{{item.logistics}}">
+        <text>{{item.logistics.latestTimeline || item.logistics.statusLabel}}</text>
+        <text wx:if="{{item.logistics.expectedArrivedAt}}">预计 {{item.logistics.expectedArrivedAt}} 到达</text>
+        <text class="logistics-brief-error" wx:if="{{item.logistics.exceptionNote}}">异常：{{item.logistics.exceptionNote}}</text>
+      </view>
+
       <view class="order-footer">
         <view class="price-wrap">
           <text class="price-label">订单金额</text>

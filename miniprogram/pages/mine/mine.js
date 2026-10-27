@@ -1,6 +1,7 @@
 // pages/mine/mine.js
 const api = require('../../api/index.js');
 const request = require('../../utils/request');
+const { isHospitalAdmin, ensureRoles } = require('../../utils/roles');
 const app = getApp();
 
 Page({
@@ -22,6 +23,7 @@ Page({
     balance: null,
     financeLoading: true,
     financeError: '',
+    canViewBills: false,
     fadeInUp: null,
     fadeInUpDelay: null,
     fadeInUpDelay2: null,
@@ -118,9 +120,11 @@ Page({
     try {
       wx.showNavigationBarLoading();
 
-      const userInfo = await api.user.getProfile();
+      const profile = await api.user.getProfile();
+      const userInfo = await ensureRoles(profile, () => request.get('/user/roles'));
+      app.globalData.userInfo = userInfo;
 
-      this.setData({ userInfo });
+      this.setData({ userInfo, canViewBills: isHospitalAdmin(userInfo) });
 
       // 加载用户的医院信息
       if (userInfo.hospitalId) {
@@ -302,6 +306,7 @@ Page({
    */
   openArticles(){wx.navigateTo({url:'/pages/articles/articles'})},
   openAccount(){wx.navigateTo({url:'/pages/account/account'})},
+  openBills(){if(this.data.canViewBills)wx.navigateTo({url:'/pages/bills/bills'})},
   onRecharge(){wx.navigateTo({url:'/pages/recharge/recharge'})},
 
   onSettingTap(e) {
@@ -315,12 +320,17 @@ Page({
         wx.navigateTo({url:'/pages/profile/profile'});
         break;
 
-      case 'help':
-        wx.showToast({
-          title: '帮助与反馈功能开发中',
-          icon: 'none'
+      case 'help': {
+        const tel = this.data.hospitalInfo.tel;
+        wx.showModal({
+          title: '帮助与反馈',
+          content: `业务问题请在消息中心查看实验室通知。${tel ? `医院联系电话：${tel}` : '如需人工协助，请联系所属医院管理员。'}`,
+          confirmText: '消息中心',
+          cancelText: '关闭',
+          success: res => { if (res.confirm) wx.switchTab({ url: '/pages/notifications/notifications' }); }
         });
         break;
+      }
 
       case 'about':
         wx.showModal({
@@ -358,34 +368,11 @@ Page({
       confirmText: '退出',
       confirmColor: '#ef4444',
       cancelText: '取消',
-      success: (res) => {
-        if (res.confirm) {
-          // 添加震动反馈
-          wx.vibrateShort({ type: 'medium' });
-
-          // 清理本地存储
-          wx.removeStorageSync('user_info');
-          wx.removeStorageSync('hospital_info');
-          wx.removeStorageSync('token');
-
-          // 清理全局数据
-          app.globalData.userInfo = null;
-          app.globalData.token = null;
-          app.globalData.hospitalInfo = null;
-
-          wx.showToast({
-            title: '已退出登录',
-            icon: 'success',
-            duration: 1500
-          });
-
-          // 跳转到登录页面
-          setTimeout(() => {
-            wx.reLaunch({
-              url: '/pages/login/login'
-            });
-          }, 1500);
-        }
+      success: async res => {
+        if (!res.confirm) return;
+        wx.vibrateShort({ type: 'medium' });
+        await app.logout();
+        wx.showToast({ title: '已退出登录', icon: 'success', duration: 1500 });
       }
     });
   },

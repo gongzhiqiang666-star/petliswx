@@ -58,6 +58,7 @@ class LegacyApiContractTest {
     @MockBean SessionService sessions;
     @MockBean AuthService auth;
     @MockBean PetService pets;
+    @MockBean com.petlis.service.impl.PetHealthService petHealth;
     @MockBean OrderService orders;
     @MockBean ReportService reports;
     @MockBean InfoHospitalRepository hospitals;

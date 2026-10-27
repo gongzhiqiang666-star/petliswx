@@ -1,0 +1,2 @@
+@import "../bills/bills.wxss";
+.page{padding-bottom:140rpx}.section-title{font-size:30rpx;font-weight:600}.detail-item{padding:24rpx 0;border-bottom:1rpx solid #E7EEEA}.bottom-actions{position:fixed;left:0;right:0;bottom:0;display:flex;gap:20rpx;padding:24rpx 32rpx calc(24rpx + env(safe-area-inset-bottom));background:#fff}.bottom-actions button{flex:1;margin:0}

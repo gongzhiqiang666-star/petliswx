@@ -1,150 +1,29 @@
-<!--pages/pet-health/pet-health.wxml-->
 <view class="page">
-  <!-- Pet Selector -->
-  <view class="pet-selector petlis-input" bindtap="onSelectPet">
-    <text class="selected-pet">{{selectedPet}}</text>
-    <image src="/assets/icons/brand-chevron-down.png" class="arrow-icon" mode="aspectFit"></image>
-  </view>
-
-  <!-- Tab Navigation -->
+  <view class="pet-selector petlis-input"><text class="selected-pet">{{selectedPet || '宠物健康档案'}}</text></view>
   <view class="tabs petlis-filters">
-    <view class="tab-item petlis-filter-item {{activeTab === 'vaccines' ? 'active' : ''}}"
-          bindtap="onTabChange" data-tab="vaccines">
-      疫苗记录
-    </view>
-    <view class="tab-item petlis-filter-item {{activeTab === 'checkups' ? 'active' : ''}}"
-          bindtap="onTabChange" data-tab="checkups">
-      体检记录
-    </view>
-    <view class="tab-item petlis-filter-item {{activeTab === 'medical' ? 'active' : ''}}"
-          bindtap="onTabChange" data-tab="medical">
-      医疗记录
-    </view>
+    <view class="tab-item petlis-filter-item {{activeTab === 'medical' ? 'active' : ''}}" bindtap="onTabChange" data-tab="medical">病史记录</view>
+    <view class="tab-item petlis-filter-item {{activeTab === 'reports' ? 'active' : ''}}" bindtap="onTabChange" data-tab="reports">送检报告</view>
   </view>
-
   <view class="petlis-empty health-state health-state-error" wx:if="{{loadError}}" role="alert">
-    <image src="/assets/icons/brand-empty.png" mode="aspectFit" aria-hidden="true"></image>
+    <image src="/assets/icons/brand-empty.png" mode="aspectFit" aria-hidden="true" />
     <view class="petlis-empty-text">{{loadError}}</view>
     <button class="petlis-btn petlis-btn-outline petlis-empty-retry" bindtap="retryLoad">重新加载</button>
   </view>
-  <scroll-view class="content" scroll-y wx:else>
-    <!-- Vaccines Tab -->
-    <view class="tab-content" wx:if="{{activeTab === 'vaccines'}}">
-      <view class="vaccine-card petlis-list-card" wx:for="{{vaccineRecords}}" wx:key="id">
-        <view class="vaccine-header">
-          <view class="vaccine-info">
-            <text class="vaccine-name">{{item.name}}</text>
-            <text class="vaccine-date">{{item.date}} ({{item.dose}})</text>
-          </view>
-          <view class="vaccine-tag {{item.type === 'required' ? 'required' : 'recommended'}}">
-            {{item.type === 'required' ? '必须疫苗' : '推荐疫苗'}}
-          </view>
-        </view>
-
-        <view class="vaccine-details">
-          <view class="vaccine-detail-item">
-            <image src="/assets/icons/brand-calendar.png" class="detail-icon" mode="aspectFit"></image>
-            <text>下次: {{item.nextDate}}</text>
-          </view>
-          <view class="vaccine-detail-item valid">
-            <image src="/assets/icons/brand-check.png" class="detail-icon" mode="aspectFit"></image>
-            <text>有效期至 {{item.validUntil}}</text>
-          </view>
-        </view>
-      </view>
-      <view class="petlis-empty health-state" wx:if="{{!vaccineRecords.length}}">
-        <image src="/assets/icons/brand-empty.png" mode="aspectFit" aria-hidden="true"></image>
-        <view class="petlis-empty-text">暂无疫苗记录</view>
-      </view>
-
-      <view class="add-btn petlis-btn petlis-btn-outline" bindtap="onAddVaccine">
-        <image src="/assets/icons/brand-plus.png" class="add-icon" mode="aspectFit"></image>
-        <text>添加疫苗记录</text>
-      </view>
-    </view>
-
-    <!-- Checkups Tab -->
-    <view class="tab-content" wx:if="{{activeTab === 'checkups'}}">
-      <view class="timeline">
-        <view class="timeline-item" wx:for="{{checkupRecords}}" wx:key="id" wx:for-index="index">
-          <view class="timeline-dot"></view>
-          <view class="timeline-line" wx:if="{{index < checkupRecords.length - 1}}"></view>
-
-          <view class="timeline-content">
-            <view class="checkup-card petlis-list-card">
-              <view class="checkup-header">
-                <text class="checkup-date">{{item.date}}</text>
-                <text class="checkup-doctor">{{item.doctor}}</text>
-              </view>
-
-              <view class="checkup-details">
-                <view class="checkup-detail-item">
-                  <text class="detail-label">体重:</text>
-                  <text class="detail-value">{{item.weight}}</text>
-                  <text class="weight-change" wx:if="{{item.weightChange !== '-'}}">({{item.weightChange}})</text>
-                </view>
-                <view class="checkup-summary">{{item.summary}}</view>
-              </view>
-
-              <view class="checkup-action" bindtap="onViewCheckupDetail" data-id="{{item.id}}">
-                <text>查看详情</text>
-                <image class="action-arrow" src="/assets/icons/brand-chevron-right.png" mode="aspectFit" aria-hidden="true" />
-              </view>
-            </view>
-          </view>
-        </view>
-      </view>
-      <view class="petlis-empty health-state" wx:if="{{!checkupRecords.length}}">
-        <image src="/assets/icons/brand-empty.png" mode="aspectFit" aria-hidden="true"></image>
-        <view class="petlis-empty-text">暂无体检记录</view>
-      </view>
-
-      <view class="add-btn petlis-btn petlis-btn-outline" bindtap="onAddCheckup">
-        <image src="/assets/icons/brand-plus.png" class="add-icon" mode="aspectFit"></image>
-        <text>添加体检记录</text>
-      </view>
-    </view>
-
-    <!-- Medical Tab -->
+  <scroll-view class="content" scroll-y bindscrolltolower="onReachBottom" wx:else>
     <view class="tab-content" wx:if="{{activeTab === 'medical'}}">
       <view class="medical-card petlis-list-card" wx:for="{{medicalRecords}}" wx:key="id">
-        <view class="medical-header">
-          <view class="medical-type {{item.type === '就诊' ? 'visit' : 'medicine'}}">
-            {{item.type}}
-          </view>
-          <text class="medical-date">{{item.date}}</text>
-        </view>
+        <view class="medical-header"><view class="medical-type visit">送检病史</view><text class="medical-date">{{item.date}}</text></view>
         <text class="medical-diagnosis">{{item.diagnosis}}</text>
-
-        <view class="medical-details">
-          <view class="medical-detail-item">
-            <text class="detail-label">医生: </text>
-            <text class="detail-value">{{item.doctor}}</text>
-          </view>
-          <view class="medical-detail-item">
-            <text class="detail-label">治疗: </text>
-            <text class="detail-value">{{item.treatment}}</text>
-          </view>
-          <view class="medical-detail-item">
-            <text class="detail-label">复查: </text>
-            <text class="detail-value">{{item.followUp}}</text>
-          </view>
-        </view>
+        <view class="medical-details"><view class="medical-detail-item"><text class="detail-label">临床记录：</text><text class="detail-value">{{item.treatment}}</text></view></view>
       </view>
-      <view class="petlis-empty health-state" wx:if="{{!medicalRecords.length}}">
-        <image src="/assets/icons/brand-empty.png" mode="aspectFit" aria-hidden="true"></image>
-        <view class="petlis-empty-text">暂无医疗记录</view>
+      <view class="petlis-empty health-state" wx:if="{{!loading && !medicalRecords.length}}"><image src="/assets/icons/brand-empty.png" mode="aspectFit" /><view class="petlis-empty-text">暂无病史记录</view></view>
+    </view>
+    <view class="tab-content" wx:if="{{activeTab === 'reports'}}">
+      <view class="medical-card petlis-list-card" wx:for="{{reports}}" wx:key="reportId" bindtap="onViewReport" data-id="{{item.reportId}}">
+        <view class="medical-header"><text class="medical-diagnosis">{{item.testTypeName}}</text><text class="medical-date">{{item.createDt}}</text></view>
+        <view class="medical-detail-item"><text class="detail-label">送检单：</text><text class="detail-value">{{item.orderNo || item.orderId}}</text></view>
       </view>
-
-      <view class="add-btn petlis-btn petlis-btn-outline" bindtap="onAddMedical">
-        <image src="/assets/icons/brand-plus.png" class="add-icon" mode="aspectFit"></image>
-        <text>添加医疗记录</text>
-      </view>
+      <view class="petlis-empty health-state" wx:if="{{!loading && !reports.length}}"><image src="/assets/icons/brand-empty.png" mode="aspectFit" /><view class="petlis-empty-text">暂无既往送检报告</view></view>
     </view>
   </scroll-view>
-
-  <!-- Floating Action Button -->
-  <view class="fab petlis-btn petlis-btn-primary" bindtap="onAddRecord">
-    <image src="/assets/icons/brand-plus.png" class="fab-icon" mode="aspectFit"></image>
-  </view>
 </view>

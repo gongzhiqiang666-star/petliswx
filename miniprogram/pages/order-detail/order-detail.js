@@ -1,5 +1,7 @@
 // pages/order-detail/order-detail.js
 const api = require('../../api/index.js')
+const request = require('../../utils/request')
+const { adaptShipment } = require('../../utils/logistics')
 
 Page({
   data: {
@@ -34,6 +36,9 @@ Page({
       totalItems: 0
     },
     timeline: [],
+    shipment: null,
+    shipmentTimeline: [],
+    logisticsError: '',
     loading: true,
     error: false
   },
@@ -102,6 +107,7 @@ Page({
         timeline,
         loading: false
       });
+      await this.loadLogistics(orderId);
     } catch (err) {
       console.error('[OrderDetail] 加载订单详情失败:', err);
       this.setData({
@@ -114,6 +120,16 @@ Page({
         title: '加载失败',
         icon: 'none'
       });
+    }
+  },
+
+  async loadLogistics(orderId) {
+    try {
+      const shipment = adaptShipment(await request.get(`/logistics/orders/${orderId}`))
+      this.setData({ shipment, shipmentTimeline: shipment ? shipment.timeline : [], logisticsError: '' })
+    } catch (error) {
+      const missing = /不存在|404/.test(error.message || '')
+      this.setData({ shipment: null, shipmentTimeline: [], logisticsError: missing ? '' : '物流信息暂时无法加载' })
     }
   },
 

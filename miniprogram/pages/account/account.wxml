@@ -7,7 +7,7 @@
       <view wx:for="{{links}}" wx:key="page" class="nav" data-page="{{item.page}}" bindtap="open">
         <image wx:if="{{item.page==='security'}}" class="nav-icon" src="/assets/icons/brand-security.png" mode="aspectFit" />
         <image wx:elif="{{item.page==='recharge'}}" class="nav-icon" src="/assets/icons/brand-wallet.png" mode="aspectFit" />
-        <image wx:elif="{{item.page==='transactions?kind=wallet' || item.page==='transactions?kind=points'}}" class="nav-icon" src="/assets/icons/brand-transactions.png" mode="aspectFit" />
+        <image wx:elif="{{item.page==='transactions?kind=wallet' || item.page==='transactions?kind=points' || item.page==='bills'}}" class="nav-icon" src="/assets/icons/brand-transactions.png" mode="aspectFit" />
         <image wx:elif="{{item.page==='mall'}}" class="nav-icon" src="/assets/icons/brand-gift.png" mode="aspectFit" />
         <image wx:elif="{{item.page==='coupons'}}" class="nav-icon" src="/assets/icons/brand-coupon.png" mode="aspectFit" />
         <image wx:elif="{{item.page==='invoices'}}" class="nav-icon" src="/assets/icons/brand-invoice.png" mode="aspectFit" />

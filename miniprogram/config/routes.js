@@ -37,5 +37,8 @@ module.exports = [
   "pages/profile/profile",
   "pages/drafts/drafts",
   "pages/recharge/recharge",
-  "pages/security/security"
+  "pages/security/security",
+  "pages/bills/bills",
+  "pages/bill-detail/bill-detail",
+  "pages/bill-arrears/bill-arrears"
 ]

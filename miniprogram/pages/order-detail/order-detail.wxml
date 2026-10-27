@@ -90,6 +90,21 @@
         </view>
       </view>
 
+      <view class="timeline-card petlis-card" role="region" aria-label="物流配送">
+        <view class="card-title"><view class="title-line"></view><text>物流配送</text></view>
+        <view wx:if="{{shipment}}">
+          <view class="logistics-summary"><text>{{shipment.statusLabel}}</text><text wx:if="{{shipment.trackingNo}}">运单 {{shipment.trackingNo}}</text></view>
+          <view class="logistics-eta" wx:if="{{shipment.expectedArrivedAt}}">预计到达：{{shipment.expectedArrivedAt}}</view>
+          <view class="logistics-exception" wx:if="{{shipment.exceptionNote}}">异常：{{shipment.exceptionType}} · {{shipment.exceptionNote}}</view>
+          <view class="timeline-item" wx:for="{{shipmentTimeline}}" wx:key="createdAt">
+            <view class="timeline-dot {{item.abnormal ? 'pending' : 'completed'}}"></view>
+            <view class="timeline-content"><view class="timeline-header"><text class="timeline-title">{{item.title}}</text><text class="timeline-time">{{item.time}}</text></view></view>
+          </view>
+        </view>
+        <view class="timeline-status" wx:elif="{{logisticsError}}">{{logisticsError}}</view>
+        <view class="timeline-status" wx:else>暂无物流记录</view>
+      </view>
+
       <!-- Test Items -->
       <view class="card petlis-card"
             role="region"

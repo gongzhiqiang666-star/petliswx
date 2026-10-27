@@ -30,6 +30,7 @@ class RoleSecurityBoundaryTest {
     @MockBean JwtUtil jwt;
     @MockBean SessionService sessions;
     @MockBean PetService pets;
+    @MockBean com.petlis.service.impl.PetHealthService petHealth;
 
     @BeforeEach
     void authenticated() {
