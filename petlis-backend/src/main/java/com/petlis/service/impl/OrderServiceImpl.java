@@ -61,6 +61,7 @@ public class OrderServiceImpl implements OrderService {
     private final InfoHospitalRepository hospitalRepository;
     private final com.petlis.common.security.ReviewPermission reviewPermission;
     private final CouponService couponService;
+    private final ContractService contracts;
     private final OrderWorkflowService orderWorkflows;
 
     /**
@@ -521,11 +522,12 @@ public class OrderServiceImpl implements OrderService {
                 && (targetStatusEnum == OrderStatusEnum.PENDING_PAYMENT || targetStatusEnum == OrderStatusEnum.WAITING_REPORT)) {
             InfoHospital hospital = hospitalRepository.findById(project.getInfoHospitalId())
                     .orElseThrow(() -> new BusinessException("医院不存在"));
-            boolean monthly = Integer.valueOf(1).equals(hospital.getPayType());
+            boolean monthly = couponService.isMonthly(orderId, Integer.valueOf(1).equals(hospital.getPayType()));
             boolean noPayment = project.getTestFee() != null && project.getTestFee() == 0d;
             if ((monthly || noPayment) != (targetStatusEnum == OrderStatusEnum.WAITING_REPORT)) {
                 throw new BusinessException(monthly ? "月结客户审核后挂账" : "现结客户审核后应进入待支付");
             }
+            if (monthly) contracts.reserveCredit(orderId, BigDecimal.valueOf(project.getTestFee() == null ? 0d : project.getTestFee()).setScale(2, java.math.RoundingMode.HALF_UP));
         }
 
         // 更新状态

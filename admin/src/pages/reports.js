@@ -3,6 +3,7 @@ import { formData } from './shared.js';
 import { formatDate, pageItems } from '../utils.js';
 import { badge, field, pageHeader, pagination, renderDetail, renderState, renderTable } from '../components/ui.js';
 import { canReportAction } from '../permissions.js';
+import { printHtml } from './orders.js';
 
 export async function render(container, context) {
   const { api, store } = context;
@@ -36,6 +37,7 @@ export async function render(container, context) {
       if (button.dataset.reportAction === 'review') return openReview(context, id, load);
       if (button.dataset.reportAction === 'detail') return showReport(context, id);
       if (button.dataset.reportAction === 'download') return download(context, id);
+      if (button.dataset.reportAction === 'print') return printHtml(api, `/admin/print/reports/${button.dataset.detailId}`, context.toast);
       await api.request(`/report-workflows/${id}/publish`, { method: 'POST' }); context.toast('报告已发布并同步医院端'); load();
     } catch (error) { context.toast(error.message, 'error'); }
   });
@@ -47,6 +49,7 @@ function reportActions(row, user) {
   if (row.status === 'PENDING_REVIEW' && canReportAction('review', user)) buttons.push(`<button class="button text" data-report-action="review" data-id="${row.id}">审核</button>`);
   if (row.status === 'APPROVED' && canReportAction('publish', user)) buttons.push(`<button class="button text" data-report-action="publish" data-id="${row.id}">发布</button>`);
   if (canReportAction('download', user)) buttons.push(`<button class="button text" data-report-action="download" data-id="${row.id}">下载</button>`);
+  if (canReportAction('print', user)) buttons.push(`<button class="button text" data-report-action="print" data-id="${row.id}" data-detail-id="${row.detailId}">打印</button>`);
   buttons.push(`<button class="button text" data-report-action="detail" data-id="${row.id}">详情</button>`);
   return buttons.join('');
 }

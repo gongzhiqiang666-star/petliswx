@@ -8,8 +8,8 @@ const refundable = { settlementType: 'CURRENT', status: 'PENDING_PICKUP', paidAt
 test('退款入口仅对合法角色和状态显示', () => {
   assert.equal(canRefund(user(['ADMIN']), refundable), true);
   assert.equal(canRefund(user(['HOSPITAL_ADMIN']), refundable), true);
-  assert.equal(canRefund(user(['DOCTOR']), refundable), true);
-  assert.equal(canRefund(user(['LAB_STAFF']), refundable), false);
+  assert.equal(canRefund(user(['DOCTOR']), refundable), false);
+  assert.equal(canRefund(user(['LAB_STAFF']), refundable), true);
   assert.equal(canRefund(user(['COURIER']), refundable), false);
   assert.equal(canRefund(user(['ADMIN']), { ...refundable, status: 'TESTING' }), false);
   assert.equal(canRefund(user(['ADMIN']), { ...refundable, settlementType: 'MONTHLY' }), false);
@@ -29,7 +29,7 @@ test('审核物流签收和财务处理入口与后端角色一致', () => {
   assert.equal(canLogisticsAction('receive', user(['COURIER'])), false);
   assert.equal(canFinanceAction('generate', user(['ADMIN'])), true);
   assert.equal(canFinanceAction('generate', user(['HOSPITAL_ADMIN'])), false);
-  assert.equal(canFinanceAction('settle', user(['HOSPITAL_ADMIN'])), true);
+  assert.equal(canFinanceAction('settle', user(['HOSPITAL_ADMIN'])), false);
   assert.equal(canFinanceAction('issue', user(['HOSPITAL_ADMIN'])), false);
   assert.equal(canFinanceAction('reject', user(['HOSPITAL_ADMIN'])), false);
   assert.equal(canFinanceAction('download', user(['HOSPITAL_ADMIN'])), true);

@@ -3,8 +3,8 @@ const any = (user, roles) => roles.some((role) => has(user, role));
 
 export const canOrderReview = (user) => has(user, 'ADMIN');
 export function canRefund(user, order) {
-  return any(user, ['ADMIN', 'HOSPITAL_ADMIN', 'DOCTOR'])
-    && order?.settlementType === 'CURRENT' && order?.status === 'PENDING_PICKUP'
+  return any(user, ['ADMIN', 'HOSPITAL_ADMIN', 'LAB_STAFF'])
+    && order?.settlementType === 'CURRENT' && ['PENDING_PICKUP', 'WAITING_REPORT', 'COMPLETED'].includes(order?.status)
     && Boolean(order?.paidAt) && !order?.refundedAt;
 }
 export function canLogisticsAction(action, user) {
@@ -19,12 +19,15 @@ export function canLabAction(action, user) {
 export function canReportAction(action, user) {
   if (['create', 'review', 'publish', 'template'].includes(action)) return any(user, ['ADMIN', 'LAB_STAFF']);
   if (action === 'download') return any(user, ['ADMIN', 'LAB_STAFF', 'HOSPITAL_ADMIN', 'DOCTOR']);
+  if (action === 'print') return any(user, ['ADMIN', 'LAB_STAFF', 'HOSPITAL_ADMIN']);
   return false;
 }
 export function canFinanceAction(action, user) {
-  if (['generate', 'issue', 'reject', 'overdue'].includes(action)) return has(user, 'ADMIN');
-  if (['reconcile', 'settle', 'download'].includes(action)) return any(user, ['ADMIN', 'HOSPITAL_ADMIN']);
-  if (action === 'refund') return any(user, ['ADMIN', 'HOSPITAL_ADMIN', 'DOCTOR']);
+  if (['issue', 'reject'].includes(action)) return has(user, 'ADMIN');
+  if (['generate', 'settle', 'overdue'].includes(action)) return any(user, ['ADMIN', 'LAB_STAFF']);
+  if (action === 'reconcile') return any(user, ['ADMIN', 'LAB_STAFF', 'HOSPITAL_ADMIN']);
+  if (action === 'download') return any(user, ['ADMIN', 'HOSPITAL_ADMIN']);
+  if (action === 'refund') return any(user, ['ADMIN', 'HOSPITAL_ADMIN', 'LAB_STAFF']);
   return false;
 }
 export const canSendMessage = (user) => has(user, 'ADMIN');

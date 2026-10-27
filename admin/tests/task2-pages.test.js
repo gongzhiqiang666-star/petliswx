@@ -22,14 +22,15 @@ test('用户医院页面提供真实角色维护和停用启用', async () => {
   assert.ok(page.includes('userStatusPayload'));
 });
 
-test('财务发票复用管理审核接口且订单全管理明确待接入', async () => {
+test('财务发票复用管理审核接口且订单全管理接入真实订单与打印', async () => {
   const finance = await source('pages/finance.js');
   assert.ok(finance.includes("'/review/invoices'"));
   assert.ok(finance.includes('/reject'));
   assert.ok(finance.includes('/issue'));
   assert.ok(finance.includes('moneyYuan'));
   const orders = await source('pages/orders.js');
-  assert.ok(orders.includes("renderState('pending')"), '订单全管理仍明确待接入');
+  assert.ok(orders.includes("api.request('/admin/orders'"), '订单全管理应使用真实订单接口');
+  assert.ok(!orders.includes("renderState('pending')"), '订单全管理不应再显示待接入');
   for (const [page, endpoint] of [['logistics', '/logistics'], ['reports', '/report-workflows']]) {
     const text = await source(`pages/${page}.js`);
     assert.ok(text.includes(endpoint), `${page} 应接入真实工作流`);

@@ -40,9 +40,26 @@ public class MallService {
   long id=store.insert("INSERT INTO lin_redemption(user_id,gift_id,gift_name,quantity,points_spent,delivery_address,request_key) VALUES(?,?,?,?,?,?,?)",userId,r.giftId(),gift.get("name"),r.quantity(),cost,store.encode(a),r.requestKey());
   store.jdbc().update("INSERT INTO lin_user_score_log(user_id,score,`before`,`after`,memo,createtime) VALUES(?,?,?,?,?,UNIX_TIMESTAMP())",userId,-cost,before,before-cost,"礼品兑换 #"+id);
   notifications.emit(userId,"mall","redemption:"+id,"礼品兑换成功","兑换申请 #"+id+" 已提交，消耗 "+cost+" 积分。","pages/mall/mall");
+  store.jdbc().update("INSERT INTO lin_audit_record(actor_user_id,action,resource_type,resource_id,request_id) VALUES(?,?,?,?,?)",userId,"REDEMPTION_CREATED","REDEMPTION",String.valueOf(id),r.requestKey());
   return id;
  }
  public Map<String,Object> history(int page,int size){return store.page("SELECT COUNT(*) FROM lin_redemption WHERE user_id=?","SELECT id,gift_id AS giftId,gift_name AS giftName,quantity,points_spent AS pointsSpent,status,tracking_number AS trackingNumber,created_at AS createdAt FROM lin_redemption WHERE user_id=? ORDER BY id DESC",page,size,SecurityUtils.getCurrentUserId());}
+ @Transactional public void cancel(long id,String reason){
+  permission.requireReviewer();if(reason==null || reason.isBlank() || reason.length()>500)throw new BusinessException("请填写取消原因");
+  var redemption=store.one("SELECT id,user_id,gift_id,quantity,points_spent,status FROM lin_redemption WHERE id=? FOR UPDATE",id);
+  if("cancelled".equals(redemption.get("status")))return;
+  if(!"pending".equals(redemption.get("status")))throw new BusinessException("仅待处理兑换可取消并退回积分库存");
+  int userId=((Number)redemption.get("user_id")).intValue(),points=((Number)redemption.get("points_spent")).intValue(),quantity=((Number)redemption.get("quantity")).intValue();
+  if(store.jdbc().update("UPDATE lin_redemption SET status='cancelled' WHERE id=? AND status='pending'",id)!=1)throw new BusinessException(409,"兑换状态已变化");
+  Integer before=store.jdbc().queryForObject("SELECT score FROM lin_user WHERE id=? FOR UPDATE",Integer.class,userId);if(before==null)throw new BusinessException("用户不存在");
+  store.jdbc().update("UPDATE lin_user SET score=score+?,updatetime=UNIX_TIMESTAMP() WHERE id=?",points,userId);
+  store.jdbc().update("UPDATE lin_gift SET stock=stock+? WHERE id=?",quantity,((Number)redemption.get("gift_id")).longValue());
+  store.jdbc().update("INSERT INTO lin_user_score_log(user_id,score,`before`,`after`,memo,createtime) VALUES(?,?,?,?,?,UNIX_TIMESTAMP())",userId,points,before,before+points,"取消礼品兑换 #"+id);
+  store.jdbc().update("INSERT INTO lin_audit_record(actor_user_id,action,resource_type,resource_id,reason) VALUES(?,?,?,?,?)",SecurityUtils.getCurrentUserId(),"REDEMPTION_CANCELLED","REDEMPTION",String.valueOf(id),reason);
+  notifications.emit(userId,"mall","redemption:cancelled:"+id,"礼品兑换已取消","兑换申请 #"+id+" 已取消，积分已退回。","pages/mall/mall");
+ }
+ public Map<String,Object> adminGifts(int page,int size){permission.requireReviewer();return store.page("SELECT COUNT(*) FROM lin_gift","SELECT id,name,description,image_url AS imageUrl,points_cost AS pointsCost,stock,active FROM lin_gift ORDER BY id DESC",page,size);}
+ public Map<String,Object> adminRedemptions(int page,int size){permission.requireReviewer();return store.page("SELECT COUNT(*) FROM lin_redemption","SELECT id,user_id AS userId,gift_id AS giftId,gift_name AS giftName,quantity,points_spent AS pointsSpent,delivery_address AS deliveryAddress,status,tracking_number AS trackingNumber,created_at AS createdAt FROM lin_redemption ORDER BY id DESC",page,size);}
  public record Gift(String name,String description,String imageUrl,int pointsCost,int stock){}
- @Transactional public long createGift(Gift r){permission.requireReviewer();if(r.name()==null || r.name().isBlank() || r.name().length()>200 || r.pointsCost()<1 || r.stock()<0)throw new BusinessException("礼品信息无效");return store.insert("INSERT INTO lin_gift(name,description,image_url,points_cost,stock) VALUES(?,?,?,?,?)",r.name(),r.description(),r.imageUrl()==null?"":r.imageUrl(),r.pointsCost(),r.stock());}
+ @Transactional public long createGift(Gift r){permission.requireReviewer();if(r.name()==null || r.name().isBlank() || r.name().length()>200 || r.pointsCost()<1 || r.stock()<0)throw new BusinessException("礼品信息无效");long id=store.insert("INSERT INTO lin_gift(name,description,image_url,points_cost,stock) VALUES(?,?,?,?,?)",r.name(),r.description(),r.imageUrl()==null?"":r.imageUrl(),r.pointsCost(),r.stock());store.jdbc().update("INSERT INTO lin_audit_record(actor_user_id,action,resource_type,resource_id) VALUES(?,?,?,?)",SecurityUtils.getCurrentUserId(),"GIFT_CREATED","GIFT",String.valueOf(id));return id;}
 }
