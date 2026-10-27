@@ -57,11 +57,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
                 // 创建认证对象,将hospitalId、cityId和openid也存储在principal中
                 UserPrincipal userPrincipal = new UserPrincipal(userId, openid, hospitalId, cityId);
+                java.util.Set<String> authorities = new java.util.HashSet<>();
+                authorities.add(jwtUtil.isReviewerToken(token) ? "ROLE_REVIEWER" : "ROLE_USER");
+                for (var role : sessionService.roles(userId)) authorities.add("ROLE_" + role.name());
                 UsernamePasswordAuthenticationToken authentication =
                         new UsernamePasswordAuthenticationToken(
                                 userPrincipal,
                                 null,
-                                Collections.singletonList(new SimpleGrantedAuthority(jwtUtil.isReviewerToken(token) ? "ROLE_REVIEWER" : "ROLE_USER"))
+                                authorities.stream().map(SimpleGrantedAuthority::new).toList()
                         );
 
                 // 设置详情
