@@ -48,7 +48,7 @@ public class BusinessNotifications {
  }
 
  @Transactional public void article(long articleId,String title,String summary){
-  store.jdbc().update("INSERT INTO lin_notification_event(user_id,event_type,business_key,title,message,page_path) SELECT u.id,'article',?,?,?,? FROM lin_user u WHERE u.status='normal' ON DUPLICATE KEY UPDATE id=id","article:"+articleId,title,summary.length()>1000?summary.substring(0,1000):summary,"pages/article-detail/article-detail?id="+articleId);
+  store.jdbc().update("INSERT INTO lin_notification_event(user_id,event_type,business_key,title,message,page_path) SELECT u.id,'article',?,?,?,? FROM lin_user u WHERE u.status='normal' ON DUPLICATE KEY UPDATE id=LAST_INSERT_ID(lin_notification_event.id)","article:"+articleId,title,summary.length()>1000?summary.substring(0,1000):summary,"pages/article-detail/article-detail?id="+articleId);
  }
  public Map<String,Object> inbox(boolean unread,int page,int size){String where=" FROM lin_notification_event WHERE user_id=?"+(unread?" AND read_at IS NULL":"");return store.page("SELECT COUNT(*)"+where,"SELECT id,event_type AS eventType,title,message,page_path AS pagePath,read_at AS readAt,created_at AS createdAt,push_status AS pushStatus"+where+" ORDER BY id DESC",page,size,SecurityUtils.getCurrentUserId());}
  public long unread(){Long count=store.jdbc().queryForObject("SELECT COUNT(*) FROM lin_notification_event WHERE user_id=? AND read_at IS NULL",Long.class,SecurityUtils.getCurrentUserId());return count==null?0:count;}

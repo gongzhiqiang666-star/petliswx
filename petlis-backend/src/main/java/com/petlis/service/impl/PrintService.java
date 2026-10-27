@@ -34,7 +34,7 @@ public class PrintService {
     }
 
     public String report(int detailId) {
-        Map<String, Object> report = store.one("SELECT d.DiagnosisDetailId AS detailId,o.ListDiagnosisProjectId AS orderId,o.InfoHospitalId AS hospitalId,e.laboratory_id AS laboratoryId,COALESCE(e.settlement_mode,'cash') AS settlementMode,o.SampleStatus AS sampleStatus,o.IsPayMoney AS paid,i.ReportResult AS result,o.AnimalName AS animalName FROM lin_lb_diagnosisdetail_info i JOIN lin_lb_diagnosisdetail d ON d.DiagnosisDetailId=i.DiagnosisdetailId JOIN lin_lb_listdiagnosisproject o ON o.ListDiagnosisProjectId=d.ListDiagnosisProjectId LEFT JOIN lin_order_extension e ON e.order_id=o.ListDiagnosisProjectId WHERE d.DiagnosisDetailId=?", detailId);
+        Map<String, Object> report = store.one("SELECT d.DiagnosisDetailId AS detailId,o.ListDiagnosisProjectId AS orderId,o.InfoHospitalId AS hospitalId,e.laboratory_id AS laboratoryId,COALESCE(e.settlement_mode,'cash') AS settlementMode,o.SampleStatus AS sampleStatus,o.IsPayMoney AS paid,i.ReportResult AS result,o.AnimalName AS animalName FROM lin_lb_diagnosisdetail_info i JOIN lin_lb_diagnosisdetail d ON d.DiagnosisDetailId=i.diagnosisdetail_id JOIN lin_lb_listdiagnosisproject o ON o.ListDiagnosisProjectId=d.ListDiagnosisProjectId LEFT JOIN lin_order_extension e ON e.order_id=o.ListDiagnosisProjectId WHERE d.DiagnosisDetailId=?", detailId);
         authorize(report);
         if (((Number) report.get("sampleStatus")).intValue() != 3) throw new BusinessException(409, "报告尚未完成，禁止打印");
         if ("cash".equals(report.get("settlementMode")) && ((Number) report.get("paid")).intValue() != 1) throw new BusinessException(403, "现结订单未支付或已退款，禁止打印报告");

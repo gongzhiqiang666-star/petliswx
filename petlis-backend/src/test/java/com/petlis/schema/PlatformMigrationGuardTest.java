@@ -67,8 +67,11 @@ class PlatformMigrationGuardTest {
         var path = BACKEND.getParent().resolve("docs/FUNCTION-MATRIX.md");
         assertTrue(Files.isRegularFile(path), "缺少 Excel 功能矩阵");
         var matrix = Files.readString(path);
-        var rows = Pattern.compile("(?m)^\\| F\\d{2} \\|").matcher(matrix).results().count();
+        var requirements = matrix.split("## Task 6 实现与实测状态", 2)[0];
+        var rows = Pattern.compile("(?m)^\\| F\\d{2} \\|").matcher(requirements).results().count();
         assertEquals(42, rows, "Excel 的 42 个功能主项必须逐项登记");
+        var statuses = matrix.split("## Task 6 实现与实测状态", 2)[1];
+        assertEquals(42, Pattern.compile("(?m)^\\| F\\d{2} \\|").matcher(statuses).results().count(), "42 个功能主项必须逐项登记实测状态");
         for (String feature : List.of("标本揽收", "配送追踪", "实验室签收确认", "检测任务分配", "退样/复检处理",
                 "医院入驻签约", "协议折扣", "欠款管理", "打印功能", "退款流程", "角色权限")) {
             assertTrue(matrix.contains(feature), "功能矩阵遗漏 " + feature);

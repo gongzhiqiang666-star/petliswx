@@ -1,0 +1,1 @@
+INSERT INTO lin_user_role(user_id,role_code,hospital_id,laboratory_id,scope_type,scope_id) VALUES(1,'ADMIN',NULL,NULL,'GLOBAL',0),(2,'COURIER',NULL,NULL,'GLOBAL',0),(3,'LAB_STAFF',NULL,1,'LABORATORY',1),(4,'DOCTOR',2,NULL,'HOSPITAL',2);

@@ -40,6 +40,13 @@ class LegacyOperationAuditTest {
         verify(jdbc).update(contains("lin_audit_record"), eq(5), eq("ARTICLE_PUBLISHED"), eq("ARTICLE"), eq("41"));
     }
 
+    @Test void articleOutboxUpsertDoesNotUseAmbiguousIdReference() {
+        BusinessNotifications service = new BusinessNotifications(store, mock(SubscriptionPush.class), permission,
+                mock(TransactionTemplate.class), new MockEnvironment(), new ObjectMapper());
+        service.article(41, "标题", "摘要");
+        verify(jdbc).update(contains("ON DUPLICATE KEY UPDATE id=LAST_INSERT_ID(lin_notification_event.id)"), any(Object[].class));
+    }
+
     @Test void invoiceIssueDoesNotRewriteImmutableProfileSnapshotAndAudits() {
         BusinessNotifications notifications = mock(BusinessNotifications.class);
         when(store.one(contains("lin_invoice_application"), eq(31L))).thenReturn(Map.of("status", "pending", "user_id", 5));

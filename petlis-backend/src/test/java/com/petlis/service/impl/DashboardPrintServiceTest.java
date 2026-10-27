@@ -69,6 +69,13 @@ class DashboardPrintServiceTest {
         verify(audits, never()).record(any(), any(), any(), any(), any(), any());
     }
 
+    @Test void reportPrintUsesTheExistingLowercaseDetailInfoKey() {
+        PrintService service = new PrintService(store, access, audits);
+        when(store.one(contains("lin_lb_diagnosisdetail_info"), eq(81))).thenReturn(Map.of("detailId", 81, "orderId", 8, "hospitalId", 7, "laboratoryId", 2, "settlementMode", "cash", "paid", 1, "sampleStatus", 3, "result", "中文结果"));
+        service.report(81);
+        verify(store).one(contains("i.diagnosisdetail_id"), eq(81));
+    }
+
     @Test void unpaidCashReportPrintIsDeniedAndForeignHospitalIsRejected() {
         when(access.current()).thenReturn(new CurrentActor(5, Set.of(PlatformRole.HOSPITAL_ADMIN), Set.of(7), Set.of(), new DataScope(false, Set.of(7), Set.of(), null)));
         PrintService service = new PrintService(store, access, audits);
