@@ -25,6 +25,11 @@ public class BusinessNotifications {
   if(userId<=0 || key.length()>100 || title.length()>200 || message.length()>1000 || page.length()>300)throw new IllegalArgumentException("Invalid notification metadata");
   store.jdbc().update("INSERT INTO lin_notification_event(user_id,event_type,business_key,title,message,page_path) VALUES(?,?,?,?,?,?) ON DUPLICATE KEY UPDATE id=id",userId,type,key,title,message,page);
  }
+ @Transactional public void emitForOrder(int orderId,Integer userId,String type,String key,String title,String message,String page){
+  if(userId!=null && userId>0 && Boolean.TRUE.equals(store.jdbc().queryForObject("SELECT EXISTS(SELECT 1 FROM lin_user WHERE id=?)",Boolean.class,userId))){emit(userId,type,key,title,message,page);return;}
+  var users=store.jdbc().queryForList("SELECT u.id FROM lin_user u JOIN lin_lb_listdiagnosisproject o ON o.InfoHospitalId=u.hospital_id LEFT JOIN lin_doctor_profile p ON p.user_id=u.id WHERE o.ListDiagnosisProjectId=? AND u.status='normal' AND (p.review_status IS NULL OR p.review_status='approved')",orderId);
+  for(var user:users)emit(((Number)user.get("id")).intValue(),type,key,title,message,page);
+ }
  @Transactional public void order(int orderId,Integer userId,int status){orderEvent(orderId,userId,status,null,null);}
  @Transactional public void reviewed(int orderId,Integer userId,int status,String reason,int reviewerId){orderEvent(orderId,userId,status,reason,reviewerId);}
  private void orderEvent(int orderId,Integer userId,int status,String reason,Integer reviewerId){

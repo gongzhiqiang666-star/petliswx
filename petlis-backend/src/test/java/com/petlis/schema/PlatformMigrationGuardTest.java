@@ -87,4 +87,34 @@ class PlatformMigrationGuardTest {
         assertFalse(Pattern.compile("Task[s]?[^|\\n]*\\b7\\b").matcher(matrix).find(), "功能矩阵验收必须追踪到 Task 6");
         assertFalse(Pattern.compile("Task[s]?[^\\n]*\\b7\\b").matcher(reviewFocus).find(), "Review Focus 必须追踪到 Task 6");
     }
+
+    @Test
+    void resultBatchesAndTemplatesPreserveVersionedHistory() throws IOException {
+        var sql = readDdl();
+        assertTrue(sql.contains("UNIQUE KEY `uk_result_task_batch` (`lab_task_id`, `batch_no`)"));
+        assertTrue(sql.contains("`result_status` VARCHAR(32) NOT NULL"));
+        assertTrue(sql.contains("UNIQUE KEY `uk_report_template_version` (`laboratory_id`, `template_code`, `version`)"));
+    }
+
+    @Test
+    void reportWorkflowContainsLegacyPublicationSynchronizationMetadata() throws IOException {
+        var sql = readDdl();
+        for (String column : List.of("pdf_file_id", "payment_checked", "published_at", "legacy_synced_at", "template_version")) {
+            assertTrue(sql.contains("`" + column + "`"), column);
+        }
+    }
+
+    @Test
+    void fileTableContainsMetadataButNoSecondBinaryMaster() throws IOException {
+        var sql = readDdl();
+        String fileTable = sql.split("CREATE TABLE IF NOT EXISTS `lin_file`", 2)[1].split(";", 2)[0];
+        for (String column : List.of("storage_path", "mime_type", "file_size", "sha256", "visibility")) assertTrue(fileTable.contains("`" + column + "`"));
+        assertFalse(Pattern.compile("(?i)\\b(BLOB|LONGBLOB|MEDIUMBLOB)\\b").matcher(fileTable).find());
+    }
+
+    @Test
+    void platformDdlDoesNotDuplicateOrderOrNotificationMasters() throws IOException {
+        var sql = readDdl();
+        assertFalse(Pattern.compile("(?i)CREATE\\s+TABLE[^;]+`(lin_notification_event|lin_order|lin_lb_listdiagnosisproject|lin_lb_diagnosisdetail)`").matcher(sql).find());
+    }
 }

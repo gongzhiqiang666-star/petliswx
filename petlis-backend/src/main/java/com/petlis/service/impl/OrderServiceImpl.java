@@ -61,6 +61,7 @@ public class OrderServiceImpl implements OrderService {
     private final InfoHospitalRepository hospitalRepository;
     private final com.petlis.common.security.ReviewPermission reviewPermission;
     private final CouponService couponService;
+    private final OrderWorkflowService orderWorkflows;
 
     /**
      * 创建检测申请
@@ -76,6 +77,8 @@ public class OrderServiceImpl implements OrderService {
         if(request.getDraftId()!=null)drafts.validateForSubmission(request.getDraftId(),request.getDraftVersion());
         // 从当前登录用户获取hospitalId和cityId（统一从token获取）
         Integer hospitalId = getCurrentHospitalId();
+        var replay = orderWorkflows.begin(request);
+        if (replay.isPresent()) return replay.getAsInt();
         Integer cityId = getCurrentCityId();
 
         log.info("当前用户信息, hospitalId: {}, cityId: {}", hospitalId, cityId);
@@ -154,6 +157,7 @@ public class OrderServiceImpl implements OrderService {
         log.info("检测申请创建成功, 申请单ID: {}, UserNO: {}", project.getListDiagnosisProjectId(), userNO);
         if(request.getDraftId()!=null)drafts.consume(request.getDraftId(),request.getDraftVersion());
         notifications.order(project.getListDiagnosisProjectId(),getCurrentUserId(),project.getSampleStatus());
+        orderWorkflows.complete(request, project.getListDiagnosisProjectId(), hospitalId);
         return project.getListDiagnosisProjectId();
     }
 

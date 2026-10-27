@@ -8,8 +8,18 @@ export function canRefund(user, order) {
     && Boolean(order?.paidAt) && !order?.refundedAt;
 }
 export function canLogisticsAction(action, user) {
-  if (action === 'receive') return any(user, ['ADMIN', 'LAB_STAFF']);
-  return any(user, ['ADMIN', 'COURIER']);
+  if (['create', 'assign'].includes(action)) return has(user, 'ADMIN');
+  if (action === 'receive') return has(user, 'LAB_STAFF');
+  if (['pickup', 'transit', 'deliver', 'exception'].includes(action)) return has(user, 'COURIER');
+  return false;
+}
+export function canLabAction(action, user) {
+  return ['assign', 'results', 'return', 'retest'].includes(action) && any(user, ['ADMIN', 'LAB_STAFF']);
+}
+export function canReportAction(action, user) {
+  if (['create', 'review', 'publish', 'template'].includes(action)) return any(user, ['ADMIN', 'LAB_STAFF']);
+  if (action === 'download') return any(user, ['ADMIN', 'LAB_STAFF', 'HOSPITAL_ADMIN', 'DOCTOR']);
+  return false;
 }
 export function canFinanceAction(action, user) {
   if (['generate', 'issue', 'reject', 'overdue'].includes(action)) return has(user, 'ADMIN');

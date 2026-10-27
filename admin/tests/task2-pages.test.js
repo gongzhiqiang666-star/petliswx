@@ -28,9 +28,12 @@ test('财务发票复用管理审核接口且订单全管理明确待接入', as
   assert.ok(finance.includes('/reject'));
   assert.ok(finance.includes('/issue'));
   assert.ok(finance.includes('moneyYuan'));
-  for (const page of ['orders', 'logistics', 'reports']) {
+  const orders = await source('pages/orders.js');
+  assert.ok(orders.includes("renderState('pending')"), '订单全管理仍明确待接入');
+  for (const [page, endpoint] of [['logistics', '/logistics'], ['reports', '/report-workflows']]) {
     const text = await source(`pages/${page}.js`);
-    assert.ok(text.includes("renderState('pending')"), `${page} 应明确待接入`);
+    assert.ok(text.includes(endpoint), `${page} 应接入真实工作流`);
+    assert.ok(!text.includes("renderState('pending')"), `${page} 不应再显示待接入`);
   }
 });
 

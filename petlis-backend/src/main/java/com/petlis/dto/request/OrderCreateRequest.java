@@ -23,6 +23,12 @@ public class OrderCreateRequest {
     private Integer draftVersion;
     private Integer laboratoryId;
     private Long userCouponId;
+    private String idempotencyKey;
+    private Integer petId;
+    private String medicalHistory;
+    private String clinicalSymptoms;
+    private String diagnosis;
+    private String medication;
 
     @Schema(description = "城市ID（已废弃，从token中获取）")
     private Integer cityId;  // 不再需要前端传递，从token中获取

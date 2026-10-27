@@ -20,7 +20,7 @@ test('退款入口仅对合法角色和状态显示', () => {
 test('审核物流签收和财务处理入口与后端角色一致', () => {
   assert.equal(canOrderReview(user(['ADMIN'])), true);
   assert.equal(canOrderReview(user(['HOSPITAL_ADMIN'])), false);
-  assert.equal(canLogisticsAction('pickup', user(['ADMIN'])), true);
+  assert.equal(canLogisticsAction('pickup', user(['ADMIN'])), false);
   assert.equal(canLogisticsAction('pickup', user(['COURIER'])), true);
   assert.equal(canLogisticsAction('pickup', user(['LAB_STAFF'])), false);
   assert.equal(canLogisticsAction('exception', user(['COURIER'])), true);
