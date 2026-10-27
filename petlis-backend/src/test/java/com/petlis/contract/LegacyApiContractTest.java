@@ -1,8 +1,10 @@
 package com.petlis.contract;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.petlis.common.dto.response.WechatLoginResponse;
 import com.petlis.common.util.JwtUtil;
 import com.petlis.config.SecurityConfig;
+import com.petlis.service.impl.FeatureStore;
 import com.petlis.service.impl.SessionService;
 import com.petlis.controller.api.AuthController;
 import com.petlis.controller.api.OrderController;
@@ -28,17 +30,22 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.core.env.Environment;
 import org.springframework.http.MediaType;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -46,6 +53,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @Import(SecurityConfig.class)
 class LegacyApiContractTest {
     @Autowired MockMvc mvc;
+    @Autowired Environment environment;
     @MockBean JwtUtil jwt;
     @MockBean SessionService sessions;
     @MockBean AuthService auth;
@@ -62,12 +70,25 @@ class LegacyApiContractTest {
         when(jwt.getCityIdFromToken("test_token_123")).thenReturn(1);
     }
 
+    private MockHttpServletRequestBuilder apiGet(String uri) {
+        return MockMvcRequestBuilders.get("/api" + uri).contextPath("/api");
+    }
+
+    private MockHttpServletRequestBuilder apiPost(String uri) {
+        return MockMvcRequestBuilders.post("/api" + uri).contextPath("/api");
+    }
+
+    @Test
+    void applicationContextPathIsTheConfiguredApiPrefix() {
+        assertEquals("/api", environment.getProperty("server.servlet.context-path"));
+    }
+
     @Test
     void loginKeepsLegacySuccessEnvelopeAndIdentifiers() throws Exception {
         when(auth.wechatLogin(any())).thenReturn(WechatLoginResponse.builder()
                 .token("session").userId(7).hospitalId(2).build());
 
-        mvc.perform(post("/auth/wechat/login")
+        mvc.perform(apiPost("/auth/wechat/login")
                         .contentType(MediaType.APPLICATION_JSON).content("{\"code\":\"mock-code\"}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(200))
@@ -80,11 +101,11 @@ class LegacyApiContractTest {
         when(pets.query(any(), any())).thenReturn(new PageImpl<>(List.of(new PetVO()), PageRequest.of(0, 1), 1));
         when(orders.queryOrders(any())).thenReturn(new PageImpl<>(List.of(new OrderResponse()), PageRequest.of(0, 1), 1));
 
-        mvc.perform(get("/pets?page=0&size=1").header("Authorization", "Bearer test_token_123"))
+        mvc.perform(apiGet("/pets?page=0&size=1").header("Authorization", "Bearer test_token_123"))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.code").value(200))
                 .andExpect(jsonPath("$.data.number").value(0))
                 .andExpect(jsonPath("$.data.content").isArray());
-        mvc.perform(get("/orders?page=0&size=1").header("Authorization", "Bearer test_token_123"))
+        mvc.perform(apiGet("/orders?page=0&size=1").header("Authorization", "Bearer test_token_123"))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.code").value(200))
                 .andExpect(jsonPath("$.data.number").value(0));
 
@@ -99,7 +120,7 @@ class LegacyApiContractTest {
         report.setReportId(19);
         when(reports.queryReports(any())).thenReturn(new PageImpl<>(List.of(report), PageRequest.of(0, 1), 1));
 
-        mvc.perform(get("/reports?pageNum=0&pageSize=1").header("Authorization", "Bearer test_token_123"))
+        mvc.perform(apiGet("/reports?pageNum=0&pageSize=1").header("Authorization", "Bearer test_token_123"))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.code").value(200))
                 .andExpect(jsonPath("$.data.number").value(0))
                 .andExpect(jsonPath("$.data.content[0].reportId").value(19));
@@ -110,7 +131,7 @@ class LegacyApiContractTest {
     }
 
     @Test
-    void orderDetailKeepsItemsPaginationShapeAndLegacyOrderId() throws Exception {
+    void orderDetailKeepsLegacyOrderAndItemIds() throws Exception {
         var detail = new OrderDetailResponse();
         detail.setOrderId(23);
         var item = new OrderDetailResponse.OrderItemResponse();
@@ -118,9 +139,26 @@ class LegacyApiContractTest {
         detail.setItems(List.of(item));
         when(orders.getOrderDetail(23)).thenReturn(detail);
 
-        mvc.perform(get("/orders/23").header("Authorization", "Bearer test_token_123"))
+        mvc.perform(apiGet("/orders/23").header("Authorization", "Bearer test_token_123"))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.code").value(200))
                 .andExpect(jsonPath("$.data.orderId").value(23))
                 .andExpect(jsonPath("$.data.items[0].itemId").value(31));
+    }
+
+    @Test
+    void featureStorePageUsesItemsTotalPageAndSize() {
+        var jdbc = mock(JdbcTemplate.class);
+        when(jdbc.queryForObject(org.mockito.ArgumentMatchers.anyString(), eq(Long.class), any(Object[].class))).thenReturn(2L);
+        when(jdbc.queryForList(eq("list LIMIT ? OFFSET ?"), eq(1), eq(0L)))
+                .thenReturn(List.of(Map.of("id", 7)));
+        var store = new FeatureStore(jdbc, new ObjectMapper());
+
+        var result = store.page("count", "list", 0, 1);
+
+        assertEquals(java.util.Set.of("items", "total", "page", "size"), result.keySet());
+        assertEquals(List.of(Map.of("id", 7)), result.get("items"));
+        assertEquals(2L, result.get("total"));
+        assertEquals(0, result.get("page"));
+        assertEquals(1, result.get("size"));
     }
 }

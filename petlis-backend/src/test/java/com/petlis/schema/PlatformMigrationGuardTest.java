@@ -77,4 +77,14 @@ class PlatformMigrationGuardTest {
             assertTrue(matrix.contains(column), "功能矩阵缺少列 " + column);
         }
     }
+
+    @Test
+    void acceptanceTrackingUsesActualTask6InsteadOfMissingTask7() throws IOException {
+        var root = BACKEND.getParent();
+        var matrix = Files.readString(root.resolve("docs/FUNCTION-MATRIX.md"));
+        var plan = Files.readString(root.resolve("docs/superpowers/plans/2026-10-27-confirmed-miniprogram-merge.md"));
+        var reviewFocus = plan.split("## Review Focus", 2)[1].split("---", 2)[0];
+        assertFalse(Pattern.compile("Task[s]?[^|\\n]*\\b7\\b").matcher(matrix).find(), "功能矩阵验收必须追踪到 Task 6");
+        assertFalse(Pattern.compile("Task[s]?[^\\n]*\\b7\\b").matcher(reviewFocus).find(), "Review Focus 必须追踪到 Task 6");
+    }
 }

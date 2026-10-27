@@ -28,17 +28,29 @@ def validate_connection(host, port, isolated_copy):
 
 
 def compare_snapshots(baseline, current):
+    baseline_tables = set(baseline.get("tables", baseline["legacy_tables"]))
+    current_tables = set(current.get("tables", current["legacy_tables"]))
     legacy_tables = set(baseline["legacy_tables"])
     differences = []
-    for section, label in (("columns", "旧表列"), ("indexes", "旧表索引")):
+    baseline_platform = sorted(baseline_tables & PLATFORM_TABLES)
+    if baseline_platform:
+        differences.append("基线已含平台表：" + ",".join(baseline_platform))
+    missing = sorted(legacy_tables - current_tables)
+    if missing:
+        differences.append("旧表缺失：" + ",".join(missing))
+    unapproved = sorted(current_tables - baseline_tables - PLATFORM_TABLES)
+    if unapproved:
+        differences.append("未批准新增表：" + ",".join(unapproved))
+    sections = (
+        ("table_options", "旧表选项"), ("columns", "旧表列"),
+        ("indexes", "旧表索引"), ("foreign_keys", "旧表外键"),
+        ("check_constraints", "旧表CHECK约束"), ("triggers", "旧表触发器"),
+    )
+    for section, label in sections:
         expected = [row for row in baseline.get(section, []) if row["table"] in legacy_tables]
         actual = [row for row in current.get(section, []) if row["table"] in legacy_tables]
         if expected != actual:
             differences.append(f"{label}发生变化")
-    expected_triggers = [row for row in baseline.get("triggers", []) if row["table"] in legacy_tables]
-    actual_triggers = [row for row in current.get("triggers", []) if row["table"] in legacy_tables]
-    if expected_triggers != actual_triggers:
-        differences.append("旧表触发器发生变化")
     return differences
 
 
@@ -53,11 +65,23 @@ def mysql_rows(args, query):
     return [json.loads(line) for line in result.stdout.splitlines() if line.strip()]
 
 
-def snapshot(args):
+def snapshot(args, allow_platform=False):
     validate_connection(args.host, args.port, args.isolated_copy)
     if not re.fullmatch(r"[A-Za-z0-9_]+", args.database):
         raise ValueError("数据库名只能包含字母、数字和下划线")
-    excluded = ",".join(f"'{table}'" for table in sorted(PLATFORM_TABLES))
+    table_options = mysql_rows(args, f"""
+SELECT JSON_OBJECT(
+ 'table', TABLE_NAME, 'type', TABLE_TYPE, 'engine', ENGINE,
+ 'row_format', ROW_FORMAT, 'collation', TABLE_COLLATION,
+ 'create_options', CREATE_OPTIONS, 'comment', TABLE_COMMENT)
+FROM information_schema.TABLES
+WHERE TABLE_SCHEMA='{args.database}' AND TABLE_TYPE='BASE TABLE'
+ORDER BY TABLE_NAME
+""")
+    tables = [row["table"] for row in table_options]
+    platform_in_baseline = sorted(set(tables) & PLATFORM_TABLES)
+    if platform_in_baseline and not allow_platform:
+        raise ValueError("基线已含平台表，不能作为旧结构基线：" + ",".join(platform_in_baseline))
     columns = mysql_rows(args, f"""
 SELECT JSON_OBJECT(
  'table', TABLE_NAME, 'position', ORDINAL_POSITION, 'name', COLUMN_NAME,
@@ -65,7 +89,7 @@ SELECT JSON_OBJECT(
  'extra', EXTRA, 'charset', CHARACTER_SET_NAME, 'collation', COLLATION_NAME,
  'generation', GENERATION_EXPRESSION)
 FROM information_schema.COLUMNS
-WHERE TABLE_SCHEMA='{args.database}' AND TABLE_NAME NOT IN ({excluded})
+WHERE TABLE_SCHEMA='{args.database}'
 ORDER BY TABLE_NAME, ORDINAL_POSITION
 """)
     indexes = mysql_rows(args, f"""
@@ -76,8 +100,32 @@ SELECT JSON_OBJECT(
  'index_type', INDEX_TYPE, 'comment', COMMENT, 'index_comment', INDEX_COMMENT,
  'visible', IS_VISIBLE, 'expression', EXPRESSION)
 FROM information_schema.STATISTICS
-WHERE TABLE_SCHEMA='{args.database}' AND TABLE_NAME NOT IN ({excluded})
+WHERE TABLE_SCHEMA='{args.database}'
 ORDER BY TABLE_NAME, INDEX_NAME, SEQ_IN_INDEX
+""")
+    foreign_keys = mysql_rows(args, f"""
+SELECT JSON_OBJECT(
+ 'table', kcu.TABLE_NAME, 'name', kcu.CONSTRAINT_NAME,
+ 'position', kcu.ORDINAL_POSITION, 'column', kcu.COLUMN_NAME,
+ 'referenced_table', kcu.REFERENCED_TABLE_NAME,
+ 'referenced_column', kcu.REFERENCED_COLUMN_NAME,
+ 'referenced_constraint', rc.UNIQUE_CONSTRAINT_NAME,
+ 'update_rule', rc.UPDATE_RULE, 'delete_rule', rc.DELETE_RULE)
+FROM information_schema.KEY_COLUMN_USAGE kcu
+JOIN information_schema.REFERENTIAL_CONSTRAINTS rc
+ ON rc.CONSTRAINT_SCHEMA=kcu.CONSTRAINT_SCHEMA AND rc.CONSTRAINT_NAME=kcu.CONSTRAINT_NAME
+WHERE kcu.CONSTRAINT_SCHEMA='{args.database}' AND kcu.REFERENCED_TABLE_NAME IS NOT NULL
+ORDER BY kcu.TABLE_NAME, kcu.CONSTRAINT_NAME, kcu.ORDINAL_POSITION
+""")
+    check_constraints = mysql_rows(args, f"""
+SELECT JSON_OBJECT(
+ 'table', tc.TABLE_NAME, 'name', tc.CONSTRAINT_NAME,
+ 'clause', cc.CHECK_CLAUSE, 'enforced', tc.ENFORCED)
+FROM information_schema.TABLE_CONSTRAINTS tc
+JOIN information_schema.CHECK_CONSTRAINTS cc
+ ON cc.CONSTRAINT_SCHEMA=tc.CONSTRAINT_SCHEMA AND cc.CONSTRAINT_NAME=tc.CONSTRAINT_NAME
+WHERE tc.CONSTRAINT_SCHEMA='{args.database}' AND tc.CONSTRAINT_TYPE='CHECK'
+ORDER BY tc.TABLE_NAME, tc.CONSTRAINT_NAME
 """)
     triggers = mysql_rows(args, f"""
 SELECT JSON_OBJECT(
@@ -89,13 +137,16 @@ FROM information_schema.TRIGGERS
 WHERE TRIGGER_SCHEMA='{args.database}'
 ORDER BY EVENT_OBJECT_TABLE, TRIGGER_NAME
 """)
-    legacy_tables = sorted({row["table"] for row in columns})
     return {
-        "format_version": 1,
+        "format_version": 2,
         "database": args.database,
-        "legacy_tables": legacy_tables,
+        "tables": tables,
+        "legacy_tables": [table for table in tables if table not in PLATFORM_TABLES],
+        "table_options": table_options,
         "columns": columns,
         "indexes": indexes,
+        "foreign_keys": foreign_keys,
+        "check_constraints": check_constraints,
         "triggers": triggers,
     }
 
@@ -110,7 +161,7 @@ def add_connection_arguments(parser):
 
 
 def main(argv=None):
-    parser = argparse.ArgumentParser(description="隔离 MySQL 副本的旧表列、索引、触发器快照守护")
+    parser = argparse.ArgumentParser(description="隔离 MySQL 副本的完整旧表结构快照与新增表白名单守护")
     subparsers = parser.add_subparsers(dest="command", required=True)
     snapshot_parser = subparsers.add_parser("snapshot")
     add_connection_arguments(snapshot_parser)
@@ -126,12 +177,12 @@ def main(argv=None):
             print(f"已保存 {len(data['legacy_tables'])} 张旧表的结构快照：{args.output}")
             return 0
         baseline = json.loads(Path(args.baseline).read_text(encoding="utf-8"))
-        differences = compare_snapshots(baseline, snapshot(args))
+        differences = compare_snapshots(baseline, snapshot(args, allow_platform=True))
         if differences:
             for difference in differences:
                 print(difference, file=sys.stderr)
             return 1
-        print(f"校验通过：{len(baseline['legacy_tables'])} 张旧表的列、索引、触发器均未变化")
+        print(f"校验通过：{len(baseline['legacy_tables'])} 张旧表的表选项、列、索引、外键、CHECK约束、触发器均未变化，且无非白名单新增表")
         return 0
     except (ValueError, OSError, subprocess.CalledProcessError, json.JSONDecodeError) as error:
         print(f"schema 守护失败：{error}", file=sys.stderr)
