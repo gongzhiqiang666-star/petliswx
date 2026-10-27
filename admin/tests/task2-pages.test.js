@@ -34,6 +34,15 @@ test('财务发票复用管理审核接口且订单全管理明确待接入', as
   }
 });
 
+test('reviewer 不显示管理员医院启停且角色删除需要确认', async () => {
+  const reviews = await source('pages/reviews.js');
+  assert.ok(reviews.includes("key !== 'hospitals' || context.store.hasRole('ADMIN')"));
+  const organizations = await source('pages/organizations.js');
+  assert.ok(organizations.includes('data-remove-role'));
+  assert.ok(organizations.includes('确认删除角色'));
+  assert.ok(organizations.includes("method: 'DELETE'"));
+});
+
 test('管理端所有分页请求使用零基页码', async () => {
   const files = ['components/coupons.js', 'pages/reviews.js', 'pages/organizations.js', 'pages/orders.js', 'pages/logistics.js', 'pages/laboratory.js', 'pages/reports.js', 'pages/finance.js', 'pages/operations.js', 'pages/messages.js', 'pages/system.js'];
   for (const file of files) {

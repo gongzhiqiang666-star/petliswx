@@ -64,6 +64,14 @@ class AccessServiceTest {
     }
 
     @Test
+    void managementBoundaryAcceptsOnlyAdmin() {
+        login(7, null, List.of(new UserRoleAssignment(1L, 7, "ADMIN", null, null, "GLOBAL", 0)));
+        assertDoesNotThrow(access::requireAdmin);
+        login(8, 12, List.of(new UserRoleAssignment(2L, 8, "HOSPITAL_ADMIN", 12, null, "HOSPITAL", 12)));
+        assertThrows(BusinessException.class, access::requireAdmin);
+    }
+
+    @Test
     void legacyDoctorWithoutMappingKeepsOwnHospitalScope() {
         login(7, 12, List.of());
 

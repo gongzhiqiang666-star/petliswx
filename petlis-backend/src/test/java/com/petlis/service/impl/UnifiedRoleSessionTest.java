@@ -41,7 +41,7 @@ class UnifiedRoleSessionTest {
         Map<String, Object> row = new HashMap<>();
         row.put("id", 7); row.put("username", "admin"); row.put("nickname", "平台管理员");
         row.put("status", status); row.put("review_status", reviewStatus); row.put("credential_version", 0);
-        row.put("hospital_id", null); row.put("CityId", 1);
+        row.put("hospital_id", null); row.put("CityId", 1); row.put("hospital_active", 1);
         when(jdbc.queryForList(contains("FROM lin_user"), eq(7))).thenReturn(List.of(row));
         return row;
     }
@@ -72,6 +72,73 @@ class UnifiedRoleSessionTest {
         row.put("status", "hidden");
         assertFalse(sessions.valid(token));
         row.put("status", "normal"); row.put("review_status", "rejected");
+        assertFalse(sessions.valid(token));
+    }
+
+    @Test
+    void courierCanLoginAndValidateStaffSessionWithoutHospital() {
+        user("normal", null);
+        when(roles.roles(7)).thenReturn(Set.of(PlatformRole.COURIER));
+
+        var response = sessions.issue(7);
+
+        assertTrue(jwt.isStaffToken(response.getToken()));
+        assertFalse(response.isReviewer());
+        assertNull(response.getHospitalId());
+        assertTrue(sessions.valid(response.getToken()));
+    }
+
+    @Test
+    void labStaffCanLoginAndValidateStaffSessionWithoutHospital() {
+        user("normal", null);
+        when(roles.roles(7)).thenReturn(Set.of(PlatformRole.LAB_STAFF));
+
+        var response = sessions.issue(7);
+
+        assertTrue(jwt.isStaffToken(response.getToken()));
+        assertTrue(sessions.valid(response.getToken()));
+    }
+
+    @Test
+    void doctorAndHospitalAdminStillRequireHospital() {
+        user("normal", null);
+        when(roles.roles(7)).thenReturn(Set.of(PlatformRole.DOCTOR));
+        assertThrows(com.petlis.common.exception.BusinessException.class, () -> sessions.issue(7));
+        when(roles.roles(7)).thenReturn(Set.of(PlatformRole.HOSPITAL_ADMIN));
+        assertThrows(com.petlis.common.exception.BusinessException.class, () -> sessions.issue(7));
+    }
+
+    @Test
+    void doctorTokenIsInvalidForNonDoctorMappedRole() {
+        Map<String, Object> row = user("normal", "approved");
+        row.put("hospital_id", 12);
+        when(roles.roles(7)).thenReturn(Set.of(PlatformRole.LAB_STAFF));
+
+        assertFalse(sessions.valid(jwt.generateToken(7, null, 12, 1)));
+    }
+
+    @Test
+    void inactiveHospitalBlocksLoginAndExistingToken() {
+        Map<String, Object> row = user("normal", "approved");
+        row.put("hospital_id", 12); row.put("hospital_active", 0);
+        when(roles.roles(7)).thenReturn(Set.of(PlatformRole.DOCTOR));
+
+        assertThrows(com.petlis.common.exception.BusinessException.class, () -> sessions.issue(7));
+        assertFalse(sessions.valid(jwt.generateToken(7, null, 12, 1)));
+    }
+
+    @Test
+    void revokedHospitalTokenCannotReplayAfterReenable() {
+        Map<String, Object> row = user("normal", "approved");
+        row.put("hospital_id", 12);
+        when(roles.roles(7)).thenReturn(Set.of(PlatformRole.DOCTOR));
+        String token = jwt.generateToken(7, null, 12, 1);
+        assertTrue(sessions.valid(token));
+        row.put("hospital_active", 0);
+        assertFalse(sessions.valid(token));
+        row.put("hospital_active", 1);
+        assertTrue(sessions.valid(token));
+        row.put("credential_version", 1);
         assertFalse(sessions.valid(token));
     }
 

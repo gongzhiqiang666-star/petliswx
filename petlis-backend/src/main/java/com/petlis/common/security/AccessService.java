@@ -34,6 +34,10 @@ public class AccessService {
         return new CurrentActor(principal.getUserId(), roles, hospitals, laboratories, scope);
     }
 
+    public void requireAdmin() {
+        if (!current().isAdmin()) throw new BusinessException(403, "需要平台管理员权限");
+    }
+
     public void requireHospital(Integer hospitalId) {
         if (!current().canAccessHospital(hospitalId)) throw forbidden();
     }

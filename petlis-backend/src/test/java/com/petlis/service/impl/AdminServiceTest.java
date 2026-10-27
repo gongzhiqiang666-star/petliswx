@@ -1,6 +1,7 @@
 package com.petlis.service.impl;
 
 import com.petlis.common.exception.BusinessException;
+import com.petlis.common.security.AccessService;
 import com.petlis.common.security.PlatformRole;
 import com.petlis.common.security.UserPrincipal;
 import com.petlis.common.security.UserRoleService;
@@ -25,6 +26,7 @@ class AdminServiceTest {
     UserRoleService roles;
     SessionService sessions;
     ReviewService reviews;
+    AccessService access;
     AdminService service;
 
     @BeforeEach
@@ -32,7 +34,8 @@ class AdminServiceTest {
         store = mock(FeatureStore.class); jdbc = mock(JdbcTemplate.class);
         when(store.jdbc()).thenReturn(jdbc);
         roles = mock(UserRoleService.class); sessions = mock(SessionService.class); reviews = mock(ReviewService.class);
-        service = new AdminService(store, roles, sessions, reviews);
+        access = mock(AccessService.class);
+        service = new AdminService(store, roles, sessions, reviews, access);
         SecurityContextHolder.getContext().setAuthentication(new UsernamePasswordAuthenticationToken(
                 new UserPrincipal(42, null, null, null), null, List.of()));
         when(roles.roles(42)).thenReturn(Set.of(PlatformRole.ADMIN));
@@ -78,12 +81,24 @@ class AdminServiceTest {
         service.reviewHospital(12, new ReviewService.Decision(true, "通过"));
 
         verify(jdbc).update("UPDATE lin_lb_infohospital SET IsActive=? WHERE InfoHospitalId=?", 1, 12);
+        verify(jdbc).update(contains("INSERT INTO lin_doctor_profile"), eq(12));
         verify(jdbc).update(contains("lin_audit_record"), eq(42), eq("HOSPITAL_APPROVED"), eq("HOSPITAL"), eq("12"), eq("通过"));
     }
 
     @Test
+    void hospitalDisableRevokesAllHospitalUserCredentialVersions() {
+        when(store.one(contains("lin_lb_infohospital"), eq(12))).thenReturn(Map.of("InfoHospitalId", 12, "IsActive", 1));
+
+        service.reviewHospital(12, new ReviewService.Decision(false, "停用"));
+
+        verify(jdbc).update("UPDATE lin_lb_infohospital SET IsActive=? WHERE InfoHospitalId=?", 0, 12);
+        verify(jdbc).update(contains("SELECT id,'approved',1 FROM lin_user WHERE hospital_id=?"), eq(12));
+    }
+
+    @Test
     void nonAdminCannotUseManagementService() {
-        when(roles.roles(42)).thenReturn(Set.of(PlatformRole.HOSPITAL_ADMIN));
+        doThrow(new BusinessException(403, "需要平台管理员权限")).when(access).requireAdmin();
         assertThrows(BusinessException.class, () -> service.hospitals("ACTIVE", 0, 20));
+        verify(access).requireAdmin();
     }
 }

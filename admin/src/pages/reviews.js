@@ -14,8 +14,9 @@ const configs = {
 export async function render(container, context) {
   const { api } = context;
   let tab = 'users';
+  const availableConfigs = Object.entries(configs).filter(([key]) => key !== 'hospitals' || context.store.hasRole('ADMIN'));
   container.innerHTML = `${pageHeader('审核中心', '处理真实注册、资料、送检与发票待审申请')}
-    <div class="tabs" role="tablist">${Object.entries(configs).map(([key, item]) => `<button data-tab="${key}" class="tab ${key === tab ? 'active' : ''}">${item.title}</button>`).join('')}</div>
+    <div class="tabs" role="tablist">${availableConfigs.map(([key, item]) => `<button data-tab="${key}" class="tab ${key === tab ? 'active' : ''}">${item.title}</button>`).join('')}</div>
     <section class="panel"><div class="toolbar"><button class="button secondary" id="review-refresh">刷新</button></div><div id="review-list"></div></section>`;
   const list = container.querySelector('#review-list');
 

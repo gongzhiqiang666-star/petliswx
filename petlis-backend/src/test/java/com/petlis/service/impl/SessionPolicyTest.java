@@ -22,7 +22,7 @@ class SessionPolicyTest {
   ReflectionTestUtils.setField(jwt,"secret","unit-test-secret-only-0123456789abcdef0123456789abcdef");ReflectionTestUtils.setField(jwt,"expiration",60000L);
   permission=new ReviewPermission();ReflectionTestUtils.setField(permission,"adminUserIds","42");sessions=new SessionService(store,jwt,permission,mock(UserRoleService.class));
  }
- Map<String,Object> user(Integer hospital,int version){var u=new HashMap<String,Object>();u.put("status","normal");u.put("review_status","approved");u.put("credential_version",version);u.put("hospital_id",hospital);return u;}
+ Map<String,Object> user(Integer hospital,int version){var u=new HashMap<String,Object>();u.put("status","normal");u.put("review_status","approved");u.put("credential_version",version);u.put("hospital_id",hospital);u.put("hospital_active",1);return u;}
  void returned(Map<String,Object> u){when(jdbc.queryForList(anyString(),any(Object[].class))).thenReturn(List.of(u));}
  @Test void reviewerSessionHasNoHospitalAndDedicatedRole(){var u=user(null,2);returned(u);var session=sessions.issue(42);assertTrue(session.isReviewer());assertNull(session.getHospitalId());assertTrue(jwt.isReviewerToken(session.getToken()));assertTrue(session.getRoles().contains("REVIEWER"));assertFalse(session.getRoles().contains("ADMIN"));assertTrue(sessions.valid(session.getToken()));}
  @Test void reviewerCannotUseDoctorRoleToken(){returned(user(9,0));assertFalse(sessions.valid(jwt.generateToken(42,null,9,1)));}

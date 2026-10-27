@@ -42,12 +42,23 @@ export async function render(container, context) {
         body: `${renderTable({ rows: assignments, emptyText: '当前使用兼容医生角色', columns: [
           { label: '分配 ID', key: 'id' }, { label: '角色', key: 'roleCode' },
           { label: '医院 ID', key: 'hospitalId' }, { label: '实验室 ID', key: 'laboratoryId' }
-        ] })}<div class="form-grid">${field({ name: 'roleCode', label: '角色', options: roleOptions, required: true })}${field({ name: 'hospitalId', label: '医院 ID（医生/医院管理员必填）', type: 'number', min: 1 })}${field({ name: 'laboratoryId', label: '实验室 ID（实验人员必填）', type: 'number', min: 1 })}</div>`,
+        ], actions: (row) => `<button class="button danger text" type="button" data-remove-role="${row.id}">删除</button>` })}<div class="form-grid">${field({ name: 'roleCode', label: '角色', options: roleOptions, required: true })}${field({ name: 'hospitalId', label: '医院 ID（医生/医院管理员必填）', type: 'number', min: 1 })}${field({ name: 'laboratoryId', label: '实验室 ID（实验人员必填）', type: 'number', min: 1 })}</div>`,
         async onSubmit(form) {
           await api.request(`/admin/users/${userId}/roles`, { method: 'POST', data: rolePayload(formData(form)) });
           context.toast('角色已保存，用户旧会话已撤销'); load();
         }
       });
+      document.querySelectorAll('[data-remove-role]').forEach((button) => button.addEventListener('click', () => {
+        const assignment = assignments.find((row) => String(row.id) === button.dataset.removeRole);
+        dialog({
+          title: '确认删除角色', submitLabel: '确认删除',
+          body: `<p>确认删除用户 #${userId} 的 ${escapeHtml(assignment?.roleCode)} 角色？删除后该用户旧会话将撤销。</p>`,
+          async onSubmit() {
+            await api.request(`/admin/users/${userId}/roles/${button.dataset.removeRole}`, { method: 'DELETE' });
+            context.toast('角色已删除，用户旧会话已撤销'); load();
+          }
+        });
+      }));
     } catch (error) { dialog({ title: '无法读取角色', body: renderState('error', error) }); }
   }
 

@@ -1,6 +1,7 @@
 package com.petlis.service.impl;
 
 import com.petlis.common.exception.BusinessException;
+import com.petlis.common.security.AccessService;
 import com.petlis.common.security.PlatformRole;
 import com.petlis.common.security.SecurityUtils;
 import com.petlis.common.security.UserRoleAssignment;
@@ -22,6 +23,7 @@ public class AdminService {
     private final UserRoleService userRoles;
     private final SessionService sessions;
     private final ReviewService reviews;
+    private final AccessService access;
 
     public Map<String, Object> users(String status, String role, Integer hospitalId, int page, int size) {
         requireAdmin();
@@ -110,6 +112,7 @@ public class AdminService {
         }
         store.one("SELECT InfoHospitalId,IsActive FROM lin_lb_infohospital WHERE InfoHospitalId=? FOR UPDATE", hospitalId);
         store.jdbc().update("UPDATE lin_lb_infohospital SET IsActive=? WHERE InfoHospitalId=?", decision.approved() ? 1 : 0, hospitalId);
+        store.jdbc().update("INSERT INTO lin_doctor_profile(user_id,review_status,credential_version) SELECT id,'approved',1 FROM lin_user WHERE hospital_id=? ON DUPLICATE KEY UPDATE credential_version=credential_version+1", hospitalId);
         audit(decision.approved() ? "HOSPITAL_APPROVED" : "HOSPITAL_REJECTED", "HOSPITAL", hospitalId, decision.reason());
     }
 
@@ -142,9 +145,7 @@ public class AdminService {
     }
 
     private void requireAdmin() {
-        if (!userRoles.roles(SecurityUtils.getCurrentUserId()).contains(PlatformRole.ADMIN)) {
-            throw new BusinessException(403, "需要平台管理员权限");
-        }
+        access.requireAdmin();
     }
 
     private void audit(String action, String resourceType, Object resourceId, String reason) {
