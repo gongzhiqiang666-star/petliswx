@@ -38,8 +38,8 @@ class ReportWorkflowServiceTest {
         service = new ReportWorkflowService(store, access, laboratory, notifications, pdf, files);
         org.springframework.test.util.ReflectionTestUtils.setField(service, "serverDomain", "https://laboklin.cn");
         lenient().when(store.one(contains("COUNT(DISTINCT"), eq(8))).thenReturn(Map.of("total", 1, "published", 1));
-        lenient().when(store.one(contains("SELECT order_id,test_result_id"), eq(41L))).thenReturn(Map.of("order_id", 8, "test_result_id", 31L));
-        lenient().when(store.one(contains("SampleStatus"), eq(8))).thenReturn(Map.of("SampleStatus", 2));
+        lenient().when(store.one(contains("w.order_id,w.test_result_id"), eq(41L))).thenReturn(Map.of("order_id", 8, "test_result_id", 31L));
+        lenient().when(store.one(contains("SampleStatus"), anyLong())).thenReturn(Map.of("order_id", 8, "test_result_id", 31L, "SampleStatus", 2));
         lenient().when(store.one(startsWith("SELECT t.id,t.status"), eq(31L))).thenReturn(Map.of("status", "REPORT_REVIEW"));
     }
 
@@ -51,7 +51,7 @@ class ReportWorkflowServiceTest {
 
     @Test
     void pendingReviewCannotBePublished() {
-        when(store.one(contains("lin_report_workflow"), eq(41L))).thenReturn(report("PENDING_REVIEW", 1, 0));
+        when(store.one(contains("SELECT w.*"), eq(41L))).thenReturn(report("PENDING_REVIEW", 1, 0));
         assertThrows(BusinessException.class, () -> service.publish(41));
         verify(jdbc, never()).update(contains("SampleStatus=3"), any(Object[].class));
     }
@@ -60,21 +60,21 @@ class ReportWorkflowServiceTest {
     void approvedReportWithVoidedResultCannotPublish() {
         var workflow = new java.util.HashMap<>(report("APPROVED", 1, 0));
         workflow.put("result_status", "VOIDED");
-        when(store.one(contains("lin_report_workflow"), eq(41L))).thenReturn(workflow);
+        when(store.one(contains("SELECT w.*"), eq(41L))).thenReturn(workflow);
         assertThrows(BusinessException.class, () -> service.publish(41));
         verify(jdbc, never()).update(contains("SampleStatus=3"), any(Object[].class));
     }
 
     @Test
     void approvedCashReportRequiresPaymentBeforeAnyLegacyWrite() {
-        when(store.one(contains("lin_report_workflow"), eq(41L))).thenReturn(report("APPROVED", 0, 0));
+        when(store.one(contains("SELECT w.*"), eq(41L))).thenReturn(report("APPROVED", 0, 0));
         assertThrows(BusinessException.class, () -> service.publish(41));
         verify(jdbc, never()).update(contains("DiagnosisStatus=2"), any(Object[].class));
     }
 
     @Test
     void publishSynchronizesLegacyDetailInfoPdfAndOrderAndEmitsStableEvent() {
-        when(store.one(contains("lin_report_workflow"), eq(41L))).thenReturn(report("APPROVED", 1, 0));
+        when(store.one(contains("SELECT w.*"), eq(41L))).thenReturn(report("APPROVED", 1, 0));
         service.publish(41);
         verify(jdbc).update(contains("DiagnosisStatus=2"), eq("https://laboklin.cn/Content/FilePdf/report-51.pdf"), eq(21));
         verify(jdbc).update(contains("lin_lb_diagnosisdetail_info"), eq(21), any(), any());
@@ -84,15 +84,15 @@ class ReportWorkflowServiceTest {
 
     @Test
     void monthlyReportCanPublishWithoutImmediatePayment() {
-        when(store.one(contains("lin_report_workflow"), eq(41L))).thenReturn(report("APPROVED", 0, 1));
+        when(store.one(contains("SELECT w.*"), eq(41L))).thenReturn(report("APPROVED", 0, 1));
         assertDoesNotThrow(() -> service.publish(41));
         verify(jdbc).update(contains("SampleStatus=3"), eq(8));
     }
 
     @Test
     void repeatedPublishReturnsOriginalWithoutDuplicateNotification() {
-        when(store.one(contains("lin_report_workflow"), eq(41L))).thenReturn(report("APPROVED", 1, 0), report("PUBLISHED", 1, 0));
-        when(store.one(contains("SampleStatus"), eq(8))).thenReturn(Map.of("SampleStatus", 2), Map.of("SampleStatus", 3));
+        when(store.one(contains("SELECT w.*"), eq(41L))).thenReturn(report("APPROVED", 1, 0), report("PUBLISHED", 1, 0));
+        when(store.one(contains("SampleStatus"), anyLong())).thenReturn(Map.of("order_id", 8, "test_result_id", 31L, "SampleStatus", 2), Map.of("order_id", 8, "test_result_id", 31L, "SampleStatus", 3));
         when(store.one(startsWith("SELECT t.id,t.status"), eq(31L))).thenReturn(Map.of("status", "REPORT_REVIEW"), Map.of("status", "COMPLETED"));
         service.publish(41);
         assertDoesNotThrow(() -> service.publish(41));
@@ -103,7 +103,7 @@ class ReportWorkflowServiceTest {
     void publishedCashReportRemainsInvisibleUntilPaid() {
         when(access.current()).thenReturn(new CurrentActor(7, Set.of(PlatformRole.DOCTOR), Set.of(1), Set.of(),
                 new DataScope(false, Set.of(1), Set.of(), null)));
-        when(store.one(contains("lin_report_workflow"), eq(41L))).thenReturn(report("PUBLISHED", 0, 0));
+        when(store.one(contains("SELECT w.*"), eq(41L))).thenReturn(report("PUBLISHED", 0, 0));
         assertThrows(BusinessException.class, () -> service.get(41));
     }
 
@@ -111,7 +111,7 @@ class ReportWorkflowServiceTest {
     void hospitalCannotReadUnpublishedOrForeignWorkflow() {
         when(access.current()).thenReturn(new CurrentActor(7, Set.of(PlatformRole.DOCTOR), Set.of(1), Set.of(),
                 new DataScope(false, Set.of(1), Set.of(), null)));
-        when(store.one(contains("lin_report_workflow"), eq(41L))).thenReturn(report("APPROVED", 1, 0));
+        when(store.one(contains("SELECT w.*"), eq(41L))).thenReturn(report("APPROVED", 1, 0));
         assertThrows(BusinessException.class, () -> service.get(41));
         verify(notifications, never()).emit(anyInt(), any(), any(), any(), any(), any());
     }

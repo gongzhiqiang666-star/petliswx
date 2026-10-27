@@ -100,12 +100,11 @@ public class ReportWorkflowService {
 
     @Transactional
     public Map<String, Object> publish(long workflowId) {
+        Map<String, Object> order = store.one("SELECT w.order_id,w.test_result_id,o.SampleStatus FROM lin_report_workflow w JOIN lin_lb_listdiagnosisproject o ON o.ListDiagnosisProjectId=w.order_id WHERE w.id=? FOR UPDATE OF o", workflowId);
+        int orderId = number(order.get("order_id")).intValue();
+        long resultId = number(order.get("test_result_id")).longValue();
+        Map<String, Object> task = store.one("SELECT t.id,t.status FROM lin_lab_task t JOIN lin_test_result r ON r.lab_task_id=t.id WHERE r.id=? FOR UPDATE OF t", resultId);
         labActor();
-        Map<String, Object> reference = store.one("SELECT order_id,test_result_id FROM lin_report_workflow WHERE id=?", workflowId);
-        int orderId = number(reference.get("order_id")).intValue();
-        long resultId = number(reference.get("test_result_id")).longValue();
-        Map<String, Object> order = store.one("SELECT ListDiagnosisProjectId,SampleStatus FROM lin_lb_listdiagnosisproject WHERE ListDiagnosisProjectId=? FOR UPDATE", orderId);
-        Map<String, Object> task = store.one("SELECT t.id,t.status FROM lin_lab_task t JOIN lin_test_result r ON r.lab_task_id=t.id WHERE r.id=? FOR UPDATE", resultId);
         Map<String, Object> report = manageable(workflowId);
         String status = String.valueOf(report.get("status"));
         if (!List.of("APPROVED", "PUBLISHED").contains(status)) throw invalidState();
@@ -120,7 +119,7 @@ public class ReportWorkflowService {
             store.jdbc().update("UPDATE lin_lb_diagnosisdetail SET DiagnosisStatus=2,IsSendMail=1,PDFHttpUrl=?,SendMailDt=NOW() WHERE DiagnosisDetailId=?", pdfUrl, detailId);
             store.jdbc().update("UPDATE lin_report_workflow SET status='PUBLISHED',payment_checked=1,published_by=?,published_at=NOW(),legacy_synced_at=NOW(),version=version+1 WHERE id=?", access.current().userId(), workflowId);
         }
-        Map<String, Object> completion = store.one("SELECT COUNT(DISTINCT d.DiagnosisDetailId) AS total,COUNT(DISTINCT CASE WHEN w.status='PUBLISHED' THEN d.DiagnosisDetailId END) AS published FROM lin_lb_diagnosisdetail d LEFT JOIN lin_report_workflow w ON w.detail_id=d.DiagnosisDetailId WHERE d.ListDiagnosisProjectId=? AND d.IsCheckPass=0 AND d.IsActive=1", orderId);
+        Map<String, Object> completion = store.one("SELECT COUNT(DISTINCT d.DiagnosisDetailId) AS total,COUNT(DISTINCT CASE WHEN w.status='PUBLISHED' THEN d.DiagnosisDetailId END) AS published FROM lin_lb_diagnosisdetail d LEFT JOIN lin_report_workflow w ON w.detail_id=d.DiagnosisDetailId WHERE d.ListDiagnosisProjectId=? AND d.IsCheckPass=0 AND d.IsActive=1 FOR UPDATE", orderId);
         if (number(completion.get("total")).intValue() == number(completion.get("published")).intValue()) {
             boolean changed = false;
             if (number(order.get("SampleStatus")).intValue() != 3) {

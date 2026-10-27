@@ -56,10 +56,10 @@ class NullCreatorWorkflowTest {
         report.put("id", 41L); report.put("order_id", 8); report.put("detail_id", 21); report.put("test_result_id", 31L);
         report.put("hospital_id", 1); report.put("laboratory_id", 2); report.put("status", "APPROVED"); report.put("doctor_user_id", null);
         report.put("is_pay_money", 1); report.put("pay_type", 0); report.put("pdf_file_id", 51L); report.put("batch_no", "B-1");
-        when(store.one(contains("lin_report_workflow"), eq(41L))).thenReturn(report);
+        when(store.one(contains("SELECT w.*"), eq(41L))).thenReturn(report);
         when(store.one(contains("COUNT(DISTINCT"), eq(8))).thenReturn(Map.of("total", 1, "published", 1));
-        when(store.one(contains("SELECT order_id,test_result_id"), eq(41L))).thenReturn(Map.of("order_id", 8, "test_result_id", 31L));
-        when(store.one(contains("SampleStatus"), eq(8))).thenReturn(Map.of("SampleStatus", 2));
+        when(store.one(contains("w.order_id,w.test_result_id"), eq(41L))).thenReturn(Map.of("order_id", 8, "test_result_id", 31L));
+        when(store.one(contains("SampleStatus"), eq(41L))).thenReturn(Map.of("order_id", 8, "test_result_id", 31L, "SampleStatus", 2));
         when(store.one(startsWith("SELECT t.id,t.status"), eq(31L))).thenReturn(Map.of("status", "REPORT_REVIEW"));
         var service = new ReportWorkflowService(store, access, mock(LabWorkflowService.class), notifications, mock(ReportPdfGenerator.class), mock(PlatformFileService.class));
         assertDoesNotThrow(() -> service.publish(41));

@@ -33,8 +33,8 @@ class ReportWorkflowReviewRegressionTest {
         when(access.current()).thenReturn(new CurrentActor(5, Set.of(PlatformRole.LAB_STAFF), Set.of(), Set.of(2),
                 new DataScope(false, Set.of(), Set.of(2), null)));
         service = new ReportWorkflowService(store, access, laboratory, notifications, mock(ReportPdfGenerator.class), mock(PlatformFileService.class));
-        lenient().when(store.one(contains("SELECT order_id,test_result_id"), anyLong())).thenReturn(Map.of("order_id", 8, "test_result_id", 31L));
-        lenient().when(store.one(contains("SampleStatus"), eq(8))).thenReturn(Map.of("SampleStatus", 2));
+        lenient().when(store.one(contains("w.order_id,w.test_result_id"), anyLong())).thenReturn(Map.of("order_id", 8, "test_result_id", 31L));
+        lenient().when(store.one(contains("SampleStatus"), anyLong())).thenReturn(Map.of("order_id", 8, "test_result_id", 31L, "SampleStatus", 2));
         lenient().when(store.one(startsWith("SELECT t.id,t.status"), eq(31L))).thenReturn(Map.of("status", "REPORT_REVIEW"));
     }
 
@@ -52,8 +52,8 @@ class ReportWorkflowReviewRegressionTest {
 
     @Test
     void multiDetailOrderCompletesOnlyAfterEveryActiveDetailIsPublished() {
-        when(store.one(contains("lin_report_workflow"), eq(41L))).thenReturn(report(41, 21));
-        when(store.one(contains("lin_report_workflow"), eq(42L))).thenReturn(report(42, 22));
+        when(store.one(contains("SELECT w.*"), eq(41L))).thenReturn(report(41, 21));
+        when(store.one(contains("SELECT w.*"), eq(42L))).thenReturn(report(42, 22));
         completion(2, 1);
         service.publish(41);
         verify(jdbc, never()).update(contains("SampleStatus=3"), any(Object[].class));
@@ -70,7 +70,7 @@ class ReportWorkflowReviewRegressionTest {
     @Test
     void rejectingOneDetailDoesNotRegressSharedTaskAndNotifiesOnce() {
         var pending = report(41, 21); pending.put("status", "PENDING_REVIEW"); pending.put("submitted_by", 5);
-        when(store.one(contains("lin_report_workflow"), eq(41L))).thenReturn(pending);
+        when(store.one(contains("SELECT w.*"), eq(41L))).thenReturn(pending);
         service.review(41, "REJECT", "结果不清晰");
         verify(jdbc, never()).update(contains("lin_lab_task"), any(Object[].class));
         verify(notifications, times(1)).emit(anyInt(), any(), any(), any(), any(), any());
@@ -79,8 +79,8 @@ class ReportWorkflowReviewRegressionTest {
     @Test
     void repeatedPublishReturnsOriginalWithoutLegacyWritesOrNotification() {
         var published = report(41, 21); published.put("status", "PUBLISHED");
-        when(store.one(contains("lin_report_workflow"), eq(41L))).thenReturn(published);
-        when(store.one(contains("SampleStatus"), eq(8))).thenReturn(Map.of("SampleStatus", 3));
+        when(store.one(contains("SELECT w.*"), eq(41L))).thenReturn(published);
+        when(store.one(contains("SampleStatus"), anyLong())).thenReturn(Map.of("order_id", 8, "test_result_id", 31L, "SampleStatus", 3));
         when(store.one(startsWith("SELECT t.id,t.status"), eq(31L))).thenReturn(Map.of("status", "COMPLETED"));
         completion(1, 1);
         assertDoesNotThrow(() -> service.publish(41));
@@ -91,7 +91,7 @@ class ReportWorkflowReviewRegressionTest {
     @Test
     void publishedRetryRepairsMissingAggregateCompletion() {
         var published = report(41, 21); published.put("status", "PUBLISHED");
-        when(store.one(contains("lin_report_workflow"), eq(41L))).thenReturn(published);
+        when(store.one(contains("SELECT w.*"), eq(41L))).thenReturn(published);
         completion(1, 1);
         service.publish(41);
         verify(jdbc).update(contains("SampleStatus=3"), eq(8));
@@ -102,24 +102,36 @@ class ReportWorkflowReviewRegressionTest {
     @Test
     void sharedOrderAndTaskAreLockedBeforeWorkflow() {
         var approved = report(41, 21);
-        when(store.one(contains("lin_report_workflow"), eq(41L))).thenReturn(approved);
+        when(store.one(contains("SELECT w.*"), eq(41L))).thenReturn(approved);
         completion(1, 1);
         service.publish(41);
         var order = org.mockito.Mockito.inOrder(store);
-        order.verify(store).one(contains("SELECT order_id,test_result_id"), eq(41L));
-        order.verify(store).one(contains("SampleStatus"), eq(8));
+        order.verify(store).one(argThat(sql -> sql.contains("w.order_id,w.test_result_id") && sql.contains("SampleStatus") && sql.contains("FOR UPDATE OF o")), eq(41L));
         order.verify(store).one(startsWith("SELECT t.id,t.status"), eq(31L));
         order.verify(store).one(contains("SELECT w.*"), eq(41L));
     }
 
     @Test
+    void firstWorkflowReadAndAggregateCountAreCurrentReadsBeforeAnyActorSnapshot() {
+        var approved = report(41, 21);
+        when(store.one(contains("SELECT w.*"), eq(41L))).thenReturn(approved);
+        completion(1, 1);
+        service.publish(41);
+        var order = org.mockito.Mockito.inOrder(store, access);
+        order.verify(store).one(argThat(sql -> sql.contains("w.order_id,w.test_result_id") && sql.contains("SampleStatus") && sql.contains("FOR UPDATE OF o")), eq(41L));
+        order.verify(store).one(startsWith("SELECT t.id,t.status"), eq(31L));
+        order.verify(access, atLeastOnce()).current();
+        verify(store).one(argThat(sql -> sql.contains("COUNT(DISTINCT") && sql.contains("FOR UPDATE")), eq(8));
+    }
+
+    @Test
     void settlementSnapshotOverridesHospitalCurrentPayType() {
         var cash = report(41, 21); cash.put("is_pay_money", 0); cash.put("pay_type", 1); cash.put("settlement_mode", "cash");
-        when(store.one(contains("lin_report_workflow"), eq(41L))).thenReturn(cash);
+        when(store.one(contains("SELECT w.*"), eq(41L))).thenReturn(cash);
         assertThrows(BusinessException.class, () -> service.publish(41));
 
         var monthly = report(41, 21); monthly.put("is_pay_money", 0); monthly.put("pay_type", 0); monthly.put("settlement_mode", "monthly");
-        when(store.one(contains("lin_report_workflow"), eq(41L))).thenReturn(monthly);
+        when(store.one(contains("SELECT w.*"), eq(41L))).thenReturn(monthly);
         completion(1, 1);
         assertDoesNotThrow(() -> service.publish(41));
         verify(jdbc).update(contains("SampleStatus=3"), eq(8));
@@ -128,7 +140,7 @@ class ReportWorkflowReviewRegressionTest {
     @Test
     void publishStoresAbsoluteLegacyPdfUrlAndConfirmedCompleteStatusTwo() {
         var approved = report(41, 21);
-        when(store.one(contains("lin_report_workflow"), eq(41L))).thenReturn(approved);
+        when(store.one(contains("SELECT w.*"), eq(41L))).thenReturn(approved);
         completion(1, 1);
         org.springframework.test.util.ReflectionTestUtils.setField(service, "serverDomain", "https://laboklin.cn");
         service.publish(41);
@@ -138,7 +150,7 @@ class ReportWorkflowReviewRegressionTest {
     @Test
     void legacyDetailBodyContainsReadableSummaryConclusionAndOnlyOwnResults() {
         var approved = report(41, 21);
-        when(store.one(contains("lin_report_workflow"), eq(41L))).thenReturn(approved);
+        when(store.one(contains("SELECT w.*"), eq(41L))).thenReturn(approved);
         completion(1, 1);
         String snapshot = "{\"summary\":\"摘要第一行\\n摘要第二行\",\"conclusion\":\"结论\",\"items\":[{\"template\":\"模板\",\"name\":\"白细胞\",\"value\":\"12\",\"unit\":\"u\",\"referenceRange\":\"1-2\",\"abnormalFlag\":false}]}";
         when(jdbc.queryForList(contains("after_json"), eq("41"))).thenReturn(java.util.List.of(Map.of("after_json", snapshot)));
