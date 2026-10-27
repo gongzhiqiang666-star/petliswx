@@ -1,1 +1,2 @@
 @import "../bills/bills.wxss";
+.bill-scroll{height:calc(100vh - 48rpx)}

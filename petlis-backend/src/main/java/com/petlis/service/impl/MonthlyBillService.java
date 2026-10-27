@@ -137,7 +137,7 @@ public class MonthlyBillService {
         Map<String, Object> bill = lock(id);
         authorizeReconcile(bill);
         String status = bill.get("status").toString();
-        if (!Set.of("PENDING_RECONCILIATION", "DISPUTED", "RECONCILED", "OVERDUE").contains(status)) throw new BusinessException(409, "当前账单不可对账");
+        if (!Set.of("PENDING_RECONCILIATION", "DISPUTED").contains(status)) throw new BusinessException(409, "仅待对账或异议账单可执行对账操作");
         CurrentActor actor = access.current();
         if ("DISPUTE".equals(action)) {
             if (reason == null || reason.isBlank()) throw new BusinessException("请填写账单异议原因");

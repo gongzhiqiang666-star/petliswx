@@ -1,9 +1,11 @@
 <view class="page">
   <view wx:if="{{forbidden}}" class="petlis-empty"><view class="petlis-empty-text">仅医院管理员可查看月结账单</view></view>
   <block wx:else>
-    <view wx:if="{{error}}" class="petlis-empty error"><view class="petlis-empty-text">{{error}}</view><button class="petlis-btn petlis-btn-outline" bindtap="load">重试</button></view>
-    <view wx:if="{{bill}}" class="card petlis-list-card"><view class="line"><text>{{bill.billNo || bill.bill_no}}</text><text>{{bill.status}}</text></view><view class="amount">¥{{bill.dueAmount || bill.due_amount}}</view><view class="meta">账期 {{bill.periodStart || bill.period_start}} 至 {{bill.periodEnd || bill.period_end}}</view><view class="meta">到期日 {{bill.dueDate || bill.due_date}} · 未结 ¥{{bill.outstandingAmount || bill.outstanding_amount}}</view></view>
-    <view class="card petlis-list-card"><view class="section-title">账单明细</view><view wx:for="{{items}}" wx:key="id" class="detail-item"><view>{{item.description}}</view><view class="meta">{{item.orderNo}} · ¥{{item.finalAmount || item.final_amount}}</view></view><view wx:if="{{bill && !items.length}}" class="meta">暂无账单明细</view></view>
-    <view class="bottom-actions" wx:if="{{bill && bill.status !== 'SETTLED'}}"><button class="petlis-btn petlis-btn-outline" disabled="{{busy}}" bindtap="dispute">提出异议</button><button class="petlis-btn petlis-btn-primary" disabled="{{busy}}" bindtap="confirm">确认对账</button></view>
+    <view wx:if="{{error}}" class="petlis-empty error"><view class="petlis-empty-text">{{error}}</view><button class="petlis-btn petlis-btn-outline" bindtap="retryLoad">重试</button></view>
+    <scroll-view scroll-y bindscrolltolower="onReachBottom" class="bill-scroll">
+      <view wx:if="{{bill}}" class="card petlis-list-card"><view class="line"><text>{{bill.billNo || bill.bill_no}}</text><text class="badge status-{{bill.statusClass}}">{{bill.statusLabel}}</text></view><view class="amount">¥{{bill.dueAmount || bill.due_amount}}</view><view class="meta">账期 {{bill.periodStart || bill.period_start}} 至 {{bill.periodEnd || bill.period_end}}</view><view class="meta">到期日 {{bill.dueDate || bill.due_date}} · 未结 ¥{{bill.outstandingAmount || bill.outstanding_amount}}</view></view>
+      <view class="card petlis-list-card"><view class="section-title">账单明细（{{items.length}}/{{total}}）</view><view wx:for="{{items}}" wx:key="id" class="detail-item"><view>{{item.description}}</view><view class="meta">{{item.orderNo}} · ¥{{item.finalAmount || item.final_amount}}</view></view><view wx:if="{{bill && !items.length}}" class="meta">暂无账单明细</view><view wx:if="{{loadingItems}}" class="meta">正在加载完整明细…</view></view>
+    </scroll-view>
+    <view class="bottom-actions" wx:if="{{canReconcile}}"><button class="petlis-btn petlis-btn-outline" disabled="{{busy}}" bindtap="dispute">提出异议</button><button class="petlis-btn petlis-btn-primary" disabled="{{busy}}" bindtap="confirm">确认对账</button></view>
   </block>
 </view>

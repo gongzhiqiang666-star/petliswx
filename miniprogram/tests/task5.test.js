@@ -3,7 +3,7 @@ const assert = require('node:assert/strict')
 const fs = require('node:fs')
 const path = require('node:path')
 const Module = require('node:module')
-const { root, loadPage, freshRequire } = require('./helpers')
+const { root, loadPage, loadApp, freshRequire } = require('./helpers')
 
 const originalRoutes = [
   'login/login','register/register','review/review','home/home','network-test/network-test','pets/pets','orders/orders',
@@ -167,6 +167,98 @@ test('宠物详情可进入对应宠物健康档案', () => {
   wx.navigateTo=options=>{url=options.url}
   instance.onViewHealth()
   assert.match(url,/petId=7/)
+})
+
+test('账单明细超过100条时续页加载完整才允许确认对账', async () => {
+  const pages=[]
+  const {instance,wx}=loadPage('bill-detail/bill-detail',{get(url,params){
+    if(url==='/user/roles')return Promise.resolve(['HOSPITAL_ADMIN'])
+    if(url==='/bills/1')return Promise.resolve({id:1,status:'PENDING_RECONCILIATION'})
+    pages.push(params.page)
+    return Promise.resolve({items:Array.from({length:params.page===0?100:1},(_,i)=>({id:params.page*100+i+1})),total:101,page:params.page,size:100})
+  }},{roles:['HOSPITAL_ADMIN']})
+  await instance.onLoad({id:'1'})
+  assert.equal(instance.data.items.length,101)
+  assert.deepEqual(pages,[0,1])
+  assert.equal(instance.data.canReconcile,true)
+  assert.ok(wx)
+})
+
+test('明细未加载完整时确认对账不发服务端请求', async () => {
+  let posted=false
+  const {instance,wx}=loadPage('bill-detail/bill-detail',{get(url,params){if(url==='/bills/1/items'){if(params.page===1)return Promise.reject(new Error('第二页失败'));return Promise.resolve({items:[{id:1}],total:2,page:0,size:100})}return Promise.resolve({id:1,status:'PENDING_RECONCILIATION'})},post(){posted=true}},{roles:['HOSPITAL_ADMIN']})
+  instance.billId='1'
+  await instance.load()
+  let modal=false
+  wx.showModal=()=>{modal=true}
+  instance.confirm()
+  assert.equal(posted,false)
+  assert.equal(modal,false)
+  assert.equal(instance.data.canReconcile,false)
+})
+
+test('欠款列表onReachBottom加载后续页', async () => {
+  const pages=[]
+  const {instance}=loadPage('bill-arrears/bill-arrears',{get(url,params){pages.push(params.page);return Promise.resolve({items:Array.from({length:params.page===0?100:1},(_,i)=>({id:params.page*100+i+1})),total:101,page:params.page,size:100})}},{roles:['HOSPITAL_ADMIN']})
+  await instance.onLoad()
+  await instance.onReachBottom()
+  assert.equal(instance.data.items.length,101)
+  assert.deepEqual(pages,[0,1])
+})
+
+test('角色接口失败不阻塞account旧导航与账户数据', async () => {
+  const {instance}=loadPage('account/account',{get(url){if(url==='/user/roles')return Promise.reject(new Error('角色失败'));return Promise.resolve({balance:10,points:2})}}, {})
+  await instance.onShow()
+  assert.equal(instance.data.account.balance,10)
+  assert.ok(instance.data.links.some(x=>x.page==='security'))
+  assert.equal(instance.data.links.some(x=>x.page==='bills'),false)
+})
+
+test('账单页角色失败显示可读错误且不请求账单', async () => {
+  const urls=[]
+  const {instance}=loadPage('bills/bills',{get(url){urls.push(url);return Promise.reject(new Error('角色失败'))}}, {})
+  await instance.onLoad()
+  assert.match(instance.data.error,/角色信息加载失败/)
+  await instance.retryLoad()
+  assert.deepEqual(urls,['/user/roles','/user/roles'])
+})
+
+test('服务端登出成功后才清理本地会话', async () => {
+  const events=[]
+  const app=loadApp(()=>Promise.resolve({}),events)
+  await app.logout()
+  assert.deepEqual(events.map(x=>x[0]),['post','remove','remove','remove','remove','reLaunch'])
+})
+
+test('服务端登出失败保留Token并允许重试', async () => {
+  const events=[]
+  const app=loadApp(()=>Promise.reject(new Error('网络失败')),events)
+  await assert.rejects(app.logout(),/网络失败/)
+  assert.equal(app.globalData.token,'token')
+  assert.deepEqual(events.map(x=>x[0]),['post'])
+})
+
+test('mine登出失败不提示成功且保留会话', async () => {
+  const {instance,app,storage,wx}=loadPage('mine/mine')
+  app.logout=()=>Promise.reject(new Error('网络失败'))
+  wx.showModal=options=>options.success({confirm:true})
+  const titles=[]
+  wx.showToast=options=>titles.push(options.title)
+  instance.onLogout()
+  await new Promise(resolve=>setImmediate(resolve))
+  assert.deepEqual(titles,['退出失败，请重试'])
+  assert.equal(storage.token,'stored-token')
+})
+
+test('所有账单状态显示中文badge而不暴露英文枚举', () => {
+  const {adaptBill}=freshRequire('utils/bills.js')
+  const expected={PENDING_RECONCILIATION:'待对账',DISPUTED:'有异议',RECONCILED:'已对账',SETTLED:'已结算',OVERDUE:'已逾期'}
+  for(const [status,label] of Object.entries(expected))assert.equal(adaptBill({status}).statusLabel,label)
+  for(const page of ['bills/bills','bill-detail/bill-detail','bill-arrears/bill-arrears']){
+    const wxml=fs.readFileSync(path.join(root,'pages',page+'.wxml'),'utf8')
+    assert.doesNotMatch(wxml,/\{\{(?:item|bill)\.status\}\}/)
+    assert.match(wxml,/statusLabel/)
+  }
 })
 
 test('所有页面WXML绑定事件都有Page方法', () => {

@@ -371,8 +371,12 @@ Page({
       success: async res => {
         if (!res.confirm) return;
         wx.vibrateShort({ type: 'medium' });
-        await app.logout();
-        wx.showToast({ title: '已退出登录', icon: 'success', duration: 1500 });
+        try {
+          await app.logout();
+          wx.showToast({ title: '已退出登录', icon: 'success', duration: 1500 });
+        } catch (error) {
+          wx.showToast({ title: '退出失败，请重试', icon: 'none' });
+        }
       }
     });
   },

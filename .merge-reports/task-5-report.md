@@ -15,14 +15,23 @@
 - 帮助反馈改为消息中心和真实医院联系电话的明确说明，不伪造提交成功。
 - 更新 `docs/FUNCTION-MATRIX.md` 的 F02、F07、F13、F15、F25、F26、F27、F39。
 
+## 审查修复
+
+- 对账状态机仅允许待对账/异议操作；RECONCILED、OVERDUE、SETTLED 不可 DISPUTE 倒退，前端仅合法状态显示操作。
+- 账单详情自动续页加载全部明细，欠款列表支持 onReachBottom；明细未完整或续页失败时禁止确认对账。
+- `/user/roles` 失败时账户页安全隐藏账单入口但保留旧导航和 `/account` 加载；账单页显示角色错误且重试仍先校验角色。
+- 服务端登出失败保留 Token 和本地会话，成功后才清理；mine 不再假提示成功。
+- 所有账单状态使用中文标签和确认版 badge 样式。
+- 目标后端补充独立 `mvnw`，测试不再引用旧 `backend/`。
+
 ## TDD 与验证
 
-先写并观察到环境、认证、病史、券详情、账单、物流、权限等失败测试，再实现；后端健康接口和角色接口同样先失败后通过。
+先写并观察到环境、认证、病史、券详情、账单、物流、权限、状态倒退、明细节流、角色失败和登出失败等测试失败，再实现并复测通过。
 
-- 后端：`/Users/apple/claudelife/petlis/backend/mvnw -q test`，293 tests，0 failures，0 errors，5 skipped。
-- Admin：`npm test`，83/83 通过。
-- 小程序：`npm test`，16/16 通过，覆盖原 38 路由/5 Tab、事件绑定、环境/认证、病史/账单/物流/券详情、权限入口和核心模块保留。
-- 小程序：`npm run check`，67 个 JS 语法、52 个 JSON 解析全部通过。
+- 后端：在 `petlis-backend/` 执行 `./mvnw -q test`，294 tests，0 failures，0 errors，5 skipped。
+- Admin：在 `admin/` 执行 `npm test`，83/83 通过。
+- 小程序：在 `miniprogram/` 执行 `npm test`，25/25 通过，覆盖原 38 路由/5 Tab、事件绑定、环境/认证、病史/账单/物流/券详情、权限入口、完整分页、状态机、登出顺序和核心模块保留。
+- 小程序：在 `miniprogram/` 执行 `npm run check`，68 个 JS 语法、52 个 JSON 解析全部通过。
 - `git diff --check` 通过；未修改 schema、触发器或迁移，未执行真实支付。
 
 ## 限制与关注

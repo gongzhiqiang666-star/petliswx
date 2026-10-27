@@ -72,6 +72,18 @@ class MonthlyBillReviewTest {
         verify(jdbc, never()).update(contains("last_overdue_reminded_at"), any(Object[].class));
     }
 
+    @Test void reconciledOrOverdueBillCannotMoveBackwardThroughReconciliation() {
+        for (String status : List.of("RECONCILED", "OVERDUE", "SETTLED")) {
+            when(store.one(contains("FROM lin_monthly_bill b"), eq(21L))).thenReturn(Map.of(
+                    "id", 21L, "hospital_id", 7, "laboratory_id", 2, "status", status));
+            assertThrows(BusinessException.class, () -> service.reconcile(21, "DISPUTE", "异议"));
+            assertThrows(BusinessException.class, () -> service.reconcile(21, "CONFIRM", ""));
+        }
+        verify(jdbc, never()).update(contains("hospital_reconciled_by"), any(Object[].class));
+        verify(jdbc, never()).update(contains("status='DISPUTED'"), any(Object[].class));
+        verifyNoInteractions(audits);
+    }
+
     private void existingBill(String status) {
         when(store.one(contains("FOR UPDATE"), eq(7), eq(2))).thenReturn(Map.of("id", 11L, "billing_cycle_days", 30));
         when(jdbc.queryForList(contains("FROM lin_monthly_bill WHERE contract_id"), any(Object[].class))).thenReturn(List.of(Map.of("id", 21L, "status", status, "paid_amount", BigDecimal.ZERO, "supplement_no", 0)));

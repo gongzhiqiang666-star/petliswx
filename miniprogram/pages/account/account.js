@@ -9,10 +9,13 @@ const links = [
 Page({
   data: { account: null, error: '', loading: false, links: [] },
   async onShow() {
-    const userInfo = await ensureRoles(getApp().getUserInfo(), () => request.get('/user/roles'))
-    getApp().globalData.userInfo = userInfo
+    let userInfo = { ...(getApp().getUserInfo() || {}), roles: [] }
+    try {
+      userInfo = await ensureRoles(getApp().getUserInfo(), () => request.get('/user/roles'))
+      getApp().globalData.userInfo = userInfo
+    } catch (error) {}
     this.setData({ links: links.filter(link => !link.adminOnly || isHospitalAdmin(userInfo)) })
-    this.load()
+    return this.load()
   },
   async load() {
     this.setData({ loading: true, error: '' })

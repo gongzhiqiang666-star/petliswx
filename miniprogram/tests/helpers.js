@@ -66,4 +66,27 @@ function freshRequire(relative) {
   return require(file)
 }
 
-module.exports = { root, loadPage, freshRequire }
+function loadApp(post, events) {
+  const originalLoad = Module._load
+  let definition
+  global.App = value => { definition = value }
+  global.wx = {
+    removeStorageSync(key) { events.push(['remove', key]) },
+    reLaunch(options) { events.push(['reLaunch', options.url]) },
+    getStorageSync() { return null }
+  }
+  const requestPath = require.resolve(path.join(root, 'utils/request.js'))
+  require.cache[requestPath] = { id: requestPath, filename: requestPath, loaded: true, exports: { post: (url, data) => { events.push(['post', url]); return post(url, data) } } }
+  Module._load = function(name, parent, main) {
+    if (name === './utils/updates') return { installUpdates() {} }
+    if (name === './utils/diagnostics') return { capture() {} }
+    return originalLoad.call(this, name, parent, main)
+  }
+  try {
+    freshRequire('app.js')
+    Object.assign(definition.globalData, { token: 'token', userInfo: {id:1}, hospitalId: 1, cityId: 1 })
+    return definition
+  } finally { Module._load = originalLoad }
+}
+
+module.exports = { root, loadPage, loadApp, freshRequire }
