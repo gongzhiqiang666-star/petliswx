@@ -46,7 +46,7 @@ class ShipmentWorkflowServiceTest {
     void adminCreatesPendingShipmentAndEmitsOneBusinessEvent() {
         when(access.current()).thenReturn(actor(PlatformRole.ADMIN, 9));
         when(store.one(contains("lin_lb_listdiagnosisproject"), eq(8))).thenReturn(Map.of(
-                "order_id", 8, "hospital_id", 1, "laboratory_id", 2, "doctor_user_id", 7));
+                "order_id", 8, "hospital_id", 1, "laboratory_id", 2, "doctor_user_id", 7, "review_status", "approved"));
         when(store.insert(contains("lin_shipment"), any(Object[].class))).thenReturn(11L);
 
         var result = service.create(8, new ShipmentWorkflowService.ShipmentCommand(
@@ -80,6 +80,26 @@ class ShipmentWorkflowServiceTest {
 
         verify(store).insert(contains("lin_lab_task"), any(Object[].class));
         verify(notifications).emitForOrder(eq(8), eq(7), eq("order"), eq("shipment:11:RECEIVED"), any(), any(), any());
+    }
+
+    @Test
+    void duplicateReceiptReturnsOriginalWithoutTaskTimelineOrNotification() {
+        when(access.current()).thenReturn(actor(PlatformRole.LAB_STAFF, 5));
+        when(store.one(contains("lin_shipment"), eq(11L))).thenReturn(Map.of(
+                "id", 11L, "order_id", 8, "hospital_id", 1, "laboratory_id", 2,
+                "courier_user_id", 6, "status", "RECEIVED", "doctor_user_id", 7));
+        assertDoesNotThrow(() -> service.transition(11, ShipmentWorkflowService.ShipmentAction.RECEIVE, null, null));
+        verify(store, never()).insert(anyString(), any(Object[].class));
+        verifyNoInteractions(notifications);
+    }
+
+    @Test
+    void unapprovedOrderCannotCreateShipment() {
+        when(access.current()).thenReturn(actor(PlatformRole.ADMIN, 9));
+        when(store.one(contains("lin_lb_listdiagnosisproject"), eq(8))).thenReturn(Map.of(
+                "order_id", 8, "hospital_id", 1, "laboratory_id", 2, "doctor_user_id", 7, "review_status", "pending"));
+        assertThrows(BusinessException.class, () -> service.create(8, new ShipmentWorkflowService.ShipmentCommand("SF-8", 2, "前台", null, 6)));
+        verify(store, never()).insert(contains("lin_shipment"), any(Object[].class));
     }
 
     @ParameterizedTest

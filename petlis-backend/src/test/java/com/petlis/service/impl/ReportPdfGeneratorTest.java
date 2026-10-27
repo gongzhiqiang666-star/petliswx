@@ -24,4 +24,15 @@ class ReportPdfGeneratorTest {
             }
         }
     }
+
+    @Test
+    void multilineSummaryConclusionAndTemplateAreBrokenIntoReadablePdfLines() throws Exception {
+        var generator = new ReportPdfGenerator("");
+        byte[] content = generator.create("RPT-2", "摘要第一行\n摘要第二行", "结论第一行\n结论第二行", "B-1", List.of(
+                Map.of("template", "模板第一行\n模板第二行", "name", "白细胞", "value", "6", "unit", "u", "referenceRange", "1-10", "abnormalFlag", false)));
+        try (var document = org.apache.pdfbox.Loader.loadPDF(content)) {
+            String text = new PDFTextStripper().getText(document);
+            for (String expected : List.of("摘要第一行", "摘要第二行", "结论第一行", "结论第二行", "模板第一行", "模板第二行")) assertTrue(text.contains(expected), expected);
+        }
+    }
 }

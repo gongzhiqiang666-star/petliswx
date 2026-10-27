@@ -34,8 +34,8 @@ public class BusinessNotifications {
  @Transactional public void reviewed(int orderId,Integer userId,int status,String reason,int reviewerId){orderEvent(orderId,userId,status,reason,reviewerId);}
  private void orderEvent(int orderId,Integer userId,int status,String reason,Integer reviewerId){
   var state=com.petlis.common.enums.OrderStatusEnum.fromCode(status);String label=state==null?"状态已更新":state.getDescription();
-  Long legacyId=store.jdbc().queryForObject("SELECT MAX(id) FROM lin_lb_notification WHERE order_id=? AND new_status=? AND operation_time>=DATE_SUB(NOW(),INTERVAL 10 SECOND)",Long.class,orderId,status);
-  String type=status==3?"report":"order",key=legacyId==null?orderId+":"+status+":"+UUID.randomUUID():"legacy:"+legacyId;
+  Long legacyId=status==3?null:store.jdbc().queryForObject("SELECT MAX(id) FROM lin_lb_notification WHERE order_id=? AND new_status=? AND operation_time>=DATE_SUB(NOW(),INTERVAL 10 SECOND)",Long.class,orderId,status);
+  String type=status==3?"report":"order",key=status==3?orderId+":published":legacyId==null?orderId+":"+status+":"+UUID.randomUUID():"legacy:"+legacyId;
   String message="送检单 #"+orderId+" 当前状态："+label+(reason==null || reason.isBlank()?"":"。审核意见："+reason);
   if(userId!=null && userId>0 && Boolean.TRUE.equals(store.jdbc().queryForObject("SELECT EXISTS(SELECT 1 FROM lin_user WHERE id=?)",Boolean.class,userId))){
    emit(userId,type,key,"送检单"+label,message,"pages/order-detail/order-detail?id="+orderId);

@@ -37,9 +37,8 @@ public class ReportWorkflowController {
     }
 
     @PostMapping("/{id}/publish")
-    public Result<Void> publish(@PathVariable long id) {
-        reports.publish(id);
-        return Result.success("报告已发布");
+    public Result<Map<String, Object>> publish(@PathVariable long id) {
+        return Result.success("报告已发布", reports.publish(id));
     }
 
     @GetMapping("/{id}/download")

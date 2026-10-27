@@ -31,14 +31,15 @@ public class ShipmentWorkflowService {
         if (command == null || blank(command.trackingNo()) || command.laboratoryId() == null
                 || command.trackingNo().length() > 64) throw new BusinessException("运单号、实验室和揽收地址不能为空");
         Map<String, Object> order = store.one("SELECT p.ListDiagnosisProjectId AS order_id,p.InfoHospitalId AS hospital_id,"
-                + "e.laboratory_id,p.CreateSampleId AS doctor_user_id FROM lin_lb_listdiagnosisproject p "
+                + "e.laboratory_id,e.review_status,p.CreateSampleId AS doctor_user_id FROM lin_lb_listdiagnosisproject p "
                 + "JOIN lin_order_extension e ON e.order_id=p.ListDiagnosisProjectId WHERE p.ListDiagnosisProjectId=? FOR UPDATE", orderId);
+        if (!"approved".equals(order.get("review_status"))) throw new BusinessException(409, "仅审核通过的送检单可创建运单");
         if (number(order.get("laboratory_id")).intValue() != command.laboratoryId()) throw new BusinessException("运单实验室必须与送检单一致");
         long id = store.insert("INSERT INTO lin_shipment(order_id,hospital_id,laboratory_id,courier_user_id,tracking_no,status,pickup_address,expected_arrived_at,assigned_at) VALUES(?,?,?,?,?,'PENDING_PICKUP',?,?,CASE WHEN ? IS NULL THEN NULL ELSE NOW() END)",
                 orderId, number(order.get("hospital_id")).intValue(), command.laboratoryId(), command.courierUserId(),
                 command.trackingNo().trim(), command.pickupAddress(), timestamp(command.expectedArrivedAt()), command.courierUserId());
         timeline(id, actor.userId(), "PENDING_PICKUP", "运单已创建");
-        notify(number(order.get("doctor_user_id")).intValue(), id, "PENDING_PICKUP", orderId);
+        notify(integer(order.get("doctor_user_id")), id, "PENDING_PICKUP", orderId);
         return id;
     }
 
@@ -51,7 +52,7 @@ public class ShipmentWorkflowService {
         if (!courierExists(courierUserId)) throw new BusinessException("快递员不存在或角色未启用");
         store.jdbc().update("UPDATE lin_shipment SET courier_user_id=?,assigned_at=NOW(),version=version+1 WHERE id=?", courierUserId, shipmentId);
         timeline(shipmentId, actor.userId(), "ASSIGNED", "运单已分配");
-        notify(number(shipment.get("doctor_user_id")).intValue(), shipmentId, "ASSIGNED", number(shipment.get("order_id")).intValue());
+        notify(integer(shipment.get("doctor_user_id")), shipmentId, "ASSIGNED", number(shipment.get("order_id")).intValue());
     }
 
     @Transactional
@@ -65,6 +66,7 @@ public class ShipmentWorkflowService {
             require(actor, PlatformRole.COURIER);
             access.requireCourierAssignment(integer(shipment.get("courier_user_id")));
         }
+        if (action == ShipmentAction.RECEIVE && "RECEIVED".equals(shipment.get("status"))) return get(shipmentId);
         if (action == ShipmentAction.EXCEPTION) {
             if (blank(note) || blank(exceptionType) || note.length() > 1000) throw new BusinessException("异常类型和说明不能为空");
             String status = String.valueOf(shipment.get("status"));
@@ -72,7 +74,7 @@ public class ShipmentWorkflowService {
             store.jdbc().update("UPDATE lin_shipment SET exception_type=?,exception_note=?,exception_at=NOW(),version=version+1 WHERE id=?",
                     exceptionType.trim(), note.trim(), shipmentId);
             timeline(shipmentId, actor.userId(), "EXCEPTION", note.trim());
-            notify(number(shipment.get("doctor_user_id")).intValue(), shipmentId, "EXCEPTION", number(shipment.get("order_id")).intValue());
+            notify(integer(shipment.get("doctor_user_id")), shipmentId, "EXCEPTION", number(shipment.get("order_id")).intValue());
             return get(shipmentId);
         }
         String target = nextStatus(String.valueOf(shipment.get("status")), action);
@@ -88,8 +90,16 @@ public class ShipmentWorkflowService {
             store.insert("INSERT INTO lin_lab_task(shipment_id,order_id,laboratory_id,task_type,status,received_by,received_at) VALUES(?,?,?,'INITIAL','RECEIVED',?,NOW())",
                     shipmentId, number(shipment.get("order_id")).intValue(), number(shipment.get("laboratory_id")).intValue(), actor.userId());
         }
-        notify(number(shipment.get("doctor_user_id")).intValue(), shipmentId, target, number(shipment.get("order_id")).intValue());
+        notify(integer(shipment.get("doctor_user_id")), shipmentId, target, number(shipment.get("order_id")).intValue());
         return get(shipmentId);
+    }
+
+    @Transactional
+    public Map<String, Object> receiveScanned(long shipmentId, String barcode) {
+        if (blank(barcode)) throw new BusinessException(400, "扫码条码不能为空");
+        Map<String, Object> shipment = store.one("SELECT s.id,o.UserNO AS order_user_no FROM lin_shipment s JOIN lin_lb_listdiagnosisproject o ON o.ListDiagnosisProjectId=s.order_id WHERE s.id=? FOR UPDATE", shipmentId);
+        if (shipment.get("order_user_no") == null || !barcode.trim().equals(shipment.get("order_user_no").toString())) throw new BusinessException(400, "扫码条码与送检单不匹配");
+        return transition(shipmentId, ShipmentAction.RECEIVE, null, null);
     }
 
     @Transactional(readOnly = true)
@@ -164,7 +174,7 @@ public class ShipmentWorkflowService {
                 actor, action, String.valueOf(shipmentId), reason);
     }
 
-    private void notify(int userId, long shipmentId, String action, int orderId) {
+    private void notify(Integer userId, long shipmentId, String action, int orderId) {
         notifications.emitForOrder(orderId, userId, "order", "shipment:" + shipmentId + ":" + action, "物流状态已更新",
                 "送检单 #" + orderId + " 物流节点：" + action, "pages/order-detail/order-detail?id=" + orderId);
     }

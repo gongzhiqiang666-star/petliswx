@@ -85,7 +85,7 @@ class LabWorkflowServiceTest {
         var created = service.retest(11, "样本凝集");
         assertEquals(12L, created);
         verify(jdbc).update(contains("result_status='VOIDED'"), eq(5), eq(11L));
-        verify(store).insert(contains("lin_lab_task"), any(Object[].class));
+        verify(store).insert(contains("return_reason"), any(Object[].class));
     }
 
     @Test
@@ -101,6 +101,28 @@ class LabWorkflowServiceTest {
         when(store.one(contains("lin_lab_task"), eq(11L))).thenReturn(task("RESULT_ENTERED"));
         service.taskForReport(11);
         verify(store).one(contains("FOR UPDATE"), eq(11L));
+    }
+
+    @Test
+    void onlyAssignedPersonCanEnterResults() {
+        when(access.current()).thenReturn(new CurrentActor(6, Set.of(PlatformRole.LAB_STAFF), Set.of(), Set.of(2),
+                new DataScope(false, Set.of(), Set.of(2), null)));
+        when(store.one(contains("lin_lab_task"), eq(11L))).thenReturn(task("TESTING"));
+        when(jdbc.queryForList(contains("lin_lb_diagnosisdetail"), eq(Integer.class), eq(8))).thenReturn(List.of(21));
+        var input = new LabWorkflowService.ResultsCommand(List.of(new LabWorkflowService.ResultCommand(21, "白细胞", "6", "10^9/L", "5-10", null)));
+        BusinessException error = assertThrows(BusinessException.class, () -> service.enterResults(11, input));
+        assertEquals(403, error.getCode());
+        verify(store, never()).insert(contains("lin_test_result"), any(Object[].class));
+    }
+
+    @Test
+    void repeatedRetestReturnsExistingChildAndChangedReasonConflicts() {
+        when(store.one(contains("lin_lab_task"), eq(11L))).thenReturn(task("RETESTED"));
+        when(store.one(contains("parent_task_id"), eq(11L))).thenReturn(Map.of("id", 12L, "return_reason", "样本凝集"));
+        assertEquals(12L, service.retest(11, "样本凝集"));
+        assertThrows(BusinessException.class, () -> service.retest(11, "不同原因"));
+        verify(store, never()).insert(contains("lin_lab_task"), any(Object[].class));
+        verifyNoInteractions(notifications);
     }
 
     @Test

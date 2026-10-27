@@ -75,18 +75,20 @@ public class ReportPdfGenerator {
 
     private List<String> wrap(String text, PDType0Font font) throws IOException {
         List<String> lines = new ArrayList<>();
-        StringBuilder line = new StringBuilder();
-        for (int offset = 0; offset < text.length();) {
-            int codePoint = text.codePointAt(offset);
-            String next = new String(Character.toChars(codePoint));
-            if (font.getStringWidth(line + next) / 1000 * 11 > 505 && !line.isEmpty()) {
-                lines.add(line.toString());
-                line.setLength(0);
+        for (String paragraph : text.split("\\R", -1)) {
+            StringBuilder line = new StringBuilder();
+            for (int offset = 0; offset < paragraph.length();) {
+                int codePoint = paragraph.codePointAt(offset);
+                String next = new String(Character.toChars(codePoint));
+                if (font.getStringWidth(line + next) / 1000 * 11 > 505 && !line.isEmpty()) {
+                    lines.add(line.toString());
+                    line.setLength(0);
+                }
+                line.append(next);
+                offset += Character.charCount(codePoint);
             }
-            line.append(next);
-            offset += Character.charCount(codePoint);
+            lines.add(line.toString());
         }
-        lines.add(line.toString());
         return lines;
     }
 

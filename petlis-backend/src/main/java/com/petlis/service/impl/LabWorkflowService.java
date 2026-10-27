@@ -67,6 +67,7 @@ public class LabWorkflowService {
     @Transactional
     public long enterResults(long taskId, ResultsCommand command) {
         Map<String, Object> task = accessible(taskId, true);
+        if (!access.current().userId().equals(integer(task.get("assigned_to")))) throw new BusinessException(403, "仅被分配的检测人员可录入结果");
         if (!"TESTING".equals(task.get("status"))) throw invalidState();
         List<Integer> detailIds = store.jdbc().queryForList("SELECT DiagnosisDetailId FROM lin_lb_diagnosisdetail WHERE ListDiagnosisProjectId=? AND IsCheckPass=0 AND IsActive=1 ORDER BY DiagnosisDetailId", Integer.class, number(task.get("order_id")).intValue());
         validateResults(command, detailIds);
@@ -102,10 +103,15 @@ public class LabWorkflowService {
     public long retest(long taskId, String reason) {
         if (blank(reason) || reason.length() > 1000) throw new BusinessException("复检原因不能为空");
         Map<String, Object> task = accessible(taskId, true);
+        if ("RETESTED".equals(task.get("status"))) {
+            Map<String, Object> child = store.one("SELECT id,return_reason FROM lin_lab_task WHERE parent_task_id=? AND task_type='RETEST' ORDER BY id DESC LIMIT 1", taskId);
+            if (!reason.trim().equals(child.get("return_reason"))) throw new BusinessException(409, "相同复检请求已处理，变更原因请使用新请求");
+            return number(child.get("id")).longValue();
+        }
         if (!"RETURNED".equals(task.get("status"))) throw invalidState();
         CurrentActor actor = access.current();
         store.jdbc().update("UPDATE lin_test_result SET result_status='VOIDED',reviewed_by=?,reviewed_at=NOW(),version=version+1 WHERE lab_task_id=? AND result_status<>'VOIDED'", actor.userId(), taskId);
-        long id = store.insert("INSERT INTO lin_lab_task(shipment_id,order_id,detail_id,laboratory_id,parent_task_id,task_type,status,assigned_to,equipment_code,received_by,received_at,started_at) SELECT shipment_id,order_id,detail_id,laboratory_id,?,'RETEST','TESTING',assigned_to,equipment_code,received_by,received_at,NOW() FROM lin_lab_task WHERE id=?", taskId, taskId);
+        long id = store.insert("INSERT INTO lin_lab_task(shipment_id,order_id,detail_id,laboratory_id,parent_task_id,task_type,status,assigned_to,equipment_code,received_by,received_at,started_at,return_reason) SELECT shipment_id,order_id,detail_id,laboratory_id,?,'RETEST','TESTING',assigned_to,equipment_code,received_by,received_at,NOW(),? FROM lin_lab_task WHERE id=?", taskId, reason.trim(), taskId);
         store.jdbc().update("UPDATE lin_lab_task SET status='RETESTED',version=version+1 WHERE id=?", taskId);
         notify(task, "RETEST:" + id, "已发起复检", reason.trim());
         return id;
@@ -179,11 +185,12 @@ public class LabWorkflowService {
 
     private void notify(Map<String, Object> task, String action, String title, String message) {
         int orderId = number(task.get("order_id")).intValue();
-        notifications.emitForOrder(orderId, number(task.get("doctor_user_id")).intValue(), "order", "lab-task:" + task.get("id") + ":" + action,
+        notifications.emitForOrder(orderId, integer(task.get("doctor_user_id")), "order", "lab-task:" + task.get("id") + ":" + action,
                 title, message, "pages/order-detail/order-detail?id=" + orderId);
     }
 
     private BusinessException invalidState() { return new BusinessException(409, "实验任务状态不允许该操作"); }
     private Number number(Object value) { return (Number) value; }
+    private Integer integer(Object value) { return value == null ? null : number(value).intValue(); }
     private boolean blank(String value) { return value == null || value.isBlank(); }
 }

@@ -104,6 +104,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             return bearerToken.substring(TOKEN_PREFIX.length());
         }
 
-        return null;
+        String queryToken = request.getParameter("token");
+        return StringUtils.hasText(queryToken) ? queryToken : null;
     }
 }

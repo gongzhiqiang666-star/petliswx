@@ -74,11 +74,11 @@ public class OrderServiceImpl implements OrderService {
     public Integer createOrder(OrderCreateRequest request) {
         log.info("创建检测申请, 宠物姓名: {}", request.getAnimalName());
 
+        var replay = orderWorkflows.begin(request);
+        if (replay.isPresent()) return replay.getAsInt();
         if(request.getDraftId()!=null)drafts.validateForSubmission(request.getDraftId(),request.getDraftVersion());
         // 从当前登录用户获取hospitalId和cityId（统一从token获取）
         Integer hospitalId = getCurrentHospitalId();
-        var replay = orderWorkflows.begin(request);
-        if (replay.isPresent()) return replay.getAsInt();
         Integer cityId = getCurrentCityId();
 
         log.info("当前用户信息, hospitalId: {}, cityId: {}", hospitalId, cityId);

@@ -36,6 +36,8 @@ class ReportWorkflowServiceTest {
         when(access.current()).thenReturn(new CurrentActor(5, Set.of(PlatformRole.LAB_STAFF), Set.of(), Set.of(2),
                 new DataScope(false, Set.of(), Set.of(2), null)));
         service = new ReportWorkflowService(store, access, laboratory, notifications, pdf, files);
+        org.springframework.test.util.ReflectionTestUtils.setField(service, "serverDomain", "https://laboklin.cn");
+        lenient().when(store.one(contains("COUNT(DISTINCT"), eq(8))).thenReturn(Map.of("total", 1, "published", 1));
     }
 
     Map<String, Object> report(String status, int paid, int payType) {
@@ -64,18 +66,17 @@ class ReportWorkflowServiceTest {
     void approvedCashReportRequiresPaymentBeforeAnyLegacyWrite() {
         when(store.one(contains("lin_report_workflow"), eq(41L))).thenReturn(report("APPROVED", 0, 0));
         assertThrows(BusinessException.class, () -> service.publish(41));
-        verify(jdbc, never()).update(contains("DiagnosisStatus=1"), any(Object[].class));
+        verify(jdbc, never()).update(contains("DiagnosisStatus=2"), any(Object[].class));
     }
 
     @Test
     void publishSynchronizesLegacyDetailInfoPdfAndOrderAndEmitsStableEvent() {
         when(store.one(contains("lin_report_workflow"), eq(41L))).thenReturn(report("APPROVED", 1, 0));
         service.publish(41);
-        verify(jdbc).update(contains("DiagnosisStatus=1"), eq("/Content/FilePdf/report-51.pdf"), eq(21));
+        verify(jdbc).update(contains("DiagnosisStatus=2"), eq("https://laboklin.cn/Content/FilePdf/report-51.pdf"), eq(21));
         verify(jdbc).update(contains("lin_lb_diagnosisdetail_info"), eq(21), any(), any());
         verify(jdbc).update(contains("SampleStatus=3"), eq(8));
-        verify(notifications).order(8, 7, 3);
-        verify(notifications, never()).emitForOrder(anyInt(), anyInt(), any(), any(), any(), any(), any());
+        verify(notifications).emitForOrder(eq(8), eq(7), eq("report"), eq("8:published"), any(), any(), any());
     }
 
     @Test
@@ -86,11 +87,11 @@ class ReportWorkflowServiceTest {
     }
 
     @Test
-    void repeatedPublishIsRejectedWithoutDuplicateNotification() {
+    void repeatedPublishReturnsOriginalWithoutDuplicateNotification() {
         when(store.one(contains("lin_report_workflow"), eq(41L))).thenReturn(report("APPROVED", 1, 0), report("PUBLISHED", 1, 0));
         service.publish(41);
-        assertThrows(BusinessException.class, () -> service.publish(41));
-        verify(notifications, times(1)).order(8, 7, 3);
+        assertDoesNotThrow(() -> service.publish(41));
+        verify(notifications, times(1)).emitForOrder(eq(8), eq(7), eq("report"), eq("8:published"), any(), any(), any());
     }
 
     @Test

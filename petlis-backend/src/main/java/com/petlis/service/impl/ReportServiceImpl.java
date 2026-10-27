@@ -60,6 +60,12 @@ public class ReportServiceImpl implements ReportService {
     private final JdbcTemplate jdbcTemplate;
     private final ReportMapper reportMapper;
     private final FileService fileService;
+    private final com.petlis.service.PdfService pdfService;
+
+    @org.springframework.beans.factory.annotation.Value("${server.domain:}")
+    private String serverDomain;
+    @org.springframework.beans.factory.annotation.Value("${server.servlet.context-path:/api}")
+    private String contextPath;
 
     /**
      * 查询检测报告列表(分页)
@@ -177,8 +183,12 @@ public class ReportServiceImpl implements ReportService {
             throw new BusinessException("PDF报告不存在");
         }
 
-        // 使用FileService下载文件
-        byte[] fileContent = fileService.downloadFile(pdfUrl);
+        byte[] fileContent;
+        try {
+            fileContent = pdfService.getPdfWithAuth(reportId, null);
+        } catch (java.io.IOException error) {
+            throw new BusinessException(500, "PDF文件读取失败", error);
+        }
 
         // 构建响应
         String filename = "报告_" + detail.getGenterNO() + ".pdf";
@@ -211,7 +221,7 @@ public class ReportServiceImpl implements ReportService {
         }
 
         try {
-            return new URL(pdfUrl);
+            return new URL(serverDomain + contextPath + "/pdf/view/" + reportId);
         } catch (Exception e) {
             log.error("解析PDF URL失败", e);
             throw new BusinessException("PDF报告URL无效");
@@ -337,8 +347,10 @@ public class ReportServiceImpl implements ReportService {
     }
 
     private boolean isPaymentRestricted(ListDiagnosisProject project, InfoHospital hospital) {
-        return !Integer.valueOf(1).equals(hospital.getPayType())
-                && !Integer.valueOf(1).equals(project.getIsPayMoney());
+        var rows = jdbcTemplate.queryForList("SELECT settlement_mode FROM lin_order_extension WHERE order_id=?", project.getListDiagnosisProjectId());
+        String settlementMode = rows.isEmpty() || rows.get(0).get("settlement_mode") == null ? null : rows.get(0).get("settlement_mode").toString();
+        boolean monthly = settlementMode == null ? Integer.valueOf(1).equals(hospital.getPayType()) : "monthly".equalsIgnoreCase(settlementMode);
+        return !monthly && !Integer.valueOf(1).equals(project.getIsPayMoney());
     }
 
     private void assertPdfAccessAllowed(DiagnosisDetail detail) {

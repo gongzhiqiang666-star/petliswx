@@ -117,12 +117,15 @@ public class ReportController {
     @GetMapping("/{id}/pdf-url")
     @Operation(summary = "获取PDF报告URL", description = "获取指定报告的PDF文件下载链接")
     public Result<String> getReportPdfUrl(
-            @Parameter(description = "报告ID", required = true) @PathVariable Integer id
+            @Parameter(description = "报告ID", required = true) @PathVariable Integer id,
+            HttpServletRequest request
     ) {
         log.info("接收到获取PDF报告URL请求, 报告ID: {}", id);
         try {
             URL url = reportService.getReportPdfUrl(id);
-            return Result.success(url.toString());
+            String token = extractToken(request);
+            String value = url.toString() + (token.isEmpty() ? "" : (url.toString().contains("?") ? "&" : "?") + "token=" + java.net.URLEncoder.encode(token, java.nio.charset.StandardCharsets.UTF_8));
+            return Result.success("操作成功", value);
         } catch (Exception e) {
             log.error("获取PDF报告URL失败", e);
             return Result.fail(e.getMessage());

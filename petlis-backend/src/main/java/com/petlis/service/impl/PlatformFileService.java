@@ -28,14 +28,16 @@ public class PlatformFileService {
     private static final Set<String> ALLOWED = Set.of("application/pdf", "image/png", "image/jpeg");
     private final FeatureStore store;
     private final AccessService access;
+    private final com.petlis.common.security.ReviewPermission reviewer;
     private final Path root;
     private final long maxBytes;
 
-    public PlatformFileService(FeatureStore store, AccessService access,
+    public PlatformFileService(FeatureStore store, AccessService access, com.petlis.common.security.ReviewPermission reviewer,
             @Value("${app.pdf.storage-path:./data/reports}") String root,
             @Value("${app.file.max-bytes:10485760}") long maxBytes) {
         this.store = store;
         this.access = access;
+        this.reviewer = reviewer;
         this.root = Path.of(root).toAbsolutePath().normalize();
         this.maxBytes = maxBytes;
     }
@@ -70,6 +72,11 @@ public class PlatformFileService {
         Map<String, Object> file = store.one("SELECT * FROM lin_file WHERE id=? AND deleted_at IS NULL", fileId);
         if ("REPORT".equals(file.get("biz_type"))) throw new BusinessException(404, "报告文件必须通过报告权限访问");
         var actor = access.current();
+        if ("QUALIFICATION".equals(file.get("biz_type"))) {
+            if (actor.isAdmin() || reviewer.isReviewer()) return response(file);
+            if (file.get("owner_user_id") != null && ((Number) file.get("owner_user_id")).intValue() == actor.userId()) return response(file);
+            throw new BusinessException(403, "仅本人或授权审核人员可下载资质文件");
+        }
         if (!actor.isAdmin()) {
             if (file.get("owner_user_id") != null && ((Number) file.get("owner_user_id")).intValue() == actor.userId()) return response(file);
             access.requireHospital(((Number) file.get("hospital_id")).intValue());

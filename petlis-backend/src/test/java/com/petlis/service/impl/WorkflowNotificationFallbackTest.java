@@ -25,4 +25,18 @@ class WorkflowNotificationFallbackTest {
         notifications.emitForOrder(8, 0, "report", "report-workflow:41:PUBLISHED", "报告已发布", "内容", "pages/report-detail/report-detail?id=21");
         verify(jdbc).update(contains("ON DUPLICATE KEY UPDATE id=id"), eq(9), eq("report"), eq("report-workflow:41:PUBLISHED"), any(), any(), any());
     }
+
+    @Test
+    void publishedOrderEventUsesStableKeyWithoutTenSecondLegacyLookup() {
+        FeatureStore store = mock(FeatureStore.class);
+        JdbcTemplate jdbc = mock(JdbcTemplate.class);
+        when(store.jdbc()).thenReturn(jdbc);
+        when(jdbc.queryForObject(contains("SELECT EXISTS"), eq(Boolean.class), eq(7))).thenReturn(true);
+        var notifications = new BusinessNotifications(store, mock(SubscriptionPush.class), mock(ReviewPermission.class),
+                mock(TransactionTemplate.class), mock(Environment.class), new ObjectMapper());
+        notifications.order(8, 7, 3);
+        notifications.order(8, 7, 3);
+        verify(jdbc, times(2)).update(contains("ON DUPLICATE KEY UPDATE id=id"), eq(7), eq("report"), eq("8:published"), any(), any(), any());
+        verify(jdbc, never()).queryForObject(contains("lin_lb_notification"), eq(Long.class), any(Object[].class));
+    }
 }

@@ -40,4 +40,12 @@ class WorkflowControllerTest {
         mvc.perform(get("/lab/tasks")).andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(200)).andExpect(jsonPath("$.data.page").value(0));
     }
+
+    @Test
+    void scanReceiptEndpointPassesBarcodeAndReturnsLegacySuccess() throws Exception {
+        when(shipments.receiveScanned(11, "55550-8")).thenReturn(Map.of("id", 11, "status", "RECEIVED"));
+        mvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post("/logistics/11/scan-receive")
+                        .contentType(org.springframework.http.MediaType.APPLICATION_JSON).content("{\"barcode\":\"55550-8\"}"))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.code").value(200)).andExpect(jsonPath("$.data.status").value("RECEIVED"));
+    }
 }

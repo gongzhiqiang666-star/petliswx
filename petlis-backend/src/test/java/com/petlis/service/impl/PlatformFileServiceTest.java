@@ -21,7 +21,7 @@ class PlatformFileServiceTest {
         JdbcTemplate jdbc = mock(JdbcTemplate.class);
         when(store.jdbc()).thenReturn(jdbc);
         when(store.insert(contains("lin_file"), any(Object[].class))).thenReturn(51L);
-        var service = new PlatformFileService(store, mock(AccessService.class), root.toString(), 1024);
+        var service = new PlatformFileService(store, mock(AccessService.class), mock(com.petlis.common.security.ReviewPermission.class), root.toString(), 1024);
         var stored = service.saveReport(1, 2, 41, new byte[]{'%', 'P', 'D', 'F', '-', '1'});
         assertEquals(51L, stored.id());
         assertTrue(stored.url().startsWith("/Content/FilePdf/"));
@@ -32,7 +32,7 @@ class PlatformFileServiceTest {
 
     @Test
     void magicAndSizeAreMandatory() {
-        var service = new PlatformFileService(mock(FeatureStore.class), mock(AccessService.class), root.toString(), 4);
+        var service = new PlatformFileService(mock(FeatureStore.class), mock(AccessService.class), mock(com.petlis.common.security.ReviewPermission.class), root.toString(), 4);
         assertThrows(BusinessException.class, () -> service.saveReport(1, 2, 41, new byte[]{'%', 'P', 'D', 'F', '-'}));
         assertThrows(BusinessException.class, () -> service.saveReport(1, 2, 41, new byte[]{1, 2, 3}));
     }
@@ -49,7 +49,7 @@ class PlatformFileServiceTest {
         var outside = root.resolveSibling("outside.pdf");
         java.nio.file.Files.writeString(outside, "secret");
         java.nio.file.Files.createSymbolicLink(root.resolve("linked.pdf"), outside);
-        var service = new PlatformFileService(store, access, root.toString(), 1024);
+        var service = new PlatformFileService(store, access, mock(com.petlis.common.security.ReviewPermission.class), root.toString(), 1024);
         assertThrows(BusinessException.class, () -> service.download(51));
     }
 }

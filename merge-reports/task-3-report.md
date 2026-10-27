@@ -6,21 +6,22 @@
 
 ## 实现内容
 
-- `/logistics`：管理员创建和分配运单；快递员仅能操作本人运单；实验人员仅能签收本实验室运单；医院与医生按归属读取。完整支持 `PENDING_PICKUP → PICKED_UP → IN_TRANSIT → DELIVERED → RECEIVED`、预计到达、异常与审计时间线，签收同事务创建初始实验任务。
-- `/lab/tasks`：本实验室人员和设备分配、完整项目结果录入、数值范围异常判断、定性结果显式异常标记、不可变批次、退样和复检新任务。退样作废旧结果并取消未发布报告，复检必须重新录入新批次。
-- `/report-workflows`：按旧 `InfoTestTypeId` 和实验室选择版本化模板，生成、审核、发布及鉴权下载。PDFBox 生成包含全部项目模板和结果的中文 PDF。发布事务同步 `lin_lb_diagnosisdetail_info`、`PDFHttpUrl`、`DiagnosisStatus` 和旧订单 `SampleStatus=3`，保留确认版报告 GET/PDF 路径。
-- 报告权限：现结未支付禁止发布且医院不可见；月结无需现付；未发布及外院不可见；作废结果不能发布；重复生成和非法状态被拒绝。
-- 订单扩展：旧订单创建接入 `lin_order_clinical` 与 `lin_order_idempotency`，支持 `Idempotency-Key`，不创建第二套订单。
-- 通知：复用 `lin_notification_event` 和既有 outbox。物流与实验事件按业务键去重并兼容无创建人的旧订单；报告发布复用 `notifications.order(..., 3)` 的 `legacy:{id}` 键，避免与触发器通知桥重复。
-- 文件：仅新增 `lin_file` 元数据，随机文件名、PDF/PNG/JPEG 魔数、大小、摘要、归属鉴权、报告专用权限、规范化及真实路径检查。
-- admin：物流、实验、报告页面均接真实 API，移除“待接入”；严格按角色展示创建、分配、快递操作、签收、结果、审核、发布与下载按钮；保持 `code=200` 和 0 基分页。
+- `/logistics`：仅审核通过订单可由管理员创建和分配运单；快递员仅能操作本人运单；实验人员仅能签收本实验室运单；医院与医生按归属读取。完整状态、预计到达、异常与审计时间线持久化，签收创建初始实验任务。重复签收幂等返回，扫码签收核验旧订单 `UserNO`。
+- `/lab/tasks`：仅 `assigned_to` 人员可录入结果；完整项目校验、不可变批次、退样和复检新任务。退样作废旧结果并取消未发布报告；同请求复检返回原任务，变更原因冲突。
+- `/report-workflows`：按旧 `InfoTestTypeId` 选择版本化模板，生成、审核、发布及鉴权下载。每个明细 PDF 和旧正文只含本项目结果，支持多行摘要、结论和模板自动换行。全部有效明细发布后才同步整单 `SampleStatus=3` 和任务 `COMPLETED`；单明细驳回不倒退共享任务；发布明细 `DiagnosisStatus=2`。
+- 报告支付与权限：发布、列表、确认版 GET 和 PDF 均优先使用 `lin_order_extension.settlement_mode` 快照，缺失才回退医院旧规则；现结未支付不可见，月结不受医院当前 `PayType` 变化影响。
+- PDF 契约：旧 `PDFHttpUrl` 保存绝对存储地址；`/reports/{id}/pdf-url` 返回带 token 的绝对 `/api/pdf/view/{id}`，`/reports/{id}/download` 与 `/pdf/view/{id}` 统一走鉴权本地存储解析，report-modal 查询 token 可用。
+- 幂等与通知：重复发布幂等返回且无新增写入/通知；订单创建幂等先于草稿校验，响应丢失重放返回原 orderId。发布通知使用稳定 `orderId:published`，触发器桥复用同键，无 10 秒窗口依赖。
+- 兼容与文件：物流、实验、报告路径均兼容 `CreateSampleId=null` 并回退本院用户。`QUALIFICATION` 仅本人、授权 reviewer 或 ADMIN 可下载；文件仍仅存 `lin_file` 元数据并校验魔数、大小和真实路径。
+- admin：物流、实验、报告页面均接真实 API，保持 `code=200` 和 0 基分页。
 
 ## 验证
 
-- 后端全量：195 项，0 失败，0 错误，5 跳过；原 152 项保持通过。
+- 12 项审查均先添加并运行失败反例，再实现并运行对应绿色回归。
+- 后端全量：224 项，0 失败，0 错误，5 跳过；原 152 项保持通过。
 - schema：`PlatformMigrationGuardTest` 9 项全部通过。
 - admin：`npm test` 78 项全部通过。
-- 中文 PDF：通过 PDFBox 实际生成并提取文本，校验中文标题、摘要、结论、全部模板和结果。
+- 中文 PDF：实际生成并提取文本，覆盖中文、多行摘要/结论/模板及每明细独立结果。
 - `git diff --check` 通过；DDL、旧迁移与 `integration/db` 无差异。
 
 ## 验证边界 / concerns

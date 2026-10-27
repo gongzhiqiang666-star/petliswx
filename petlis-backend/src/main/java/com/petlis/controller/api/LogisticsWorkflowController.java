@@ -55,6 +55,11 @@ public class LogisticsWorkflowController {
     @PostMapping("/{id}/receive")
     public Result<Map<String, Object>> receive(@PathVariable long id) { return transition(id, ShipmentWorkflowService.ShipmentAction.RECEIVE); }
 
+    @PostMapping("/{id}/scan-receive")
+    public Result<Map<String, Object>> scanReceive(@PathVariable long id, @RequestBody ScanCommand command) {
+        return Result.success(shipments.receiveScanned(id, command.barcode()));
+    }
+
     @PostMapping("/{id}/exception")
     public Result<Map<String, Object>> exception(@PathVariable long id, @RequestBody ExceptionCommand command) {
         String note = command.note() == null || command.note().isBlank() ? command.reason() : command.note();
@@ -73,4 +78,5 @@ public class LogisticsWorkflowController {
     }
     public record AssignCommand(int courierUserId) { }
     public record ExceptionCommand(String exceptionType, String note, String reason) { }
+    public record ScanCommand(String barcode) { }
 }
