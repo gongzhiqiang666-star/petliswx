@@ -68,6 +68,6 @@ class ReviewServiceSecurityTest {
 
         service.profileChange(9L, new ReviewService.Decision(false, "资料不符"));
 
-        verify(jdbc).update("UPDATE lin_doctor_profile SET credential_version=credential_version+1 WHERE user_id=?", 7);
+        verify(jdbc).update("INSERT INTO lin_doctor_profile(user_id,review_status,credential_version) VALUES(?,'approved',1) ON DUPLICATE KEY UPDATE credential_version=credential_version+1", 7);
     }
 }

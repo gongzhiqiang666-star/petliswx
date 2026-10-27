@@ -43,7 +43,7 @@ public class ReviewService {
    store.jdbc().update("UPDATE lin_user SET nickname=?,avatar=?,hospital_id=?,updatetime=UNIX_TIMESTAMP() WHERE id=?",change.nickname(),change.avatar(),change.hospitalId(),userId);
    store.jdbc().update("INSERT INTO lin_doctor_profile(user_id,title,qualification_files,requested_hospital_id,review_status,reviewed_by,reviewed_at,credential_version) VALUES(?,?,?,?,'approved',?,NOW(),1) ON DUPLICATE KEY UPDATE title=VALUES(title),qualification_files=VALUES(qualification_files),requested_hospital_id=VALUES(requested_hospital_id),reviewed_by=VALUES(reviewed_by),reviewed_at=NOW(),credential_version=credential_version+1",userId,change.title(),store.encode(change.qualificationFiles()),change.hospitalId(),SecurityUtils.getCurrentUserId());
   }else{
-   store.jdbc().update("UPDATE lin_doctor_profile SET credential_version=credential_version+1 WHERE user_id=?",userId);
+   store.jdbc().update("INSERT INTO lin_doctor_profile(user_id,review_status,credential_version) VALUES(?,'approved',1) ON DUPLICATE KEY UPDATE credential_version=credential_version+1",userId);
   }
   store.jdbc().update("UPDATE lin_profile_change SET status=?,review_reason=?,reviewed_by=?,reviewed_at=NOW() WHERE id=?",r.approved()?"approved":"rejected",r.reason()==null?"":r.reason(),SecurityUtils.getCurrentUserId(),id);
   notifications.emit(userId,"profile","profile:"+id,"资料审核结果",r.approved()?"资料修改已通过审核，请重新登录。":"资料修改未通过审核："+r.reason(),"pages/mine/mine");
