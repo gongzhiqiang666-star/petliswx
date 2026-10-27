@@ -11,14 +11,16 @@
 - `/report-workflows`：按旧 `InfoTestTypeId` 选择版本化模板，生成、审核、发布及鉴权下载。每个明细 PDF 和旧正文只含本项目结果，支持多行摘要、结论和模板自动换行。全部有效明细发布后才同步整单 `SampleStatus=3` 和任务 `COMPLETED`；单明细驳回不倒退共享任务；发布明细 `DiagnosisStatus=2`。
 - 报告支付与权限：发布、列表、确认版 GET 和 PDF 均优先使用 `lin_order_extension.settlement_mode` 快照，缺失才回退医院旧规则；现结未支付不可见，月结不受医院当前 `PayType` 变化影响。
 - PDF 契约：旧 `PDFHttpUrl` 保存绝对存储地址；`/reports/{id}/pdf-url` 返回带 token 的绝对 `/api/pdf/view/{id}`，`/reports/{id}/download` 与 `/pdf/view/{id}` 统一走鉴权本地存储解析，report-modal 查询 token 可用。
-- 幂等与通知：重复发布幂等返回且无新增写入/通知；订单创建幂等先于草稿校验，响应丢失重放返回原 orderId。发布通知使用稳定 `orderId:published`，触发器桥复用同键，无 10 秒窗口依赖。
+- 幂等与通知：重复发布幂等返回且无新增写入/通知；订单创建幂等先于草稿校验，响应丢失重放返回原 orderId。发布通知使用稳定 `orderId:published`，触发器桥复用同键，无 10 秒窗口依赖；桥接导入前识别同订单主动发布事件并跳过 legacy 重复。
+- 并发恢复：首次发布和已发布重试均先锁定共享订单与实验任务聚合行，再处理 workflow。最后明细并发发布串行化；重试可补齐缺失的整单状态与任务完成状态，已完整时不重复写入或通知。
 - 兼容与文件：物流、实验、报告路径均兼容 `CreateSampleId=null` 并回退本院用户。`QUALIFICATION` 仅本人、授权 reviewer 或 ADMIN 可下载；文件仍仅存 `lin_file` 元数据并校验魔数、大小和真实路径。
 - admin：物流、实验、报告页面均接真实 API，保持 `code=200` 和 0 基分页。
 
 ## 验证
 
 - 12 项审查均先添加并运行失败反例，再实现并运行对应绿色回归。
-- 后端全量：224 项，0 失败，0 错误，5 跳过；原 152 项保持通过。
+- 后端全量：228 项，0 失败，0 错误，5 跳过；原 152 项保持通过。
+- 真实并发：H2 两个事务线程同时发布最后两个明细，最终整单 `SampleStatus=3` 且共享任务 `COMPLETED`；已发布重试恢复测试通过。
 - schema：`PlatformMigrationGuardTest` 9 项全部通过。
 - admin：`npm test` 78 项全部通过。
 - 中文 PDF：实际生成并提取文本，覆盖中文、多行摘要/结论/模板及每明细独立结果。

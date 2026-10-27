@@ -38,6 +38,9 @@ class ReportWorkflowServiceTest {
         service = new ReportWorkflowService(store, access, laboratory, notifications, pdf, files);
         org.springframework.test.util.ReflectionTestUtils.setField(service, "serverDomain", "https://laboklin.cn");
         lenient().when(store.one(contains("COUNT(DISTINCT"), eq(8))).thenReturn(Map.of("total", 1, "published", 1));
+        lenient().when(store.one(contains("SELECT order_id,test_result_id"), eq(41L))).thenReturn(Map.of("order_id", 8, "test_result_id", 31L));
+        lenient().when(store.one(contains("SampleStatus"), eq(8))).thenReturn(Map.of("SampleStatus", 2));
+        lenient().when(store.one(startsWith("SELECT t.id,t.status"), eq(31L))).thenReturn(Map.of("status", "REPORT_REVIEW"));
     }
 
     Map<String, Object> report(String status, int paid, int payType) {
@@ -89,6 +92,8 @@ class ReportWorkflowServiceTest {
     @Test
     void repeatedPublishReturnsOriginalWithoutDuplicateNotification() {
         when(store.one(contains("lin_report_workflow"), eq(41L))).thenReturn(report("APPROVED", 1, 0), report("PUBLISHED", 1, 0));
+        when(store.one(contains("SampleStatus"), eq(8))).thenReturn(Map.of("SampleStatus", 2), Map.of("SampleStatus", 3));
+        when(store.one(startsWith("SELECT t.id,t.status"), eq(31L))).thenReturn(Map.of("status", "REPORT_REVIEW"), Map.of("status", "COMPLETED"));
         service.publish(41);
         assertDoesNotThrow(() -> service.publish(41));
         verify(notifications, times(1)).emitForOrder(eq(8), eq(7), eq("report"), eq("8:published"), any(), any(), any());

@@ -101,24 +101,37 @@ public class ReportWorkflowService {
     @Transactional
     public Map<String, Object> publish(long workflowId) {
         labActor();
+        Map<String, Object> reference = store.one("SELECT order_id,test_result_id FROM lin_report_workflow WHERE id=?", workflowId);
+        int orderId = number(reference.get("order_id")).intValue();
+        long resultId = number(reference.get("test_result_id")).longValue();
+        Map<String, Object> order = store.one("SELECT ListDiagnosisProjectId,SampleStatus FROM lin_lb_listdiagnosisproject WHERE ListDiagnosisProjectId=? FOR UPDATE", orderId);
+        Map<String, Object> task = store.one("SELECT t.id,t.status FROM lin_lab_task t JOIN lin_test_result r ON r.lab_task_id=t.id WHERE r.id=? FOR UPDATE", resultId);
         Map<String, Object> report = manageable(workflowId);
-        if ("PUBLISHED".equals(report.get("status"))) return report;
-        if (!"APPROVED".equals(report.get("status"))) throw invalidState();
-        if (report.get("result_status") != null && !"ENTERED".equals(report.get("result_status"))) throw new BusinessException(409, "检测结果已作废，不能发布报告");
-        if (!isMonthly(report) && number(report.get("is_pay_money")).intValue() != 1) throw new BusinessException(422, "现结订单未支付，不能发布报告");
+        String status = String.valueOf(report.get("status"));
+        if (!List.of("APPROVED", "PUBLISHED").contains(status)) throw invalidState();
         int detailId = number(report.get("detail_id")).intValue();
-        int orderId = number(report.get("order_id")).intValue();
-        String fileName = report.get("storage_path") == null ? "report-" + report.get("pdf_file_id") + ".pdf" : report.get("storage_path").toString();
-        String pdfUrl = serverDomain + "/Content/FilePdf/" + fileName;
-        String result = legacyContent(workflowId, report);
-        store.jdbc().update("INSERT INTO lin_lb_diagnosisdetail_info(diagnosisdetail_id,ReportResult,MailReport) VALUES(?,?,?) ON DUPLICATE KEY UPDATE ReportResult=VALUES(ReportResult),MailReport=VALUES(MailReport)", detailId, result, result);
-        store.jdbc().update("UPDATE lin_lb_diagnosisdetail SET DiagnosisStatus=2,IsSendMail=1,PDFHttpUrl=?,SendMailDt=NOW() WHERE DiagnosisDetailId=?", pdfUrl, detailId);
-        store.jdbc().update("UPDATE lin_report_workflow SET status='PUBLISHED',payment_checked=1,published_by=?,published_at=NOW(),legacy_synced_at=NOW(),version=version+1 WHERE id=?", access.current().userId(), workflowId);
+        if ("APPROVED".equals(status)) {
+            if (report.get("result_status") != null && !"ENTERED".equals(report.get("result_status"))) throw new BusinessException(409, "检测结果已作废，不能发布报告");
+            if (!isMonthly(report) && number(report.get("is_pay_money")).intValue() != 1) throw new BusinessException(422, "现结订单未支付，不能发布报告");
+            String fileName = report.get("storage_path") == null ? "report-" + report.get("pdf_file_id") + ".pdf" : report.get("storage_path").toString();
+            String pdfUrl = serverDomain + "/Content/FilePdf/" + fileName;
+            String result = legacyContent(workflowId, report);
+            store.jdbc().update("INSERT INTO lin_lb_diagnosisdetail_info(diagnosisdetail_id,ReportResult,MailReport) VALUES(?,?,?) ON DUPLICATE KEY UPDATE ReportResult=VALUES(ReportResult),MailReport=VALUES(MailReport)", detailId, result, result);
+            store.jdbc().update("UPDATE lin_lb_diagnosisdetail SET DiagnosisStatus=2,IsSendMail=1,PDFHttpUrl=?,SendMailDt=NOW() WHERE DiagnosisDetailId=?", pdfUrl, detailId);
+            store.jdbc().update("UPDATE lin_report_workflow SET status='PUBLISHED',payment_checked=1,published_by=?,published_at=NOW(),legacy_synced_at=NOW(),version=version+1 WHERE id=?", access.current().userId(), workflowId);
+        }
         Map<String, Object> completion = store.one("SELECT COUNT(DISTINCT d.DiagnosisDetailId) AS total,COUNT(DISTINCT CASE WHEN w.status='PUBLISHED' THEN d.DiagnosisDetailId END) AS published FROM lin_lb_diagnosisdetail d LEFT JOIN lin_report_workflow w ON w.detail_id=d.DiagnosisDetailId WHERE d.ListDiagnosisProjectId=? AND d.IsCheckPass=0 AND d.IsActive=1", orderId);
         if (number(completion.get("total")).intValue() == number(completion.get("published")).intValue()) {
-            store.jdbc().update("UPDATE lin_lb_listdiagnosisproject SET SampleStatus=3,SendReportDt=NOW() WHERE ListDiagnosisProjectId=?", orderId);
-            store.jdbc().update("UPDATE lin_lab_task SET status='COMPLETED',completed_at=NOW(),version=version+1 WHERE id=(SELECT lab_task_id FROM lin_test_result WHERE id=?)", number(report.get("test_result_id")).longValue());
-            notifications.emitForOrder(orderId, integer(report.get("doctor_user_id")), "report", orderId + ":published",
+            boolean changed = false;
+            if (number(order.get("SampleStatus")).intValue() != 3) {
+                store.jdbc().update("UPDATE lin_lb_listdiagnosisproject SET SampleStatus=3,SendReportDt=NOW() WHERE ListDiagnosisProjectId=?", orderId);
+                changed = true;
+            }
+            if (!"COMPLETED".equals(task.get("status"))) {
+                store.jdbc().update("UPDATE lin_lab_task SET status='COMPLETED',completed_at=NOW(),version=version+1 WHERE id=(SELECT lab_task_id FROM lin_test_result WHERE id=?)", resultId);
+                changed = true;
+            }
+            if (changed) notifications.emitForOrder(orderId, integer(report.get("doctor_user_id")), "report", orderId + ":published",
                     "检测报告已发布", "送检单 #" + orderId + " 的全部检测报告已发布", "pages/report-detail/report-detail?id=" + detailId);
         }
         return report;

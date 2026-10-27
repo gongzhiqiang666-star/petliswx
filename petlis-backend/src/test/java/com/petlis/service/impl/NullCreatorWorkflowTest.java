@@ -58,6 +58,9 @@ class NullCreatorWorkflowTest {
         report.put("is_pay_money", 1); report.put("pay_type", 0); report.put("pdf_file_id", 51L); report.put("batch_no", "B-1");
         when(store.one(contains("lin_report_workflow"), eq(41L))).thenReturn(report);
         when(store.one(contains("COUNT(DISTINCT"), eq(8))).thenReturn(Map.of("total", 1, "published", 1));
+        when(store.one(contains("SELECT order_id,test_result_id"), eq(41L))).thenReturn(Map.of("order_id", 8, "test_result_id", 31L));
+        when(store.one(contains("SampleStatus"), eq(8))).thenReturn(Map.of("SampleStatus", 2));
+        when(store.one(startsWith("SELECT t.id,t.status"), eq(31L))).thenReturn(Map.of("status", "REPORT_REVIEW"));
         var service = new ReportWorkflowService(store, access, mock(LabWorkflowService.class), notifications, mock(ReportPdfGenerator.class), mock(PlatformFileService.class));
         assertDoesNotThrow(() -> service.publish(41));
         verify(notifications).emitForOrder(eq(8), isNull(), eq("report"), eq("8:published"), any(), any(), any());

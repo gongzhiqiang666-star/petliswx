@@ -33,6 +33,9 @@ class ReportWorkflowReviewRegressionTest {
         when(access.current()).thenReturn(new CurrentActor(5, Set.of(PlatformRole.LAB_STAFF), Set.of(), Set.of(2),
                 new DataScope(false, Set.of(), Set.of(2), null)));
         service = new ReportWorkflowService(store, access, laboratory, notifications, mock(ReportPdfGenerator.class), mock(PlatformFileService.class));
+        lenient().when(store.one(contains("SELECT order_id,test_result_id"), anyLong())).thenReturn(Map.of("order_id", 8, "test_result_id", 31L));
+        lenient().when(store.one(contains("SampleStatus"), eq(8))).thenReturn(Map.of("SampleStatus", 2));
+        lenient().when(store.one(startsWith("SELECT t.id,t.status"), eq(31L))).thenReturn(Map.of("status", "REPORT_REVIEW"));
     }
 
     Map<String, Object> report(long id, int detailId) {
@@ -77,9 +80,36 @@ class ReportWorkflowReviewRegressionTest {
     void repeatedPublishReturnsOriginalWithoutLegacyWritesOrNotification() {
         var published = report(41, 21); published.put("status", "PUBLISHED");
         when(store.one(contains("lin_report_workflow"), eq(41L))).thenReturn(published);
+        when(store.one(contains("SampleStatus"), eq(8))).thenReturn(Map.of("SampleStatus", 3));
+        when(store.one(startsWith("SELECT t.id,t.status"), eq(31L))).thenReturn(Map.of("status", "COMPLETED"));
+        completion(1, 1);
         assertDoesNotThrow(() -> service.publish(41));
         verify(jdbc, never()).update(anyString(), any(Object[].class));
         verifyNoInteractions(notifications);
+    }
+
+    @Test
+    void publishedRetryRepairsMissingAggregateCompletion() {
+        var published = report(41, 21); published.put("status", "PUBLISHED");
+        when(store.one(contains("lin_report_workflow"), eq(41L))).thenReturn(published);
+        completion(1, 1);
+        service.publish(41);
+        verify(jdbc).update(contains("SampleStatus=3"), eq(8));
+        verify(jdbc).update(contains("lin_lab_task SET status='COMPLETED'"), any(Object[].class));
+        verify(notifications).emitForOrder(eq(8), eq(7), eq("report"), eq("8:published"), any(), any(), any());
+    }
+
+    @Test
+    void sharedOrderAndTaskAreLockedBeforeWorkflow() {
+        var approved = report(41, 21);
+        when(store.one(contains("lin_report_workflow"), eq(41L))).thenReturn(approved);
+        completion(1, 1);
+        service.publish(41);
+        var order = org.mockito.Mockito.inOrder(store);
+        order.verify(store).one(contains("SELECT order_id,test_result_id"), eq(41L));
+        order.verify(store).one(contains("SampleStatus"), eq(8));
+        order.verify(store).one(startsWith("SELECT t.id,t.status"), eq(31L));
+        order.verify(store).one(contains("SELECT w.*"), eq(41L));
     }
 
     @Test
