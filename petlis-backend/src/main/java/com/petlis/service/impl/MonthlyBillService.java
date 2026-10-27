@@ -32,14 +32,16 @@ public class MonthlyBillService {
         YearMonth period = YearMonth.parse(month);
         LocalDate start = period.atDay(1), end = period.atEndOfMonth();
         if (!end.isBefore(LocalDate.now())) throw new BusinessException("当前或未来账期尚未结束，不能生成月账单");
-        Map<String, Object> contract = store.one("SELECT id,billing_cycle_days FROM lin_contract WHERE hospital_id=? AND laboratory_id=? AND settlement_type='MONTHLY' AND status='ACTIVE' FOR UPDATE", hospitalId, laboratoryId);
-        long contractId = ((Number) contract.get("id")).longValue();
-        var existing = store.jdbc().queryForList("SELECT id,status,paid_amount FROM lin_monthly_bill WHERE contract_id=? AND period_start=? AND period_end=?", contractId, start, end);
+        var contractRows = store.jdbc().queryForList("SELECT DISTINCT s.contract_id FROM lin_order_pricing_snapshot s JOIN lin_lb_listdiagnosisproject o ON o.ListDiagnosisProjectId=s.order_id WHERE s.hospital_id=? AND s.laboratory_id=? AND s.settlement_type='monthly' AND o.SampleStatus IN (2,3) AND o.CreateDt>=? AND o.CreateDt<?", hospitalId, laboratoryId, start, end.plusDays(1));
+        if (contractRows.size() != 1) throw new BusinessException(contractRows.isEmpty() ? "该账期没有可出账的订单定价快照" : "账期订单存在多个快照合同，请分合同出账");
+        long contractId = ((Number) contractRows.get(0).get("contract_id")).longValue();
+        Map<String, Object> contract = store.one("SELECT id,billing_cycle_days FROM lin_contract WHERE id=? FOR UPDATE", contractId);
+        var existing = store.jdbc().queryForList("SELECT id,status,paid_amount,supplement_no FROM lin_monthly_bill WHERE contract_id=? AND period_start=? AND period_end=? ORDER BY supplement_no DESC,id DESC LIMIT 1", contractId, start, end);
         Long billId = existing.isEmpty() ? null : ((Number) existing.get(0).get("id")).longValue();
         boolean recalculate = billId != null && Set.of("PENDING_RECONCILIATION", "DISPUTED").contains(existing.get(0).get("status").toString());
-        String exclusion = billId == null ? "NOT EXISTS(SELECT 1 FROM lin_monthly_bill_item i WHERE i.order_id=s.order_id)" : recalculate
-                ? "NOT EXISTS(SELECT 1 FROM lin_monthly_bill_item i WHERE i.order_id=s.order_id AND i.bill_id<>?)" : "NOT EXISTS(SELECT 1 FROM lin_monthly_bill_item i WHERE i.order_id=s.order_id)";
-        String sql = "SELECT s.order_id,s.original_amount,s.payable_amount FROM lin_order_pricing_snapshot s JOIN lin_lb_listdiagnosisproject o ON o.ListDiagnosisProjectId=s.order_id WHERE s.hospital_id=? AND s.laboratory_id=? AND s.contract_id=? AND s.settlement_type='monthly' AND o.SampleStatus IN (2,3) AND o.CreateDt>=? AND o.CreateDt<? AND " + exclusion + " ORDER BY s.order_id";
+        String inclusion = recalculate ? "(NOT EXISTS(SELECT 1 FROM lin_monthly_bill_item i WHERE i.order_id=s.order_id) OR EXISTS(SELECT 1 FROM lin_monthly_bill_item i WHERE i.order_id=s.order_id AND i.bill_id=?))"
+                : "NOT EXISTS(SELECT 1 FROM lin_monthly_bill_item i WHERE i.order_id=s.order_id)";
+        String sql = "SELECT s.order_id,s.original_amount,s.payable_amount FROM lin_order_pricing_snapshot s JOIN lin_lb_listdiagnosisproject o ON o.ListDiagnosisProjectId=s.order_id WHERE s.hospital_id=? AND s.laboratory_id=? AND s.contract_id=? AND s.settlement_type='monthly' AND o.SampleStatus IN (2,3) AND o.CreateDt>=? AND o.CreateDt<? AND " + inclusion + " ORDER BY s.order_id";
         List<Object> args = new ArrayList<>(List.of(hospitalId, laboratoryId, contractId, start, end.plusDays(1)));
         if (recalculate) args.add(billId);
         var orders = store.jdbc().queryForList(sql, args.toArray());
@@ -47,17 +49,20 @@ public class MonthlyBillService {
         BigDecimal total = BigDecimal.ZERO, due = BigDecimal.ZERO;
         for (var order : orders) { total = total.add(money(order.get("original_amount"))); due = due.add(money(order.get("payable_amount"))); }
         BigDecimal discount = total.subtract(due);
-        if (billId == null) {
-            billId = store.insert("INSERT INTO lin_monthly_bill(bill_no,contract_id,hospital_id,laboratory_id,period_start,period_end,total_amount,discount_amount,due_amount,status,due_date) VALUES(?,?,?,?,?,?,?,?,?,'PENDING_RECONCILIATION',?)",
-                    "B" + UUID.randomUUID().toString().replace("-", ""), contractId, hospitalId, laboratoryId, start, end, total, discount, due, end.plusDays(((Number) contract.get("billing_cycle_days")).intValue()));
+        boolean supplement = billId != null && !recalculate;
+        if (supplement) {
+            int supplementNo = ((Number) existing.get(0).get("supplement_no")).intValue() + 1;
+            billId = store.insert("INSERT INTO lin_monthly_bill(bill_no,contract_id,hospital_id,laboratory_id,period_start,period_end,total_amount,discount_amount,due_amount,status,due_date,bill_kind,supplement_no) VALUES(?,?,?,?,?,?,?,?,?,'PENDING_RECONCILIATION',?,'SUPPLEMENT',?)",
+                    "B" + UUID.randomUUID().toString().replace("-", ""), contractId, hospitalId, laboratoryId, start, end, total, discount, due, end.plusDays(((Number) contract.get("billing_cycle_days")).intValue()), supplementNo);
         } else if (recalculate) {
             store.jdbc().update("DELETE FROM lin_monthly_bill_item WHERE bill_id=?", billId);
             store.jdbc().update("UPDATE lin_monthly_bill SET total_amount=?,discount_amount=?,due_amount=?,status='PENDING_RECONCILIATION',hospital_reconciled_by=NULL,hospital_reconciled_at=NULL,laboratory_reconciled_by=NULL,laboratory_reconciled_at=NULL,reconciled_at=NULL WHERE id=?", total, discount, due, billId);
         } else {
-            store.jdbc().update("UPDATE lin_monthly_bill SET total_amount=total_amount+?,discount_amount=discount_amount+?,due_amount=due_amount+?,status='PENDING_RECONCILIATION',hospital_reconciled_by=NULL,hospital_reconciled_at=NULL,laboratory_reconciled_by=NULL,laboratory_reconciled_at=NULL,reconciled_at=NULL,settled_at=NULL,settlement_reference=NULL WHERE id=?", total, discount, due, billId);
+            billId = store.insert("INSERT INTO lin_monthly_bill(bill_no,contract_id,hospital_id,laboratory_id,period_start,period_end,total_amount,discount_amount,due_amount,status,due_date,bill_kind,supplement_no) VALUES(?,?,?,?,?,?,?,?,?,'PENDING_RECONCILIATION',?,'STANDARD',0)",
+                    "B" + UUID.randomUUID().toString().replace("-", ""), contractId, hospitalId, laboratoryId, start, end, total, discount, due, end.plusDays(((Number) contract.get("billing_cycle_days")).intValue()));
         }
         for (var order : orders) insertItems(billId, order);
-        audits.record(billId != null && !existing.isEmpty() && !recalculate ? "MONTHLY_BILL_ADJUSTED" : "MONTHLY_BILL_GENERATED", "MONTHLY_BILL", billId, existing.isEmpty() ? null : existing.get(0), Map.of("month", month, "adjustmentAmount", due), recalculate ? "未对账账单锁定重算" : existing.isEmpty() ? null : "补录订单调整并重新对账");
+        audits.record(supplement ? "MONTHLY_BILL_SUPPLEMENT_GENERATED" : recalculate ? "MONTHLY_BILL_RECALCULATED" : "MONTHLY_BILL_GENERATED", "MONTHLY_BILL", billId, existing.isEmpty() ? null : existing.get(0), Map.of("month", month, "amount", due), supplement ? "独立补充账单，原结算保持不变" : recalculate ? "未对账账单锁定重算" : null);
         return get(billId);
     }
 

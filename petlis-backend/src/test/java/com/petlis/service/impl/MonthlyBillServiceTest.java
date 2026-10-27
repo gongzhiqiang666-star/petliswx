@@ -27,6 +27,8 @@ class MonthlyBillServiceTest {
         store = mock(FeatureStore.class); jdbc = mock(JdbcTemplate.class);
         access = mock(AccessService.class); audits = mock(AuditService.class); notifications = mock(BusinessNotifications.class);
         when(store.jdbc()).thenReturn(jdbc);
+        lenient().when(jdbc.queryForList(contains("SELECT DISTINCT s.contract_id"), any(Object[].class))).thenReturn(List.of(Map.of("contract_id", 11L)));
+        lenient().when(store.one("SELECT id,billing_cycle_days FROM lin_contract WHERE id=? FOR UPDATE", 11L)).thenReturn(Map.of("id", 11L, "billing_cycle_days", 30));
         service = new MonthlyBillService(store, access, audits, notifications);
         when(access.current()).thenReturn(actor(PlatformRole.ADMIN));
     }

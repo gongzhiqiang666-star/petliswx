@@ -246,6 +246,8 @@ CREATE TABLE IF NOT EXISTS `lin_monthly_bill` (
   `paid_amount` DECIMAL(18,2) NOT NULL DEFAULT 0.00,
   `status` VARCHAR(32) NOT NULL,
   `due_date` DATE NOT NULL,
+  `bill_kind` VARCHAR(16) NOT NULL DEFAULT 'STANDARD',
+  `supplement_no` INT NOT NULL DEFAULT 0,
   `generated_at` DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
   `hospital_reconciled_by` INT NULL,
   `hospital_reconciled_at` DATETIME(6) NULL,
@@ -260,7 +262,7 @@ CREATE TABLE IF NOT EXISTS `lin_monthly_bill` (
   `updated_at` DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_monthly_bill_no` (`bill_no`),
-  UNIQUE KEY `uk_monthly_bill_period` (`contract_id`, `period_start`, `period_end`),
+  UNIQUE KEY `uk_monthly_bill_period` (`contract_id`, `period_start`, `period_end`, `bill_kind`, `supplement_no`),
   KEY `idx_monthly_bill_hospital` (`hospital_id`, `status`, `due_date`),
   KEY `idx_monthly_bill_lab` (`laboratory_id`, `status`, `period_end`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
