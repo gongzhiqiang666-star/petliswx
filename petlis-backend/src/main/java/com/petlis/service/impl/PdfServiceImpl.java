@@ -200,6 +200,12 @@ public class PdfServiceImpl implements PdfService {
             try { relative = java.net.URI.create(relative).getPath(); }
             catch (IllegalArgumentException error) { throw new SecurityException("报告路径无效"); }
         }
+        var apiPdf = relative.matches(".*/api/pdf/view/\\d+") ? relative : relative.matches("/api/pdf/view/\\d+") ? relative : null;
+        if (apiPdf != null) {
+            int detailId = Integer.parseInt(apiPdf.substring(apiPdf.lastIndexOf('/') + 1));
+            relative = jdbcTemplate.queryForObject("SELECT f.storage_path FROM lin_file f JOIN lin_report_workflow w ON w.pdf_file_id=f.id WHERE w.detail_id=?", String.class, detailId);
+            if (relative == null) throw new IllegalArgumentException("报告文件不可用");
+        }
         if(relative.startsWith("/Content/FilePdf/"))relative=relative.substring("/Content/FilePdf/".length());
         else if(relative.startsWith("Content/FilePdf/"))relative=relative.substring("Content/FilePdf/".length());
         if(relative.startsWith("/") || relative.contains(":") || !relative.toLowerCase(java.util.Locale.ROOT).endsWith(".pdf"))throw new SecurityException("报告路径无效");

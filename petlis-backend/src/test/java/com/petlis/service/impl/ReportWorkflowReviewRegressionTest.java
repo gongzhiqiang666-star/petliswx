@@ -138,13 +138,12 @@ class ReportWorkflowReviewRegressionTest {
     }
 
     @Test
-    void publishStoresAbsoluteLegacyPdfUrlAndConfirmedCompleteStatusTwo() {
+    void publishStoresAuthenticatedApiPdfUrlAndConfirmedCompleteStatusTwo() {
         var approved = report(41, 21);
         when(store.one(contains("SELECT w.*"), eq(41L))).thenReturn(approved);
         completion(1, 1);
-        org.springframework.test.util.ReflectionTestUtils.setField(service, "serverDomain", "https://laboklin.cn");
         service.publish(41);
-        verify(jdbc).update(contains("DiagnosisStatus=2"), eq("https://laboklin.cn/Content/FilePdf/report-51.pdf"), eq(21));
+        verify(jdbc).update(contains("DiagnosisStatus=2"), eq("/api/pdf/view/21"), eq(21));
     }
 
     @Test

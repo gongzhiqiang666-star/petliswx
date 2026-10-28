@@ -116,7 +116,7 @@ public class OrderServiceImpl implements OrderService {
         project.setDictSexId(request.getDictSexId());
         project.setSampleArea(request.getSampleArea());
         project.setMasterName(request.getMasterName());
-        project.setMasterNameEn(request.getMasterNameEn());
+        project.setMasterNameEn(request.getMasterNameEn() == null ? "" : request.getMasterNameEn());
         project.setCollectDt(request.getCollectDt());
         // 日期字段默认值: "1900-01-01" (用户不会在创建时设置这些字段)
         project.setReceiveSampleDt(request.getReceiveSampleDt() != null ?
@@ -258,7 +258,7 @@ public class OrderServiceImpl implements OrderService {
         project.setDictSexId(request.getDictSexId());
         project.setSampleArea(request.getSampleArea());
         project.setMasterName(request.getMasterName());
-        project.setMasterNameEn(request.getMasterNameEn());
+        project.setMasterNameEn(request.getMasterNameEn() == null ? "" : request.getMasterNameEn());
         project.setCollectDt(request.getCollectDt());
 
         project.setCityId(getCurrentCityId());
@@ -458,7 +458,7 @@ public class OrderServiceImpl implements OrderService {
         project.setDictSexId(request.getDictSexId());
         project.setSampleArea(request.getSampleArea());
         project.setMasterName(request.getMasterName());
-        project.setMasterNameEn(request.getMasterNameEn());
+        project.setMasterNameEn(request.getMasterNameEn() == null ? "" : request.getMasterNameEn());
         project.setCollectDt(request.getCollectDt());
         project.setReceiveSampleDt(request.getReceiveSampleDt());
         project.setDoctorName(request.getDoctorName() != null ? request.getDoctorName() : "");
@@ -527,7 +527,7 @@ public class OrderServiceImpl implements OrderService {
             if ((monthly || noPayment) != (targetStatusEnum == OrderStatusEnum.WAITING_REPORT)) {
                 throw new BusinessException(monthly ? "月结客户审核后挂账" : "现结客户审核后应进入待支付");
             }
-            if (monthly) contracts.reserveCredit(orderId, BigDecimal.valueOf(project.getTestFee() == null ? 0d : project.getTestFee()).setScale(2, java.math.RoundingMode.HALF_UP));
+            if (monthly && contracts.hasMonthlyContract(orderId)) contracts.reserveCredit(orderId, BigDecimal.valueOf(project.getTestFee() == null ? 0d : project.getTestFee()).setScale(2, java.math.RoundingMode.HALF_UP));
         }
 
         // 更新状态
