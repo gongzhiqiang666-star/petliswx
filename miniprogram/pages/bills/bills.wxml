@@ -1,0 +1,15 @@
+<view class="page">
+  <view wx:if="{{forbidden}}" class="petlis-empty"><image src="/assets/icons/brand-empty.png" mode="aspectFit" /><view class="petlis-empty-text">仅医院管理员可查看月结账单</view></view>
+  <block wx:else>
+    <view class="petlis-filters"><button class="petlis-filter-item {{!arrears?'active':''}}" bindtap="showAll">全部账单</button><button class="petlis-filter-item {{arrears?'active':''}}" bindtap="showArrears">欠款</button></view>
+    <view wx:if="{{error}}" class="petlis-empty error"><view class="petlis-empty-text">{{error}}</view><button class="petlis-btn petlis-btn-outline" bindtap="retryLoad">重试</button></view>
+    <view wx:for="{{items}}" wx:key="id" class="card petlis-list-card" data-id="{{item.id}}" bindtap="openDetail">
+      <view class="line"><text>{{item.billNo || item.bill_no}}</text><text class="badge status-{{item.statusClass}}">{{item.statusLabel}}</text></view>
+      <view class="amount">¥{{item.dueAmount || item.due_amount}}</view>
+      <view class="meta">账期 {{item.periodStart || item.period_start}} 至 {{item.periodEnd || item.period_end}}</view>
+      <view class="meta" wx:if="{{item.outstandingAmount > 0 || item.outstanding_amount > 0}}">未结 ¥{{item.outstandingAmount || item.outstanding_amount}} · 逾期 {{item.overdueDays || 0}} 天</view>
+    </view>
+    <view wx:if="{{!loading && !items.length && !error}}" class="petlis-empty"><image src="/assets/icons/brand-empty.png" mode="aspectFit" /><view class="petlis-empty-text">{{arrears?'暂无欠款账单':'暂无月结账单'}}</view></view>
+    <view wx:if="{{loading}}" class="loading-text">正在加载…</view>
+  </block>
+</view>

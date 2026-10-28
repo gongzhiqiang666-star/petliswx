@@ -57,11 +57,20 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
                 // 创建认证对象,将hospitalId、cityId和openid也存储在principal中
                 UserPrincipal userPrincipal = new UserPrincipal(userId, openid, hospitalId, cityId);
+                java.util.Set<String> authorities = new java.util.HashSet<>();
+                var roles = sessionService.roles(userId);
+                boolean reviewer = jwtUtil.isReviewerToken(token);
+                if (reviewer) authorities.add("ROLE_REVIEWER");
+                if (roles.contains(com.petlis.common.security.PlatformRole.DOCTOR)
+                        || roles.isEmpty() && !reviewer && !jwtUtil.isStaffToken(token)) {
+                    authorities.add("ROLE_USER");
+                }
+                for (var role : roles) authorities.add("ROLE_" + role.name());
                 UsernamePasswordAuthenticationToken authentication =
                         new UsernamePasswordAuthenticationToken(
                                 userPrincipal,
                                 null,
-                                Collections.singletonList(new SimpleGrantedAuthority(jwtUtil.isReviewerToken(token) ? "ROLE_REVIEWER" : "ROLE_USER"))
+                                authorities.stream().map(SimpleGrantedAuthority::new).toList()
                         );
 
                 // 设置详情
@@ -95,6 +104,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             return bearerToken.substring(TOKEN_PREFIX.length());
         }
 
-        return null;
+        String queryToken = request.getParameter("token");
+        return StringUtils.hasText(queryToken) ? queryToken : null;
     }
 }

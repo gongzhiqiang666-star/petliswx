@@ -53,8 +53,10 @@ public class OrderController {
      */
     @PostMapping
     @Operation(summary = "创建检测申请", description = "创建新的检测申请单,提交后进入待审核，审核通过后按现结或月结结算")
-    public Result<OrderCreateResponse> createOrder(@Valid @RequestBody OrderCreateRequest request) {
+    public Result<OrderCreateResponse> createOrder(@Valid @RequestBody OrderCreateRequest request,
+            @RequestHeader(value = "Idempotency-Key", required = false) String idempotencyKey) {
         log.info("接收到创建检测申请请求");
+        if (idempotencyKey != null && !idempotencyKey.isBlank()) request.setIdempotencyKey(idempotencyKey);
         try {
             // 1. 创建订单
             Integer orderId = orderService.createOrder(request);

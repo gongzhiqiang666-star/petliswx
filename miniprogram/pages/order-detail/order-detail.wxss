@@ -505,3 +505,7 @@
   border-radius: 50%;
   background: #0D6E6E;
 }
+
+.logistics-summary { display: flex; justify-content: space-between; gap: 24rpx; font-size: 28rpx; margin-bottom: 20rpx; }
+.logistics-eta { color: #666; font-size: 26rpx; margin-bottom: 20rpx; }
+.logistics-exception { color: #C96F45; background: #fff4e8; padding: 20rpx; font-size: 26rpx; margin-bottom: 20rpx; }

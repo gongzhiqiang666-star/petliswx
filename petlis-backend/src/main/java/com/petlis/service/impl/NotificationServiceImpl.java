@@ -230,6 +230,8 @@ public class NotificationServiceImpl implements NotificationService {
             record.setErrorMessage(e.getMessage());
             notificationRepository.save(record);
             return false;
+        } finally {
+            jdbc.update("INSERT INTO lin_audit_record(actor_user_id,action,resource_type,resource_id) VALUES(?,?,?,?)", com.petlis.common.security.SecurityUtils.getCurrentUserId(), "LEGACY_NOTIFICATION_RETRIED", "NOTIFICATION", String.valueOf(notificationId));
         }
     }
 

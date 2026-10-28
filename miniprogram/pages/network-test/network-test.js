@@ -5,7 +5,7 @@ const app = getApp()
 Page({
   data: {
     baseURL: config.baseURL,
-    ipAddress: '192.168.1.103',
+    ipAddress: '由环境配置管理',
     testResult: '点击按钮开始测试...',
     systemInfo: {},
     loginStatus: '检查中...',

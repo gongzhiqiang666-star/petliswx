@@ -38,4 +38,8 @@ public class WechatLoginResponse {
 
     @Schema(description = "微信openid")
     private String openid;
+
+    private java.util.Set<String> roles;
+
+    private java.util.Map<String, Object> user;
 }

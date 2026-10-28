@@ -302,6 +302,10 @@ Page({
     });
   },
 
+  onViewHealth() {
+    wx.navigateTo({ url: `/pages/pet-health/pet-health?petId=${this.data.petData.id}` });
+  },
+
   /**
    * 预约检测 - 直接跳转到预约信息填写页面，带入宠物信息
    */

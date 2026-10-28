@@ -61,6 +61,8 @@ public class OrderServiceImpl implements OrderService {
     private final InfoHospitalRepository hospitalRepository;
     private final com.petlis.common.security.ReviewPermission reviewPermission;
     private final CouponService couponService;
+    private final ContractService contracts;
+    private final OrderWorkflowService orderWorkflows;
 
     /**
      * 创建检测申请
@@ -73,6 +75,8 @@ public class OrderServiceImpl implements OrderService {
     public Integer createOrder(OrderCreateRequest request) {
         log.info("创建检测申请, 宠物姓名: {}", request.getAnimalName());
 
+        var replay = orderWorkflows.begin(request);
+        if (replay.isPresent()) return replay.getAsInt();
         if(request.getDraftId()!=null)drafts.validateForSubmission(request.getDraftId(),request.getDraftVersion());
         // 从当前登录用户获取hospitalId和cityId（统一从token获取）
         Integer hospitalId = getCurrentHospitalId();
@@ -154,6 +158,7 @@ public class OrderServiceImpl implements OrderService {
         log.info("检测申请创建成功, 申请单ID: {}, UserNO: {}", project.getListDiagnosisProjectId(), userNO);
         if(request.getDraftId()!=null)drafts.consume(request.getDraftId(),request.getDraftVersion());
         notifications.order(project.getListDiagnosisProjectId(),getCurrentUserId(),project.getSampleStatus());
+        orderWorkflows.complete(request, project.getListDiagnosisProjectId(), hospitalId);
         return project.getListDiagnosisProjectId();
     }
 
@@ -517,11 +522,12 @@ public class OrderServiceImpl implements OrderService {
                 && (targetStatusEnum == OrderStatusEnum.PENDING_PAYMENT || targetStatusEnum == OrderStatusEnum.WAITING_REPORT)) {
             InfoHospital hospital = hospitalRepository.findById(project.getInfoHospitalId())
                     .orElseThrow(() -> new BusinessException("医院不存在"));
-            boolean monthly = Integer.valueOf(1).equals(hospital.getPayType());
+            boolean monthly = couponService.isMonthly(orderId, Integer.valueOf(1).equals(hospital.getPayType()));
             boolean noPayment = project.getTestFee() != null && project.getTestFee() == 0d;
             if ((monthly || noPayment) != (targetStatusEnum == OrderStatusEnum.WAITING_REPORT)) {
                 throw new BusinessException(monthly ? "月结客户审核后挂账" : "现结客户审核后应进入待支付");
             }
+            if (monthly) contracts.reserveCredit(orderId, BigDecimal.valueOf(project.getTestFee() == null ? 0d : project.getTestFee()).setScale(2, java.math.RoundingMode.HALF_UP));
         }
 
         // 更新状态

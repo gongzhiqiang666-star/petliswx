@@ -52,6 +52,12 @@
       <image class="menu-chevron" src="/assets/icons/brand-chevron-right.png" mode="aspectFit" aria-hidden="true" />
     </view>
 
+    <view wx:if="{{canViewBills}}" class="petlis-menu-item menu-item" role="listitem button" aria-label="月结账单" bindtap="openBills">
+      <view class="petlis-icon-badge menu-icon"><image src="/assets/icons/brand-transactions.png" mode="aspectFit" aria-hidden="true" /></view>
+      <text class="menu-label">月结账单</text>
+      <image class="menu-chevron" src="/assets/icons/brand-chevron-right.png" mode="aspectFit" aria-hidden="true" />
+    </view>
+
     <navigator class="petlis-menu-item menu-item" url="/pages/mall/mall" hover-class="menu-item-active" role="listitem button" aria-label="积分商城">
       <view class="petlis-icon-badge menu-icon"><image src="/assets/icons/brand-gift.png" mode="aspectFit" aria-hidden="true" /></view>
       <text class="menu-label">积分商城</text>
@@ -81,6 +87,12 @@
       <text class="menu-label">通知偏好</text>
       <image class="menu-chevron" src="/assets/icons/brand-chevron-right.png" mode="aspectFit" aria-hidden="true" />
     </navigator>
+
+    <view class="petlis-menu-item menu-item" role="listitem button" aria-label="帮助与反馈" bindtap="onSettingTap" data-setting="help">
+      <view class="petlis-icon-badge menu-icon"><image src="/assets/icons/brand-help.png" mode="aspectFit" aria-hidden="true" /></view>
+      <text class="menu-label">帮助与反馈</text>
+      <image class="menu-chevron" src="/assets/icons/brand-chevron-right.png" mode="aspectFit" aria-hidden="true" />
+    </view>
 
     <view class="petlis-menu-item menu-item" role="listitem button" aria-label="个人资料" bindtap="onSettingTap" data-setting="profile">
       <view class="petlis-icon-badge menu-icon"><image src="/assets/icons/brand-mine.png" mode="aspectFit" aria-hidden="true" /></view>

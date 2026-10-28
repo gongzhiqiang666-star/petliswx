@@ -50,6 +50,9 @@ class PdfServiceTest {
     @Mock
     private HttpServletRequest request;
 
+    @Mock
+    private org.springframework.jdbc.core.JdbcTemplate jdbcTemplate;
+
     @InjectMocks
     private PdfServiceImpl pdfService;
 
@@ -118,6 +121,18 @@ class PdfServiceTest {
             // 验证方法调用
             verify(detailRepository).findById(1);
             verify(projectRepository).findById(1);
+        }
+    }
+
+    @Test
+    void absoluteLegacyStorageUrlResolvesInsideAuthorizedPdfRoot() throws Exception {
+        mockDetail.setPdfHttpUrl("https://laboklin.cn/Content/FilePdf/" + tempPdfFile.getFileName());
+        when(detailRepository.findById(1)).thenReturn(Optional.of(mockDetail));
+        when(projectRepository.findById(1)).thenReturn(Optional.of(mockProject));
+        allowHospitalAccess();
+        try (var mockedStatic = mockStatic(com.petlis.common.security.SecurityUtils.class)) {
+            mockedStatic.when(com.petlis.common.security.SecurityUtils::getCurrentHospitalId).thenReturn(1);
+            assertEquals("Test PDF Content", new String(pdfService.getPdfWithAuth(1, request)));
         }
     }
 
@@ -255,6 +270,27 @@ class PdfServiceTest {
         when(detailRepository.findById(1)).thenReturn(Optional.of(mockDetail));
         when(projectRepository.findById(1)).thenReturn(Optional.of(mockProject));
         allowHospitalAccess();
+        try (var mockedStatic = mockStatic(com.petlis.common.security.SecurityUtils.class)) {
+            mockedStatic.when(com.petlis.common.security.SecurityUtils::getCurrentHospitalId).thenReturn(1);
+            assertEquals("Test PDF Content", new String(pdfService.getPdfWithAuth(1, request)));
+        }
+    }
+
+    @Test
+    void settlementSnapshotControlsPdfAccessInsteadOfCurrentHospitalPayType() throws Exception {
+        mockProject.setIsPayMoney(0);
+        mockHospital.setPayType(1);
+        when(detailRepository.findById(1)).thenReturn(Optional.of(mockDetail));
+        when(projectRepository.findById(1)).thenReturn(Optional.of(mockProject));
+        allowHospitalAccess();
+        when(jdbcTemplate.queryForObject(contains("settlement_mode"), eq(String.class), eq(1))).thenReturn("cash");
+        try (var mockedStatic = mockStatic(com.petlis.common.security.SecurityUtils.class)) {
+            mockedStatic.when(com.petlis.common.security.SecurityUtils::getCurrentHospitalId).thenReturn(1);
+            assertThrows(BusinessException.class, () -> pdfService.getPdfWithAuth(1, request));
+        }
+
+        mockHospital.setPayType(0);
+        when(jdbcTemplate.queryForObject(contains("settlement_mode"), eq(String.class), eq(1))).thenReturn("monthly");
         try (var mockedStatic = mockStatic(com.petlis.common.security.SecurityUtils.class)) {
             mockedStatic.when(com.petlis.common.security.SecurityUtils::getCurrentHospitalId).thenReturn(1);
             assertEquals("Test PDF Content", new String(pdfService.getPdfWithAuth(1, request)));

@@ -18,6 +18,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Map;
+
 /**
  * 宠物档案控制器
  *
@@ -34,6 +36,14 @@ import org.springframework.web.bind.annotation.*;
 public class PetController {
 
     private final PetService petService;
+    private final com.petlis.service.impl.PetHealthService petHealthService;
+
+    @GetMapping("/{id}/health")
+    @Operation(summary = "查询宠物病史与既往送检报告")
+    public Result<Map<String, Object>> health(@PathVariable("id") Integer petId,
+            @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "20") int size) {
+        return Result.success(petHealthService.health(petId, page, size));
+    }
 
     /**
      * 创建宠物档案

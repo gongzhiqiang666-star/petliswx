@@ -18,12 +18,12 @@ const auth = {
    * 刷新token
    * @param {String} token 旧的token
    */
-  refreshToken: (token) => request.post('/auth/refresh', { token }, false),  // false = 不需要token
+  refreshToken: (token) => request.post('/auth/refresh', { token }, true),
 
   /**
    * 登出
    */
-  logout: () => request.post('/auth/logout', {}, false)  // false = 不需要token
+  logout: () => request.post('/auth/logout', {}, true)
 }
 
 /**
@@ -65,7 +65,9 @@ const pets = {
    * 删除宠物（逻辑删除）
    * @param {Number} id 宠物ID
    */
-  delete: (id) => request.delete(`/pets/${id}`)
+  delete: (id) => request.delete(`/pets/${id}`),
+
+  getHealth: (id, params) => request.get(`/pets/${id}/health`, params)
 }
 
 /**
@@ -223,6 +225,8 @@ const user = {
    */
   getProfile: () => request.get('/user/profile'),
 
+  getRoles: () => request.get('/user/roles'),
+
   /**
    * 更新用户信息
    * @param {Object} data 用户信息 {nickname, avatarUrl, mobile, email, gender, birthday, bio}
@@ -244,6 +248,18 @@ const billing = {
    * 检查月结客户支付状态
    */
   checkStatus: () => request.get('/billing/check')
+}
+
+const bills = {
+  getList: params => request.get('/bills', params),
+  getDetail: id => request.get(`/bills/${id}`),
+  getItems: (id, params) => request.get(`/bills/${id}/items`, params),
+  reconcile: (id, action, reason) => request.post(`/bills/${id}/reconciliation`, { action, reason })
+}
+
+const logistics = {
+  getByOrder: orderId => request.get(`/logistics/orders/${orderId}`),
+  getList: params => request.get('/logistics', params)
 }
 
 /**
@@ -305,6 +321,8 @@ module.exports = {
   dictionary,
   user,
   billing,
+  bills,
+  logistics,
   payment,
   notifications
 }

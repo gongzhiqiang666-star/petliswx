@@ -47,6 +47,7 @@ class ReportServiceImplTest {
     @Mock JdbcTemplate jdbcTemplate;
     @Mock ReportMapper reportMapper;
     @Mock FileService fileService;
+    @Mock com.petlis.service.PdfService pdfService;
     @InjectMocks ReportServiceImpl service;
 
     DiagnosisDetail detail;
@@ -70,6 +71,9 @@ class ReportServiceImplTest {
 
     void stubQuery() {
         ReportResponse response = new ReportResponse();
+        response.setPdfHttpUrl("/Content/FilePdf/report.pdf");
+        response.setPdfFullUrl("https://files.example/report.pdf");
+        response.setSecurePdfUrl("/api/pdf/view/11");
         when(diagnosisDetailRepository.findAll(any(Specification.class), any(Pageable.class)))
                 .thenReturn(new PageImpl<>(List.of(detail)));
         when(reportMapper.toResponse(detail)).thenReturn(response);
@@ -104,6 +108,16 @@ class ReportServiceImplTest {
     void cashUnpaidListIsPaymentRestricted() {
         stubQuery();
         assertTrue(query().getPaymentRestricted());
+    }
+
+    @Test
+    void cashUnpaidOrRefundedListClearsEveryLegacyPdfAddress() {
+        stubQuery();
+        ReportResponse response = query();
+        assertTrue(response.getPaymentRestricted());
+        assertNull(response.getPdfHttpUrl());
+        assertNull(response.getPdfFullUrl());
+        assertNull(response.getSecurePdfUrl());
     }
 
     @Test
@@ -217,6 +231,31 @@ class ReportServiceImplTest {
     }
 
     @Test
+    void cashSnapshotRestrictsUnpaidReportEvenWhenHospitalIsNowMonthly() {
+        hospital.setPayType(1);
+        stubDetail();
+        when(jdbcTemplate.queryForList(contains("SELECT settlement_mode"), eq(22))).thenReturn(List.of(Map.of("settlement_mode", "cash")));
+        try (var security = mockStatic(SecurityUtils.class)) {
+            security.when(SecurityUtils::getCurrentHospitalId).thenReturn(1);
+            ReportVO result = service.getReportDetail(11);
+            assertTrue(result.getPaymentRestricted());
+            assertNull(result.getReportResult());
+        }
+    }
+
+    @Test
+    void monthlySnapshotAllowsUnpaidReportEvenWhenHospitalIsNowCash() {
+        stubDetail();
+        when(jdbcTemplate.queryForList(contains("SELECT settlement_mode"), eq(22))).thenReturn(List.of(Map.of("settlement_mode", "monthly")));
+        try (var security = mockStatic(SecurityUtils.class)) {
+            security.when(SecurityUtils::getCurrentHospitalId).thenReturn(1);
+            ReportVO result = service.getReportDetail(11);
+            assertFalse(result.getPaymentRestricted());
+            assertEquals("secret result", result.getReportResult());
+        }
+    }
+
+    @Test
     void crossHospitalDownloadIsRejected() {
         when(diagnosisDetailRepository.findById(11)).thenReturn(Optional.of(detail));
         when(listDiagnosisProjectRepository.findById(22)).thenReturn(Optional.of(project));
@@ -233,10 +272,25 @@ class ReportServiceImplTest {
         when(diagnosisDetailRepository.findById(11)).thenReturn(Optional.of(detail));
         when(listDiagnosisProjectRepository.findById(22)).thenReturn(Optional.of(project));
         when(infoHospitalRepository.findById(1)).thenReturn(Optional.of(hospital));
-        when(fileService.downloadFile(detail.getPdfHttpUrl())).thenReturn("pdf".getBytes());
+        when(pdfService.getPdfWithAuth(eq(11), isNull())).thenReturn("pdf".getBytes());
         try (var security = mockStatic(SecurityUtils.class)) {
             security.when(SecurityUtils::getCurrentHospitalId).thenReturn(1);
             assertArrayEquals("pdf".getBytes(), service.downloadReportPdf(11).getBody());
+        }
+    }
+
+    @Test
+    void absoluteLegacyDownloadUsesAuthenticatedLocalStorageNotRemoteUrl() throws Exception {
+        project.setIsPayMoney(1);
+        detail.setPdfHttpUrl("https://laboklin.cn/Content/FilePdf/report.pdf");
+        when(diagnosisDetailRepository.findById(11)).thenReturn(Optional.of(detail));
+        when(listDiagnosisProjectRepository.findById(22)).thenReturn(Optional.of(project));
+        when(infoHospitalRepository.findById(1)).thenReturn(Optional.of(hospital));
+        when(pdfService.getPdfWithAuth(eq(11), isNull())).thenReturn("local-pdf".getBytes());
+        try (var security = mockStatic(SecurityUtils.class)) {
+            security.when(SecurityUtils::getCurrentHospitalId).thenReturn(1);
+            assertArrayEquals("local-pdf".getBytes(), service.downloadReportPdf(11).getBody());
+            verifyNoInteractions(fileService);
         }
     }
 }

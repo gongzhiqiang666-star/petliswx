@@ -2,6 +2,8 @@
 const api = require('../../api/index.js')
 const app = getApp()
 const logger = require('../../utils/logger.js')
+const request = require('../../utils/request')
+const { adaptListPage } = require('../../utils/logistics')
 
 Page({
   data: {
@@ -26,7 +28,8 @@ Page({
     hospitalId: null,  // 当前医院ID
     startDate:'',endDate:'',errorMessage:'',
     searchKeyword: '',  // 搜索关键字
-    showFilters: false
+    showFilters: false,
+    logisticsByOrder: {}
   },
 
   onLoad() {
@@ -92,6 +95,7 @@ Page({
 
       // 根据当前选中的tab筛选订单
       this.filterOrders()
+      this.loadLogistics()
     } catch (err) {
       if(version!==this._queryVersion)return
       this.setData({errorMessage:err.message || '加载失败，请重试'})
@@ -149,6 +153,7 @@ Page({
 
       // 重新筛选订单
       this.filterOrders()
+      this.loadLogistics()
     } catch (err) {
       if(version!==this._queryVersion)return
       this.setData({errorMessage:err.message || '加载失败，请重试'})
@@ -173,6 +178,23 @@ Page({
       pageNum: this.data.pageNum
     })
     this.loadMore()
+  },
+
+  async loadLogistics() {
+    try {
+      const result = await request.get('/logistics', { page: 0, size: 100 })
+      const logisticsByOrder = {}
+      adaptListPage(result).forEach(shipment => {
+        logisticsByOrder[shipment.orderId] = {
+          statusLabel: shipment.statusLabel,
+          expectedArrivedAt: shipment.expectedArrivedAt,
+          exceptionNote: shipment.exceptionNote,
+          latestTimeline: shipment.timeline.length ? shipment.timeline[shipment.timeline.length - 1].title : ''
+        }
+      })
+      this.setData({ logisticsByOrder })
+      this.filterOrders()
+    } catch (error) {}
   },
 
   /**
@@ -211,6 +233,7 @@ Page({
     // 格式化日期字段
     filtered = filtered.map(order => ({
       ...order,
+      logistics: this.data.logisticsByOrder[order.orderId] || null,
       collectDt: this.formatDate(order.collectDt),
       createDtText: this.formatDateTime(order.createDt),
       statusLabel: this.getStatusLabel(order.sampleStatus)

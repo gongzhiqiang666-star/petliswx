@@ -48,8 +48,16 @@ public class JwtUtil {
         return generateSessionToken(userId, null, null, null, version, "reviewer");
     }
 
+    public String generateStaffToken(Integer userId, String openid, Integer hospitalId, Integer cityId, int version) {
+        return generateSessionToken(userId, openid, hospitalId, cityId, version, "staff");
+    }
+
     public boolean isReviewerToken(String token) {
         return "reviewer".equals(parseToken(token).get("role", String.class));
+    }
+
+    public boolean isStaffToken(String token) {
+        return "staff".equals(parseToken(token).get("role", String.class));
     }
 
     private String generateSessionToken(Integer userId, String openid, Integer hospitalId, Integer cityId, int credentialVersion, String role) {

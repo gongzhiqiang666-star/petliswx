@@ -179,7 +179,10 @@ App({
     wx.reLaunch({url:'/pages/login/login'})
   },
   async logout() {
-    try { await require('./utils/request').post('/auth/logout', {}) } catch (e) { this.logWarn('Logout', '服务端会话撤销失败，已清除本地登录') }
+    try { await require('./utils/request').post('/auth/logout', {}) } catch (e) {
+      this.logWarn('Logout', '服务端会话撤销失败，本地登录保持不变')
+      throw e
+    }
     this.clearSession()
   },
 

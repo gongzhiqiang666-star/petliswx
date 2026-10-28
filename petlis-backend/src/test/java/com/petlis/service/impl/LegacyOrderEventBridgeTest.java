@@ -28,4 +28,12 @@ class LegacyOrderEventBridgeTest {
   verify(notifications).emit(eq(7),eq("report"),eq("legacy:21"),contains("已完成"),contains("已完成"),anyString());
   verify(jdbc).queryForList(contains("creator.hospital_id=n.hospital_id"),eq(0L));
  }
+ @Test void proactivePublishedEventSuppressesLegacyDuplicate() throws Exception {
+  var jdbc=mock(JdbcTemplate.class);var notifications=mock(BusinessNotifications.class);var file=directory.resolve("baseline");Files.writeString(file,"0");
+  when(jdbc.queryForList(anyString(),eq(0L))).thenReturn(List.of(Map.of("id",21,"order_id",9,"new_status",3,"user_id",7)));
+  when(jdbc.queryForObject(contains("business_key"),eq(Boolean.class),eq("9:published"))).thenReturn(true);
+  var bridge=new LegacyOrderEventBridge(new FeatureStore(jdbc,new ObjectMapper()),notifications,new MockEnvironment().withProperty("app.notifications.legacy-baseline-file",file.toString()));bridge.initialize();
+  assertEquals(0,bridge.importBatch());
+  verify(notifications,never()).emit(anyInt(),any(),any(),any(),any(),any());
+ }
 }

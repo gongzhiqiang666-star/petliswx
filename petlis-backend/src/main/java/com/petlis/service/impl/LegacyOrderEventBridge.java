@@ -43,11 +43,14 @@ public class LegacyOrderEventBridge {
    AND (o.CreateSampleId=u.id OR NOT EXISTS (SELECT 1 FROM lin_user creator WHERE creator.id=o.CreateSampleId AND creator.hospital_id=n.hospital_id))
    ORDER BY n.id,u.id LIMIT 50
    """,baseline);
+  int imported=0;
   for(var row:rows){
    int status=((Number)row.get("new_status")).intValue(),order=((Number)row.get("order_id")).intValue();
+   if(status==3 && Boolean.TRUE.equals(store.jdbc().queryForObject("SELECT EXISTS(SELECT 1 FROM lin_notification_event WHERE event_type='report' AND business_key=?)",Boolean.class,order+":published")))continue;
    var state=OrderStatusEnum.fromCode(status);
    notifications.emit(((Number)row.get("user_id")).intValue(),status==3?"report":"order","legacy:"+row.get("id"),"送检单"+state.getDescription(),"送检单 #"+order+" 当前状态："+state.getDescription(),"pages/order-detail/order-detail?id="+order);
+   imported++;
   }
-  return rows.size();
+  return imported;
  }
 }

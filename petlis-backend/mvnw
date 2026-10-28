@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+set -euo pipefail
+ROOT="$(cd "$(dirname "$0")" && pwd)"
+if [[ -z "${JAVA_HOME:-}" ]]; then
+  for candidate in "$ROOT/.tooling/jdk-21/Contents/Home" "$ROOT/.tooling/jdk-21" /tmp/petlis-tooling/jdk-21/Contents/Home /tmp/petlis-tooling/jdk-21; do
+    if [[ -x "$candidate/bin/java" ]]; then JAVA_HOME="$candidate"; break; fi
+  done
+  if [[ -z "${JAVA_HOME:-}" && -x /usr/libexec/java_home ]]; then
+    JAVA_HOME="$(/usr/libexec/java_home -v 21 2>/dev/null || true)"
+  fi
+fi
+if [[ -z "${JAVA_HOME:-}" || ! -x "$JAVA_HOME/bin/java" ]]; then
+  echo "JDK 21 is required; set JAVA_HOME or run scripts/bootstrap-tooling.sh" >&2
+  exit 1
+fi
+export JAVA_HOME
+export PATH="$JAVA_HOME/bin:$PATH"
+MAVEN_VERSION="3.9.9"
+for candidate in "$ROOT/.tooling/apache-maven-$MAVEN_VERSION" "/tmp/petlis-tooling/apache-maven-$MAVEN_VERSION"; do
+  if [[ -x "$candidate/bin/mvn" ]]; then MAVEN_HOME="$candidate"; break; fi
+done
+if [[ -z "${MAVEN_HOME:-}" ]]; then
+  mkdir -p "$ROOT/.tooling"
+  archive="$ROOT/.tooling/apache-maven-$MAVEN_VERSION-bin.tar.gz"
+  curl -fL --retry 3 "https://archive.apache.org/dist/maven/maven-3/$MAVEN_VERSION/binaries/apache-maven-$MAVEN_VERSION-bin.tar.gz" -o "$archive"
+  tar -xzf "$archive" -C "$ROOT/.tooling"
+  MAVEN_HOME="$ROOT/.tooling/apache-maven-$MAVEN_VERSION"
+fi
+exec "$MAVEN_HOME/bin/mvn" "$@"

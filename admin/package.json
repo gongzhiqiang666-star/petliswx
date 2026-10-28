@@ -1,0 +1,14 @@
+{
+  "name": "petlis-admin",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Petlis 原生 Web 管理后台",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node --test tests/*.test.js"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

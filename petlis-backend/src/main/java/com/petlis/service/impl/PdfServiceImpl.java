@@ -35,6 +35,7 @@ public class PdfServiceImpl implements PdfService {
     private final DiagnosisDetailRepository detailRepository;
     private final ListDiagnosisProjectRepository projectRepository;
     private final InfoHospitalRepository hospitalRepository;
+    private final org.springframework.jdbc.core.JdbcTemplate jdbcTemplate;
 
     /**
      * PDF文件存储路径（从配置文件读取）
@@ -158,8 +159,14 @@ public class PdfServiceImpl implements PdfService {
     private void assertPaymentAllowed(ListDiagnosisProject project) {
         InfoHospital hospital = hospitalRepository.findById(project.getInfoHospitalId())
                 .orElseThrow(() -> new BusinessException("订单所属医院不存在"));
-        if (!Integer.valueOf(1).equals(hospital.getPayType())
-                && !Integer.valueOf(1).equals(project.getIsPayMoney())) {
+        String settlementMode;
+        try {
+            settlementMode = jdbcTemplate.queryForObject("SELECT settlement_mode FROM lin_order_extension WHERE order_id=?", String.class, project.getListDiagnosisProjectId());
+        } catch (org.springframework.dao.EmptyResultDataAccessException ignored) {
+            settlementMode = null;
+        }
+        boolean monthly = settlementMode == null ? Integer.valueOf(1).equals(hospital.getPayType()) : "monthly".equalsIgnoreCase(settlementMode);
+        if (!monthly && !Integer.valueOf(1).equals(project.getIsPayMoney())) {
             throw new BusinessException("订单未支付，报告暂未开放，请完成支付后查看");
         }
     }
@@ -189,6 +196,10 @@ public class PdfServiceImpl implements PdfService {
     private String buildPdfFilePath(String pdfHttpUrl) {
         Path root=Paths.get(pdfStoragePath).toAbsolutePath().normalize();
         String relative=pdfHttpUrl.replace('\\','/');
+        if(relative.startsWith("http://") || relative.startsWith("https://")) {
+            try { relative = java.net.URI.create(relative).getPath(); }
+            catch (IllegalArgumentException error) { throw new SecurityException("报告路径无效"); }
+        }
         if(relative.startsWith("/Content/FilePdf/"))relative=relative.substring("/Content/FilePdf/".length());
         else if(relative.startsWith("Content/FilePdf/"))relative=relative.substring("Content/FilePdf/".length());
         if(relative.startsWith("/") || relative.contains(":") || !relative.toLowerCase(java.util.Locale.ROOT).endsWith(".pdf"))throw new SecurityException("报告路径无效");
