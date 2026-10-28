@@ -125,6 +125,20 @@ class PdfServiceTest {
     }
 
     @Test
+    void publishedApiPdfUrlResolvesWorkflowFileInsideAuthorizedRoot() throws Exception {
+        mockDetail.setPdfHttpUrl("/api/pdf/view/1");
+        when(detailRepository.findById(1)).thenReturn(Optional.of(mockDetail));
+        when(projectRepository.findById(1)).thenReturn(Optional.of(mockProject));
+        lenient().when(jdbcTemplate.queryForObject(contains("lin_report_workflow"), eq(String.class), eq(1)))
+                .thenReturn(tempPdfFile.getFileName().toString());
+        allowHospitalAccess();
+        try (var mockedStatic = mockStatic(com.petlis.common.security.SecurityUtils.class)) {
+            mockedStatic.when(com.petlis.common.security.SecurityUtils::getCurrentHospitalId).thenReturn(1);
+            assertEquals("Test PDF Content", new String(pdfService.getPdfWithAuth(1, request)));
+        }
+    }
+
+    @Test
     void absoluteLegacyStorageUrlResolvesInsideAuthorizedPdfRoot() throws Exception {
         mockDetail.setPdfHttpUrl("https://laboklin.cn/Content/FilePdf/" + tempPdfFile.getFileName());
         when(detailRepository.findById(1)).thenReturn(Optional.of(mockDetail));

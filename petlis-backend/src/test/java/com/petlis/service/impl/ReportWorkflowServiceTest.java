@@ -75,8 +75,9 @@ class ReportWorkflowServiceTest {
     @Test
     void publishSynchronizesLegacyDetailInfoPdfAndOrderAndEmitsStableEvent() {
         when(store.one(contains("SELECT w.*"), eq(41L))).thenReturn(report("APPROVED", 1, 0));
-        service.publish(41);
-        verify(jdbc).update(contains("DiagnosisStatus=2"), eq("https://laboklin.cn/Content/FilePdf/report-51.pdf"), eq(21));
+        var published = service.publish(41);
+        assertEquals("PUBLISHED", published.get("status"));
+        verify(jdbc).update(contains("DiagnosisStatus=2"), eq("/api/pdf/view/21"), eq(21));
         verify(jdbc).update(contains("lin_lb_diagnosisdetail_info"), eq(21), any(), any());
         verify(jdbc).update(contains("SampleStatus=3"), eq(8));
         verify(notifications).emitForOrder(eq(8), eq(7), eq("report"), eq("8:published"), any(), any(), any());

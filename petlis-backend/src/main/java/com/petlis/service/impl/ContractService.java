@@ -136,6 +136,10 @@ public class ContractService {
         return new Resolution(contractId, true, contracts.get(0).get("settlement_type").toString(), result);
     }
 
+    public boolean hasMonthlyContract(int orderId) {
+        return Boolean.TRUE.equals(store.jdbc().queryForObject("SELECT EXISTS(SELECT 1 FROM lin_order_pricing_snapshot s JOIN lin_contract c ON c.id=s.contract_id WHERE s.order_id=? AND s.settlement_type='MONTHLY')", Boolean.class, orderId));
+    }
+
     @Transactional
     public void reserveCredit(int orderId, BigDecimal additionalAmount) {
         Map<String, Object> contract = store.one("SELECT c.id,c.credit_amount FROM lin_order_pricing_snapshot s JOIN lin_contract c ON c.id=s.contract_id WHERE s.order_id=? AND s.settlement_type='MONTHLY' FOR UPDATE", orderId);

@@ -165,14 +165,14 @@
 
       <view class="form-group">
         <view class="form-label">
-          畜主英文名 <text class="required">*</text>
+          畜主英文名 <text class="optional">（选填）</text>
         </view>
         <input class="form-input petlis-input"
                placeholder="畜主英文名（国际订单使用）"
                value="{{deliveryInfo.masterNameEn}}"
                bindinput="onMasterNameEnInput"
                aria-label="畜主英文名"
-               aria-required="true" />
+               aria-required="false" />
         <text class="form-error" wx:if="{{formErrors.masterNameEn}}">
           {{formErrors.masterNameEn}}
         </text>

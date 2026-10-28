@@ -88,8 +88,7 @@ public class OrderCreateRequest {
     @Schema(description = "畜主姓名", required = true)
     private String masterName;
 
-    @NotBlank(message = "畜主姓名(英文)不能为空")
-    @Schema(description = "畜主姓名(英文)", required = true)
+    @Schema(description = "畜主姓名(英文)")
     private String masterNameEn;
 
     @Schema(description = "采样日期")
