@@ -220,6 +220,9 @@ async function main() {
   const cashContractId = sql("SELECT id FROM lin_contract WHERE contract_no='MERGE-CASH'");
   await api(`/admin/contracts/${cashContractId}/status`, { token: admin.token, method: 'PATCH', body: { active: false, reason: '停用验收' } });
   await denied('/orders', { token: doctor.token, method: 'POST', body: { ...orderBody(pet.id, 1, 11), idempotencyKey: 'merge-inactive-cash-001' } });
+  const secondCashContract = await api('/admin/contracts', { token: admin.token, method: 'POST', body: { contractNo: 'MERGE-CASH-B', hospitalId: 1, laboratoryId: 1, settlementType: 'CASH', billingCycleDays: 30, creditAmount: 100000, effectiveFrom: '2026-01-01', effectiveTo: later } });
+  await denied(`/admin/contracts/${cashContractId}/status`, { token: admin.token, method: 'PATCH', body: { active: true, reason: 'A停用期间创建B后禁止恢复A' } });
+  await api(`/admin/contracts/${secondCashContract}/status`, { token: admin.token, method: 'PATCH', body: { active: false, reason: '清理B后恢复A' } });
   await api(`/admin/contracts/${cashContractId}/status`, { token: admin.token, method: 'PATCH', body: { active: true, reason: '恢复验收' } });
   const monthlyContractId = sql("SELECT id FROM lin_contract WHERE contract_no='MERGE-MONTHLY'");
   await api(`/admin/contracts/${monthlyContractId}/status`, { token: admin.token, method: 'PATCH', body: { active: false, reason: '停用后历史出账验收' } });
@@ -227,9 +230,12 @@ async function main() {
   await denied('/orders', { token: monthlyDoctor.token, method: 'POST', body: { ...orderBody(monthlyPet.id, 1, 11), idempotencyKey: 'merge-inactive-monthly-1' } });
   await api(`/admin/contracts/${monthlyContractId}/status`, { token: admin.token, method: 'PATCH', body: { active: true, reason: '恢复验收' } });
   const crudId = sql("SELECT InfoTestTypeId FROM lin_lb_infotesttype WHERE TestNO='BROWSER-CRUD'");
+  sql(`INSERT INTO lin_lab_test(laboratory_id,test_type_id,price,active) VALUES(2,${crudId},166,1)`);
   await api(`/admin/catalog/laboratories/1/items/${crudId}`, { token: lab.token, method: 'PUT', body: { name: '浏览器项目已编辑', code: 'BROWSER-CRUD', price: 67 } });
   await api(`/admin/catalog/laboratories/1/items/${crudId}`, { token: lab.token, method: 'DELETE' });
-  assert.equal(sql(`SELECT CONCAT(IsActive,(SELECT active FROM lin_lab_test WHERE laboratory_id=1 AND test_type_id=${crudId})) FROM lin_lb_infotesttype WHERE InfoTestTypeId=${crudId}`), '00');
+  assert.equal(sql(`SELECT CONCAT(IsActive,'|',Price,'|',TestName) FROM lin_lb_infotesttype WHERE InfoTestTypeId=${crudId}`), '1|66.5|浏览器验收项目');
+  assert.equal(sql(`SELECT CONCAT(active,'|',price) FROM lin_lab_test WHERE laboratory_id=2 AND test_type_id=${crudId}`), '1|166.00');
+  assert.equal(sql(`SELECT CONCAT(active,'|',price) FROM lin_lab_test WHERE laboratory_id=1 AND test_type_id=${crudId}`), '0|67.00');
   pass('合同重叠/启停用/历史出账与项目CRUD/HTTP角色矩阵/41页面5Tab', { pages: 41, tabs: 5, crudId: Number(crudId) });
   summary.status = 'PASS'; summary.orderIds = { cash: cash.orderId, monthly: monthly.orderId }; summary.reportIds = workflow.reportIds;
 }

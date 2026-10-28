@@ -1,6 +1,9 @@
 package com.petlis.service.impl;
 
 import com.petlis.common.security.AccessService;
+import com.petlis.common.security.CurrentActor;
+import com.petlis.common.security.DataScope;
+import com.petlis.common.security.PlatformRole;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -34,17 +37,27 @@ class AdminCatalogServiceTest {
         verify(store).insert(contains("lin_lab_test"), eq(2), eq(91L), any());
     }
 
-    @Test void updateChangesOnlyCurrentMastersWithoutTouchingOrderSnapshots() {
+    @Test void adminCanUpdateGlobalDictionaryAndMappingWithoutTouchingOrderSnapshots() {
+        actor(PlatformRole.ADMIN);
         service.updateItem(2, 91, new AdminCatalogService.ItemCommand("新名称", "NEW", new BigDecimal("99.00")));
         verify(jdbc).update(contains("UPDATE lin_lb_infotesttype"), any(Object[].class));
         verify(jdbc).update(contains("UPDATE lin_lab_test"), any(Object[].class));
         verify(jdbc, never()).update(contains("lin_order_pricing_snapshot"), any(Object[].class));
     }
 
-    @Test void deleteLogicallyDeactivatesEvenWhenLegacyOrdersExist() {
+    @Test void labStaffUpdateAndDeleteOnlyTouchOwnMapping() {
+        actor(PlatformRole.LAB_STAFF);
+        service.updateItem(2, 91, new AdminCatalogService.ItemCommand("新名称", "NEW", new BigDecimal("99.00")));
         service.deleteItem(2, 91);
-        verify(jdbc).update(contains("IsActive=0"), eq(91));
-        verify(jdbc).update(contains("active=0"), eq(2), eq(91));
-        verify(jdbc, never()).update(contains("DELETE FROM lin_lb_infotesttype"), any(Object[].class));
+        service.setItemStatus(2, 91, false);
+        verify(jdbc, never()).update(contains("UPDATE lin_lb_infotesttype"), any(Object[].class));
+        verify(jdbc).update(contains("UPDATE lin_lab_test SET price=?"), any(Object[].class));
+        verify(jdbc).update("UPDATE lin_lab_test SET active=0 WHERE laboratory_id=? AND test_type_id=?", 2, 91);
+        verify(jdbc).update("UPDATE lin_lab_test SET active=? WHERE laboratory_id=? AND test_type_id=?", 0, 2, 91);
+    }
+
+    private void actor(PlatformRole role) {
+        when(access.current()).thenReturn(new CurrentActor(5, java.util.Set.of(role), java.util.Set.of(), java.util.Set.of(2),
+                new DataScope(role == PlatformRole.ADMIN, java.util.Set.of(), java.util.Set.of(2), null)));
     }
 }

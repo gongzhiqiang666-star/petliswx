@@ -46,12 +46,14 @@
 - 最终审查修复 3：先复现旧 PDF 地址在未支付列表残留，再将 `pdfHttpUrl/pdfFullUrl/securePdfUrl` 全部置空；真实列表在已发布后模拟退款状态验证并恢复。
 - 最终审查修复 4：先补重叠、启停用、停用回退旧价失败测试，再实现 ACTIVE 效期排斥和状态 API/admin；真实停用后新单拒绝且历史账单可读。
 - 最终审查修复 5：先补旧主表 CRUD/逻辑停用和 admin 失败测试，再实现服务/API/页面；真实 HTTP 完成编辑/删除，Playwright 完成新建代表操作，未创建重复项目主表或改写订单快照。
+- 复审修复 1：`setStatus(true)` 与创建使用同一重叠校验并排除自身；单测及真实 HTTP 均覆盖 A 停用→创建 B→启用 A 拒绝，停用 B 后 A 可恢复。
+- 复审修复 2：先以共享字典失败测试约束 LAB_STAFF 只写本实验室 `lin_lab_test`，删除/上下架不再全局停用；ADMIN 才修改 `lin_lb_infotesttype`。真实 E2E 验证实验室 2 原名、原价和 active 不变，旧 schema 未改。
 
 ## 最终验证
 
 | 项目 | 结果 |
 |---|---|
-| `petlis-backend ./mvnw test` | **306 tests，0 failures，0 errors，5 skipped，BUILD SUCCESS**；5 项均为既有本地数据库测试 |
+| `petlis-backend ./mvnw test` | **307 tests，0 failures，0 errors，5 skipped，BUILD SUCCESS**；5 项均为既有本地数据库测试 |
 | `admin npm test` | **81/81 PASS** |
 | `miniprogram npm test` | **25/25 PASS** |
 | `miniprogram npm run check` | **68 JS、52 JSON PASS** |

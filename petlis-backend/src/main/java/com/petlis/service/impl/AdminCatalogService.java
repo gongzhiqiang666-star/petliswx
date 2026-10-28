@@ -38,19 +38,19 @@ public class AdminCatalogService {
         access.requireLaboratory(laboratoryId);
         validate(command);
         store.one("SELECT test_type_id FROM lin_lab_test WHERE laboratory_id=? AND test_type_id=?", laboratoryId, testTypeId);
-        store.jdbc().update("UPDATE lin_lb_infotesttype SET TestName=?,TestNO=?,Price=?,updatetime=UNIX_TIMESTAMP() WHERE InfoTestTypeId=?", command.name().trim(), command.code().trim(), command.price(), testTypeId);
+        if (access.current().isAdmin()) {
+            store.jdbc().update("UPDATE lin_lb_infotesttype SET TestName=?,TestNO=?,Price=?,updatetime=UNIX_TIMESTAMP() WHERE InfoTestTypeId=?", command.name().trim(), command.code().trim(), command.price(), testTypeId);
+        }
         store.jdbc().update("UPDATE lin_lab_test SET price=? WHERE laboratory_id=? AND test_type_id=?", command.price(), laboratoryId, testTypeId);
     }
     @Transactional public void deleteItem(int laboratoryId, int testTypeId) {
         access.requireLaboratory(laboratoryId);
         store.one("SELECT test_type_id FROM lin_lab_test WHERE laboratory_id=? AND test_type_id=?", laboratoryId, testTypeId);
-        store.jdbc().update("UPDATE lin_lb_infotesttype SET IsActive=0,updatetime=UNIX_TIMESTAMP() WHERE InfoTestTypeId=?", testTypeId);
         store.jdbc().update("UPDATE lin_lab_test SET active=0 WHERE laboratory_id=? AND test_type_id=?", laboratoryId, testTypeId);
     }
     @Transactional public void setItemStatus(int laboratoryId, int testTypeId, boolean active) {
         access.requireLaboratory(laboratoryId);
         store.jdbc().update("UPDATE lin_lab_test SET active=? WHERE laboratory_id=? AND test_type_id=?", active ? 1 : 0, laboratoryId, testTypeId);
-        store.jdbc().update("UPDATE lin_lb_infotesttype SET IsActive=?,updatetime=UNIX_TIMESTAMP() WHERE InfoTestTypeId=?", active ? 1 : 0, testTypeId);
     }
     private void validate(ItemCommand command) {
         if (command == null || command.name() == null || command.name().isBlank() || command.name().length() > 250

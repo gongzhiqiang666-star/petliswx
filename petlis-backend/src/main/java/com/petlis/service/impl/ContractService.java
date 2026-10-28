@@ -73,7 +73,13 @@ public class ContractService {
     @Transactional
     public void setStatus(long id, boolean active, String reason) {
         access.requireAdmin();
-        Map<String, Object> before = store.one("SELECT id,status FROM lin_contract WHERE id=? FOR UPDATE", id);
+        Map<String, Object> before = store.one("SELECT * FROM lin_contract WHERE id=? FOR UPDATE", id);
+        if (active) {
+            Command current = new Command(before.get("contract_no").toString(), ((Number) before.get("hospital_id")).intValue(), ((Number) before.get("laboratory_id")).intValue(),
+                    before.get("settlement_type").toString(), ((Number) before.get("billing_cycle_days")).intValue(), decimal(before.get("credit_amount")),
+                    localDate(before.get("effective_from")), before.get("effective_to") == null ? null : localDate(before.get("effective_to")));
+            validateNoOverlap(id, current);
+        }
         store.jdbc().update("UPDATE lin_contract SET status='" + (active ? "ACTIVE" : "INACTIVE") + "',version=version+1,updated_by=? WHERE id=?", access.current().userId(), id);
         audits.record(active ? "CONTRACT_ACTIVATED" : "CONTRACT_DEACTIVATED", "CONTRACT", id, before, Map.of("active", active), reason);
     }
@@ -151,4 +157,5 @@ public class ContractService {
     }
 
     private static BigDecimal decimal(Object value) { return new BigDecimal(value.toString()).setScale(2, RoundingMode.HALF_UP); }
+    private static LocalDate localDate(Object value) { return value instanceof LocalDate date ? date : ((java.sql.Date) value).toLocalDate(); }
 }
