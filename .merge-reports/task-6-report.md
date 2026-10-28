@@ -33,7 +33,7 @@
 ## 小程序与管理端
 
 - 实际加载页面：`login`、`pets`、`order-preview`、`orders`、`order-detail`、`report-list`、`pet-health`、`bills`、`coupons`；通过确认版 request/service 覆盖登录、档案、送检、记录、物流、报告、病史、账单、优惠券。
-- Playwright 使用本机 Chrome 真实浏览器登录，执行注册审核和订单审核，并进入物流、实验、报告、财务、运营和打印相关页面。保存 8 张截图；`pageerror=[]`，意外 console error=0。仅记录一条已明确忽略的静态 `favicon.ico` 404，不属于业务错误。
+- Playwright 使用本机 Chrome 真实浏览器登录，执行注册审核、订单审核和项目新建代表操作，并进入物流、实验、报告、财务、运营和打印相关页面。保存 9 张截图；`pageerror=[]`，意外 console error=0。仅记录一条已明确忽略的静态 `favicon.ico` 404，不属于业务错误。
 - `app.json` 实测 41 个注册页面、5 个 Tab；静态检查 68 个 JS、52 个 JSON 全通过。
 
 ## 集成发现的问题与 TDD 修复
@@ -41,13 +41,18 @@
 - `PrintService.report` 使用 `i.DiagnosisdetailId`，与既有实体和发布写入的 `diagnosisdetail_id` 不一致，真实 MySQL 打印返回 500。先新增 `reportPrintUsesTheExistingLowercaseDetailInfoKey`，观察 Mockito SQL 不匹配 RED；改为既有小写列名后定向及全链路 GREEN。
 - `BusinessNotifications.article` 的 `INSERT…SELECT … ON DUPLICATE KEY UPDATE id=id` 在真实 MySQL 中列名歧义。先新增资讯 outbox 守护 RED；最终使用 `LAST_INSERT_ID(lin_notification_event.id)` 明确目标表，真实发布及通知去重 GREEN。
 - 功能矩阵增加 42 行实测状态后，原守护把两张表合计为 84 而 RED；将需求计数限定原矩阵区，同时新增状态区也必须 42 行，最终 GREEN。
+- 最终审查修复 1：`ReviewService.order` 先以失败测试固定医院月结+合同现结、医院现结+合同月结及无快照兼容，再改为订单定价/settlement 快照；真实审核覆盖两种相反配置。
+- 最终审查修复 2：以 `AdminAuthorizationRuleTest` 先 RED，拆分订单/账单/退款/打印和项目目录角色，其他 `/admin/**` 仍 ADMIN；真实 HTTP 验证医院管理员退款/订单、实验人员任务/项目和配置拒绝。
+- 最终审查修复 3：先复现旧 PDF 地址在未支付列表残留，再将 `pdfHttpUrl/pdfFullUrl/securePdfUrl` 全部置空；真实列表在已发布后模拟退款状态验证并恢复。
+- 最终审查修复 4：先补重叠、启停用、停用回退旧价失败测试，再实现 ACTIVE 效期排斥和状态 API/admin；真实停用后新单拒绝且历史账单可读。
+- 最终审查修复 5：先补旧主表 CRUD/逻辑停用和 admin 失败测试，再实现服务/API/页面；真实 HTTP 完成编辑/删除，Playwright 完成新建代表操作，未创建重复项目主表或改写订单快照。
 
 ## 最终验证
 
 | 项目 | 结果 |
 |---|---|
-| `petlis-backend ./mvnw test` | **294 tests，0 failures，0 errors，5 skipped，BUILD SUCCESS**；5 项均为既有本地数据库测试 |
-| `admin npm test` | **83/83 PASS** |
+| `petlis-backend ./mvnw test` | **306 tests，0 failures，0 errors，5 skipped，BUILD SUCCESS**；5 项均为既有本地数据库测试 |
+| `admin npm test` | **81/81 PASS** |
 | `miniprogram npm test` | **25/25 PASS** |
 | `miniprogram npm run check` | **68 JS、52 JSON PASS** |
 | `integration python3 -m unittest discover -s tests -v` | **11/11 PASS**（原 schema 9 + 集成入口 2） |
@@ -59,6 +64,6 @@
 ## Concerns / 未宣称通过
 
 - 真实微信登录/绑定、真实短信、订阅消息、真实支付/退款、生产数据库与真机未验收；全部外部动作均为合成或 mock。
-- F02、F03、F04、F06、F10、F12、F17、F22、F27、F28、F29、F33、F35、F36、F38 的部分子项仍仅由单元/MVC/Node 测试覆盖，详见功能矩阵，未标为全量实测通过。
+- F02、F03、F04、F06、F10、F12、F17、F22、F27、F28、F33、F35、F38 的部分子项仍仅由单元/MVC/Node 测试覆盖，详见功能矩阵，未标为全量实测通过。
 - 集成旧结构为 39 张合成旧表，不是 Mac mini 全量脱敏结构副本；未读取或修改原库。
 - 浏览器 favicon 404 已单列；无意外 console/pageerror。

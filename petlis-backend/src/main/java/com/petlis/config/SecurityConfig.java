@@ -65,6 +65,8 @@ public class SecurityConfig {
                         .requestMatchers("/actuator/**").permitAll()
                         // 公开接口:错误处理
                         .requestMatchers("/error").permitAll()
+                        .requestMatchers("/admin/orders/**", "/admin/bills/**", "/admin/refunds/**", "/admin/print/**").hasAnyRole("ADMIN", "HOSPITAL_ADMIN", "LAB_STAFF")
+                        .requestMatchers("/admin/catalog/**").hasAnyRole("ADMIN", "LAB_STAFF")
                         .requestMatchers("/admin/**").hasRole("ADMIN")
                         .requestMatchers("/review/**").hasAnyRole("REVIEWER", "ADMIN")
                         .requestMatchers("/invoices/*/issue", "/invoices/*/reject").hasAnyRole("REVIEWER", "ADMIN")

@@ -372,6 +372,11 @@ public class ReportServiceImpl implements ReportService {
                 .orElse(null);
         if (project != null) {
             response.setPaymentRestricted(isPaymentRestricted(project, requireHospital(project)));
+            if (Boolean.TRUE.equals(response.getPaymentRestricted())) {
+                response.setPdfHttpUrl(null);
+                response.setPdfFullUrl(null);
+                response.setSecurePdfUrl(null);
+            }
             response.setAnimalName(project.getAnimalName());
             response.setAnimalType(project.getAnimalType());
             response.setCollectDt(project.getCollectDt());

@@ -61,6 +61,43 @@ class ReviewServiceSecurityTest {
     }
 
     @Test
+    void orderReviewUsesCashSnapshotInsteadOfCurrentMonthlyHospital() {
+        login(42);
+        when(store.one(contains("lin_order_pricing_snapshot"), eq(8))).thenReturn(Map.of(
+                "SampleStatus", 0, "TestFee", 75.0, "CreateSampleId", 7, "PayType", 1, "settlement_type", "CASH"));
+
+        service.order(8, new ReviewService.Decision(true, "现结合同"));
+
+        verify(serviceOrders()).updateOrderStatus(8, -3);
+    }
+
+    @Test
+    void orderReviewUsesMonthlySnapshotInsteadOfCurrentCashHospital() {
+        login(42);
+        when(store.one(contains("lin_order_pricing_snapshot"), eq(8))).thenReturn(Map.of(
+                "SampleStatus", 0, "TestFee", 75.0, "CreateSampleId", 7, "PayType", 0, "settlement_type", "MONTHLY"));
+
+        service.order(8, new ReviewService.Decision(true, "月结合同"));
+
+        verify(serviceOrders()).updateOrderStatus(8, 2);
+    }
+
+    @Test
+    void orderReviewWithoutSnapshotKeepsLegacyHospitalRule() {
+        login(42);
+        when(store.one(contains("lin_order_pricing_snapshot"), eq(8))).thenReturn(new java.util.HashMap<>(Map.of(
+                "SampleStatus", 0, "TestFee", 75.0, "CreateSampleId", 7, "PayType", 1)));
+
+        service.order(8, new ReviewService.Decision(true, "旧订单"));
+
+        verify(serviceOrders()).updateOrderStatus(8, 2);
+    }
+
+    private OrderService serviceOrders() {
+        return (OrderService) org.springframework.test.util.ReflectionTestUtils.getField(service, "orders");
+    }
+
+    @Test
     void rejectedProfileChangeRevokesCredentialVersion() {
         login(42);
         when(store.one(contains("lin_profile_change"), eq(9L))).thenReturn(Map.of(

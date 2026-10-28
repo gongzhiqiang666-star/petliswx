@@ -104,6 +104,9 @@ async function runBrowser(tokens, doctorId, orderId) {
     await page.locator('[data-tab=orders]').click(); await page.waitForSelector(`[data-review="${orderId}"]`); await page.locator(`[data-review="${orderId}"]`).click(); await page.locator('#active-dialog-form textarea[name=reason]').fill('浏览器订单审核通过'); await page.locator('button[form=active-dialog-form]').click(); await shot('admin-reviews.png');
     const labels = { logistics: '物流配送', laboratory: '实验室任务', reports: '报告审核发布', finance: '财务处理', operations: '运营管理', orders: '送检管理' };
     for (const route of ['logistics', 'laboratory', 'reports', 'finance', 'operations', 'orders']) { await page.locator(`[data-route=${route}]`).click(); await page.waitForFunction(label => document.querySelector('#current-page')?.textContent === label && !document.querySelector('#page-content')?.textContent.includes('正在加载'), labels[route]); await shot(`admin-${route}.png`); }
+    await page.locator('[data-route=catalog]').click(); await page.waitForSelector('#item-new'); await page.locator('#item-new').click();
+    await page.locator('#active-dialog-form input[name=name]').fill('浏览器验收项目'); await page.locator('#active-dialog-form input[name=code]').fill('BROWSER-CRUD'); await page.locator('#active-dialog-form input[name=price]').fill('66.50');
+    await page.locator('button[form=active-dialog-form]').click(); await page.waitForFunction(() => document.querySelector('#catalog-list')?.textContent.includes('浏览器验收项目')); await shot('admin-catalog-crud.png');
     const unexpected = summary.browser.console.filter(e => !(e.url.endsWith('/favicon.ico') && e.text.includes('404')));
     assert.deepEqual(summary.browser.pageerrors, []); assert.deepEqual(unexpected, []);
     pass('Playwright管理端登录/审核/物流/实验/报告/财务/运营/打印入口', { screenshots: summary.browser.screenshots.length, consoleErrors: 0, pageerrors: 0 });
@@ -161,12 +164,16 @@ async function main() {
   await api(`/review/orders/${refundOrder.orderId}`, { token: admin.token, method: 'POST', body: { approved: true, reason: '退款订单审核' } });
   const refundPayment = await api('/payment/create', { token: doctor.token, method: 'POST', body: { orderId: refundOrder.orderId, amount: 75, openid: 'mock-openid' } });
   await api(`/payment/mock-callback/${refundPayment.paymentNo}`, { token: doctor.token, method: 'POST', body: {} });
-  await api(`/admin/refunds/${refundOrder.orderId}`, { token: admin.token, method: 'POST', body: { reason: 'mock退款验收', requestKey: 'merge-refund-success' } });
-  await api(`/admin/refunds/${refundOrder.orderId}`, { token: admin.token, method: 'POST', body: { reason: 'mock退款验收', requestKey: 'merge-refund-success' } });
+  await api(`/admin/refunds/${refundOrder.orderId}`, { token: doctor.token, method: 'POST', body: { reason: 'mock退款验收', requestKey: 'merge-refund-success' } });
+  await api(`/admin/refunds/${refundOrder.orderId}`, { token: doctor.token, method: 'POST', body: { reason: 'mock退款验收', requestKey: 'merge-refund-success' } });
   pass('未支付/月结/已开票退款边界与mock退款幂等', { refundOrderId: refundOrder.orderId });
   const workflow = await shipmentAndReport(cash, tokens);
   const logistics = await mini.services.logistics.getByOrder(cash.orderId); assert(logistics.id);
   const reports = await mini.services.reports.getList({ page: 0, size: 20 }); assert(reports.content.length > 0);
+  sql(`UPDATE lin_lb_listdiagnosisproject SET IsPayMoney=0 WHERE ListDiagnosisProjectId=${cash.orderId}`);
+  const restrictedReports = await mini.services.reports.getList({ page: 0, size: 20 });
+  const restricted = restrictedReports.content.find(r => r.reportId === workflow.reportIds[0]); assert(restricted.paymentRestricted); assert(!restricted.pdfHttpUrl && !restricted.pdfFullUrl && !restricted.securePdfUrl);
+  sql(`UPDATE lin_lb_listdiagnosisproject SET IsPayMoney=1 WHERE ListDiagnosisProjectId=${cash.orderId}`);
   const health = await mini.services.pets.getHealth(pet.id, { page: 0, size: 20 }); assert(health.medicalHistory.length > 0); assert(health.reports.items.length > 0);
   pass('配送/扫码签收/任务/结果/退样复检/报告审核发布/中文PDF/小程序物流报告病史', workflow);
   const invoiceProfile = await api('/invoices/profiles', { token: doctor.token, method: 'POST', body: { title: '合并验收一院', taxNumber: '91310000MERGE00001', email: 'merge@example.invalid' } });
@@ -205,7 +212,25 @@ async function main() {
   const appJson = JSON.parse(fs.readFileSync(path.join(ROOT, 'miniprogram/app.json'), 'utf8')); assert.equal(appJson.pages.length, 41); assert.equal(appJson.tabBar.list.length, 5);
   const appRoles = await api('/user/roles', { token: lab.token }); assert(appRoles.some(r => (r.roleCode || r) === 'LAB_STAFF'));
   await denied('/admin/dashboard?from=2026-01-01&to=2026-12-31', { token: other.token });
-  pass('打印/看板/跨院与员工越权/41页面5Tab', { pages: 41, tabs: 5 });
+  await api('/admin/orders', { token: doctor.token }); await api('/admin/orders', { token: lab.token });
+  await api('/lab/tasks', { token: lab.token });
+  await denied('/admin/contracts', { token: doctor.token }); await denied('/admin/contracts', { token: lab.token });
+  await denied('/admin/orders', { token: other.token });
+  await denied('/admin/contracts', { token: admin.token, method: 'POST', body: { contractNo: 'MERGE-CASH-OVERLAP', hospitalId: 1, laboratoryId: 1, settlementType: 'CASH', billingCycleDays: 30, creditAmount: 100000, effectiveFrom: '2026-06-01', effectiveTo: later } });
+  const cashContractId = sql("SELECT id FROM lin_contract WHERE contract_no='MERGE-CASH'");
+  await api(`/admin/contracts/${cashContractId}/status`, { token: admin.token, method: 'PATCH', body: { active: false, reason: '停用验收' } });
+  await denied('/orders', { token: doctor.token, method: 'POST', body: { ...orderBody(pet.id, 1, 11), idempotencyKey: 'merge-inactive-cash-001' } });
+  await api(`/admin/contracts/${cashContractId}/status`, { token: admin.token, method: 'PATCH', body: { active: true, reason: '恢复验收' } });
+  const monthlyContractId = sql("SELECT id FROM lin_contract WHERE contract_no='MERGE-MONTHLY'");
+  await api(`/admin/contracts/${monthlyContractId}/status`, { token: admin.token, method: 'PATCH', body: { active: false, reason: '停用后历史出账验收' } });
+  await api(`/bills/${bill.id}`, { token: monthlyDoctor.token });
+  await denied('/orders', { token: monthlyDoctor.token, method: 'POST', body: { ...orderBody(monthlyPet.id, 1, 11), idempotencyKey: 'merge-inactive-monthly-1' } });
+  await api(`/admin/contracts/${monthlyContractId}/status`, { token: admin.token, method: 'PATCH', body: { active: true, reason: '恢复验收' } });
+  const crudId = sql("SELECT InfoTestTypeId FROM lin_lb_infotesttype WHERE TestNO='BROWSER-CRUD'");
+  await api(`/admin/catalog/laboratories/1/items/${crudId}`, { token: lab.token, method: 'PUT', body: { name: '浏览器项目已编辑', code: 'BROWSER-CRUD', price: 67 } });
+  await api(`/admin/catalog/laboratories/1/items/${crudId}`, { token: lab.token, method: 'DELETE' });
+  assert.equal(sql(`SELECT CONCAT(IsActive,(SELECT active FROM lin_lab_test WHERE laboratory_id=1 AND test_type_id=${crudId})) FROM lin_lb_infotesttype WHERE InfoTestTypeId=${crudId}`), '00');
+  pass('合同重叠/启停用/历史出账与项目CRUD/HTTP角色矩阵/41页面5Tab', { pages: 41, tabs: 5, crudId: Number(crudId) });
   summary.status = 'PASS'; summary.orderIds = { cash: cash.orderId, monthly: monthly.orderId }; summary.reportIds = workflow.reportIds;
 }
 main().then(() => { summary.finishedAt = new Date().toISOString(); save(); }).catch(error => { summary.status = 'FAIL'; summary.error = { message: error.message, stack: error.stack }; summary.finishedAt = new Date().toISOString(); save(); console.error(error); process.exitCode = 1; });

@@ -2,6 +2,8 @@ package com.petlis.service.impl;
 
 import com.petlis.common.exception.BusinessException;
 import com.petlis.common.security.AccessService;
+import com.petlis.common.security.CurrentActor;
+import com.petlis.common.security.DataScope;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -56,6 +58,33 @@ class ContractServiceTest {
         var result = service.priceForOrder(7, 2, List.of(91));
         assertEquals("CASH", result.settlementType());
         assertTrue(result.items().isEmpty());
+    }
+
+    @Test void createRejectsOverlappingActiveContractForSameParties() {
+        when(jdbc.queryForObject(contains("c.status='ACTIVE'"), eq(Boolean.class), any(Object[].class))).thenReturn(true);
+        assertThrows(BusinessException.class, () -> service.create(command("OVERLAP")));
+        verify(store, never()).insert(anyString(), any(Object[].class));
+    }
+
+    @Test void statusCanDeactivateAndReactivateWithoutChangingHistoricalContract() {
+        when(store.one(contains("SELECT id,status FROM lin_contract"), eq(11L))).thenReturn(Map.of("id", 11L, "status", "ACTIVE"));
+        AccessService access = (AccessService) org.springframework.test.util.ReflectionTestUtils.getField(service, "access");
+        when(access.current()).thenReturn(new CurrentActor(5, java.util.Set.of(), java.util.Set.of(), java.util.Set.of(), new DataScope(true, java.util.Set.of(), java.util.Set.of(), null)));
+        service.setStatus(11L, false, "暂停合作");
+        verify(jdbc).update(contains("status='INACTIVE'"), eq(5), eq(11L));
+        service.setStatus(11L, true, "恢复合作");
+        verify(jdbc).update(contains("status='ACTIVE'"), eq(5), eq(11L));
+    }
+
+    private ContractService.Command command(String number) {
+        return new ContractService.Command(number, 7, 2, "CASH", 30, BigDecimal.ZERO,
+                java.time.LocalDate.of(2026, 1, 1), java.time.LocalDate.of(2026, 12, 31));
+    }
+
+    @Test void inactiveContractCannotFallBackToLegacyPricingForNewOrders() {
+        when(jdbc.queryForList(contains("FROM lin_contract c"), eq(7), eq(2))).thenReturn(List.of());
+        when(jdbc.queryForObject(contains("c.status='INACTIVE'"), eq(Boolean.class), eq(7), eq(2))).thenReturn(true);
+        assertThrows(BusinessException.class, () -> service.priceForOrder(7, 2, List.of(91)));
     }
 
     @Test void concurrentCreditReservationLocksContractAndRejectsOverflow() {

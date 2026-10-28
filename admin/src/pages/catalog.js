@@ -36,11 +36,11 @@ export async function render(container, context) {
           { label: '账期（天）', render: (row) => cell(row, 'billingCycleDays') },
           { label: '信用额度（元）', render: (row) => moneyYuan(value(row, 'creditAmount', 0)) },
           { label: '状态', render: (row) => badge(value(row, 'status', '')) }
-        ], actions: (row) => `<button class="button text" data-price="${row.id}" data-lab="${value(row, 'laboratoryId')}">设置协议价</button>` });
+        ], actions: (row) => `<button class="button text" data-price="${row.id}" data-lab="${value(row, 'laboratoryId')}">设置协议价</button><button class="button text" data-contract-status="${row.id}" data-active="${value(row, 'status')}">${value(row, 'status') === 'ACTIVE' ? '停用' : '启用'}</button>` });
         return;
       }
       if (!selectedLab && laboratories[0]) selectedLab = String(laboratories[0].id);
-      tools.innerHTML = `<label>所属实验室<select id="catalog-lab">${laboratories.map((lab) => `<option value="${lab.id}">${cell(lab, 'name')}</option>`).join('')}</select></label>`;
+      tools.innerHTML = `<div class="toolbar"><label>所属实验室<select id="catalog-lab">${laboratories.map((lab) => `<option value="${lab.id}">${cell(lab, 'name')}</option>`).join('')}</select></label><button class="button" id="item-new">新建项目</button></div>`;
       const labSelect = tools.querySelector('#catalog-lab');
       if (labSelect) {
         labSelect.value = selectedLab;
@@ -52,7 +52,7 @@ export async function render(container, context) {
         { label: '项目', render: (row) => cell(row, 'name') },
         { label: '目录价（元）', render: (row) => moneyYuan(row.price) },
         { label: '状态', render: (row) => badge(Number(row.active) === 1 ? 'ACTIVE' : 'INACTIVE') }
-      ], actions: (row) => `<button class="button text" data-item-status="${row.id}" data-active="${row.active}">${Number(row.active) === 1 ? '停用' : '启用'}</button>` });
+      ], actions: (row) => `<button class="button text" data-item-edit="${row.id}" data-name="${cell(row, 'name')}" data-code="${cell(row, 'code')}" data-price="${row.price}">编辑</button><button class="button text" data-item-status="${row.id}" data-active="${row.active}">${Number(row.active) === 1 ? '停用' : '启用'}</button><button class="button text" data-item-delete="${row.id}">删除</button>` });
     } catch (error) {
       list.innerHTML = renderState(error.status === 403 ? 'forbidden' : 'error', error);
     }
@@ -79,11 +79,42 @@ export async function render(container, context) {
       } catch (error) { context.toast(error.message, 'error'); }
       return;
     }
+    const contractStatus = event.target.closest('[data-contract-status]');
+    if (contractStatus) {
+      const active = contractStatus.dataset.active !== 'ACTIVE';
+      await api.request(`/admin/contracts/${contractStatus.dataset.contractStatus}/status`, { method: 'PATCH', data: { active, reason: active ? '管理端启用' : '管理端停用' } });
+      context.toast(active ? '合同已启用' : '合同已停用'); await load(); return;
+    }
+    if (event.target.closest('#item-new')) { openItem(context, Number(selectedLab), null, load); return; }
+    const edit = event.target.closest('[data-item-edit]');
+    if (edit) { openItem(context, Number(selectedLab), { id: Number(edit.dataset.itemEdit), name: edit.dataset.name, code: edit.dataset.code, price: edit.dataset.price }, load); return; }
+    const remove = event.target.closest('[data-item-delete]');
+    if (remove) {
+      if (!globalThis.confirm('删除将把项目逻辑停用，历史订单快照保持不变。是否继续？')) return;
+      await api.request(`/admin/catalog/laboratories/${selectedLab}/items/${remove.dataset.itemDelete}`, { method: 'DELETE' });
+      context.toast('项目已逻辑停用'); await load(); return;
+    }
     const price = event.target.closest('[data-price]');
     if (price) await openPrice(context, price.dataset.price, price.dataset.lab, load);
   });
 
   await load();
+}
+
+function openItem(context, laboratoryId, item, done) {
+  const fields = [
+    field({ name: 'name', label: '项目名称', value: item?.name || '', required: true }),
+    field({ name: 'code', label: '项目编码', value: item?.code || '', required: true }),
+    field({ name: 'price', label: '目录价（元）', type: 'number', value: item?.price || '0.00', min: 0, step: '0.01', required: true })
+  ];
+  context.dialog({
+    title: item ? '编辑检测项目' : '新建检测项目', submitLabel: '保存项目', body: `<div class="form-grid">${fields.join('')}</div>`,
+    async onSubmit(form) {
+      const data = formData(form);
+      await context.api.request(`/admin/catalog/laboratories/${laboratoryId}/items${item ? `/${item.id}` : ''}`, { method: item ? 'PUT' : 'POST', data: { name: data.name, code: data.code, price: Number(data.price) } });
+      context.toast('项目已保存'); done();
+    }
+  });
 }
 
 async function openContract(context, laboratories, done) {

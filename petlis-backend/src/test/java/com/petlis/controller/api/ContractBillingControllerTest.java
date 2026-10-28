@@ -26,5 +26,8 @@ class ContractBillingControllerTest {
         mvc.perform(get("/bills")).andExpect(status().isOk()).andExpect(jsonPath("$.code").value(200));
         mvc.perform(get("/bills/21")).andExpect(status().isOk()).andExpect(jsonPath("$.data.id").value(21));
         mvc.perform(get("/admin/bills/21/items")).andExpect(status().isOk()).andExpect(jsonPath("$.code").value(200));
+        mvc.perform(patch("/admin/contracts/21/status").contentType("application/json").content("{\"active\":false,\"reason\":\"暂停\"}"))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.code").value(200));
+        verify(contracts).setStatus(21, false, "暂停");
     }
 }

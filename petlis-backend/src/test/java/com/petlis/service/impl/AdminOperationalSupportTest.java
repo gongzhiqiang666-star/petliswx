@@ -1,6 +1,9 @@
 package com.petlis.service.impl;
 
 import com.petlis.common.security.AccessService;
+import com.petlis.common.security.CurrentActor;
+import com.petlis.common.security.DataScope;
+import com.petlis.common.security.PlatformRole;
 import com.petlis.common.security.ReviewPermission;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
@@ -25,7 +28,9 @@ class AdminOperationalSupportTest {
     }
 
     @Test void catalogReadsExistingLaboratoryAndLabTestMasters() {
-        AdminCatalogService service = new AdminCatalogService(store, mock(AccessService.class));
+        AccessService access = mock(AccessService.class);
+        when(access.current()).thenReturn(new CurrentActor(1, java.util.Set.of(PlatformRole.ADMIN), java.util.Set.of(), java.util.Set.of(), new DataScope(true, java.util.Set.of(), java.util.Set.of(), null)));
+        AdminCatalogService service = new AdminCatalogService(store, access);
         when(store.page(contains("lin_laboratory"), contains("lin_laboratory"), eq(0), eq(20), any(Object[].class))).thenReturn(Map.of("items", List.of(), "total", 0, "page", 0, "size", 20));
         when(store.page(contains("lin_lab_test"), contains("lin_lb_infotesttype"), eq(0), eq(20), any(Object[].class))).thenReturn(Map.of("items", List.of(), "total", 0, "page", 0, "size", 20));
         assertEquals(0, service.laboratories(0, 20).get("page"));

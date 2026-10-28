@@ -38,7 +38,7 @@ CREATE TABLE lin_lb_notification(id BIGINT AUTO_INCREMENT PRIMARY KEY,order_id I
 CREATE TABLE lin_lb_notification_log(id BIGINT AUTO_INCREMENT PRIMARY KEY,notification_id BIGINT,status VARCHAR(32),created_at DATETIME DEFAULT CURRENT_TIMESTAMP) ENGINE=InnoDB;
 CREATE TABLE lin_notification_receipt(id BIGINT AUTO_INCREMENT PRIMARY KEY,event_id BIGINT,created_at DATETIME DEFAULT CURRENT_TIMESTAMP) ENGINE=InnoDB;
 CREATE TRIGGER legacy_merge_guard BEFORE UPDATE ON lin_lb_city FOR EACH ROW SET @legacy_merge_unchanged = 1;
-INSERT INTO lin_lb_infohospital(InfoHospitalId,HospitalName,HospitalName_en,CityId,Place,Adress,Tel,IsActive,PayType) VALUES(1,'合并验收一院','Merge One',1,'上海','验收路1号','13800000001',1,0),(2,'合并验收二院','Merge Two',1,'上海','验收路2号','13800000002',1,0),(3,'合并验收月结院','Merge Monthly',1,'上海','验收路3号','13800000003',1,1);
+INSERT INTO lin_lb_infohospital(InfoHospitalId,HospitalName,HospitalName_en,CityId,Place,Adress,Tel,IsActive,PayType) VALUES(1,'合并验收一院','Merge One',1,'上海','验收路1号','13800000001',1,1),(2,'合并验收二院','Merge Two',1,'上海','验收路2号','13800000002',1,0),(3,'合并验收月结院','Merge Monthly',1,'上海','验收路3号','13800000003',1,0);
 INSERT INTO lin_lb_city VALUES(1,'上海',1);
 INSERT INTO lin_lb_infoanimal(InfoAnimalId,AnimalName,AnimalName_en,IsActive) VALUES(1,'猫','Cat',1);
 INSERT INTO lin_lb_infovariety(IID,Variety_CN,Variety_EN) VALUES(1,'中华田园猫','Domestic');

@@ -71,6 +71,9 @@ class ReportServiceImplTest {
 
     void stubQuery() {
         ReportResponse response = new ReportResponse();
+        response.setPdfHttpUrl("/Content/FilePdf/report.pdf");
+        response.setPdfFullUrl("https://files.example/report.pdf");
+        response.setSecurePdfUrl("/api/pdf/view/11");
         when(diagnosisDetailRepository.findAll(any(Specification.class), any(Pageable.class)))
                 .thenReturn(new PageImpl<>(List.of(detail)));
         when(reportMapper.toResponse(detail)).thenReturn(response);
@@ -105,6 +108,16 @@ class ReportServiceImplTest {
     void cashUnpaidListIsPaymentRestricted() {
         stubQuery();
         assertTrue(query().getPaymentRestricted());
+    }
+
+    @Test
+    void cashUnpaidOrRefundedListClearsEveryLegacyPdfAddress() {
+        stubQuery();
+        ReportResponse response = query();
+        assertTrue(response.getPaymentRestricted());
+        assertNull(response.getPdfHttpUrl());
+        assertNull(response.getPdfFullUrl());
+        assertNull(response.getSecurePdfUrl());
     }
 
     @Test

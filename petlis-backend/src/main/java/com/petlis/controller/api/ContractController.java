@@ -18,4 +18,6 @@ public class ContractController {
     @PostMapping public Result<Long> create(@RequestBody ContractService.Command command) { return Result.success(service.create(command)); }
     @PutMapping("/{id}") public Result<Void> update(@PathVariable long id, @RequestParam int version, @RequestBody ContractService.Command command) { service.update(id, version, command); return Result.success(); }
     @PostMapping("/{id}/prices") public Result<Long> savePrice(@PathVariable long id, @RequestBody ContractService.PriceCommand command) { return Result.success(service.savePrice(id, command)); }
+    @PatchMapping("/{id}/status") public Result<Void> status(@PathVariable long id, @RequestBody StatusCommand command) { service.setStatus(id, command.active(), command.reason()); return Result.success(command.active() ? "合同已启用" : "合同已停用"); }
+    public record StatusCommand(boolean active, String reason) { }
 }

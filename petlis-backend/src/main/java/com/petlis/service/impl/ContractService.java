@@ -44,6 +44,7 @@ public class ContractService {
     public long create(Command command) {
         access.requireAdmin();
         validate(command);
+        validateNoOverlap(0, command);
         long id = store.insert("INSERT INTO lin_contract(contract_no,hospital_id,laboratory_id,settlement_type,billing_cycle_days,credit_amount,effective_from,effective_to,status,created_by) VALUES(?,?,?,?,?,?,?,?,'ACTIVE',?)",
                 command.contractNo().trim(), command.hospitalId(), command.laboratoryId(), command.settlementType(), command.billingCycleDays(),
                 command.creditAmount(), command.effectiveFrom(), command.effectiveTo(), access.current().userId());
@@ -57,6 +58,7 @@ public class ContractService {
         validate(command);
         Map<String, Object> before = store.one("SELECT * FROM lin_contract WHERE id=? FOR UPDATE", id);
         if (((Number) before.get("version")).intValue() != version) throw new BusinessException(409, "签约配置已变更，请刷新后重试");
+        if ("ACTIVE".equals(before.get("status"))) validateNoOverlap(id, command);
         if (command.creditAmount().compareTo(new BigDecimal(before.get("credit_amount").toString())) < 0) {
             BigDecimal used = usedCredit(id, -1);
             if (command.creditAmount().compareTo(used) < 0) throw new BusinessException("信用额度不得低于当前未结占用");
@@ -66,6 +68,23 @@ public class ContractService {
                 command.effectiveFrom(), command.effectiveTo(), access.current().userId(), id, version);
         if (changed != 1) throw new BusinessException(409, "签约配置已变更，请刷新后重试");
         audits.record("CONTRACT_UPDATED", "CONTRACT", id, before, command, null);
+    }
+
+    @Transactional
+    public void setStatus(long id, boolean active, String reason) {
+        access.requireAdmin();
+        Map<String, Object> before = store.one("SELECT id,status FROM lin_contract WHERE id=? FOR UPDATE", id);
+        store.jdbc().update("UPDATE lin_contract SET status='" + (active ? "ACTIVE" : "INACTIVE") + "',version=version+1,updated_by=? WHERE id=?", access.current().userId(), id);
+        audits.record(active ? "CONTRACT_ACTIVATED" : "CONTRACT_DEACTIVATED", "CONTRACT", id, before, Map.of("active", active), reason);
+    }
+
+    private void validateNoOverlap(long excludedId, Command command) {
+        LocalDate to = command.effectiveTo() == null ? LocalDate.of(9999, 12, 31) : command.effectiveTo();
+        LocalDate from = command.effectiveFrom();
+        if (Boolean.TRUE.equals(store.jdbc().queryForObject("SELECT EXISTS(SELECT 1 FROM lin_contract c WHERE c.hospital_id=? AND c.laboratory_id=? AND c.status='ACTIVE' AND c.effective_from<=COALESCE(?,?) AND (c.effective_to IS NULL OR c.effective_to>=COALESCE(?,?)) AND c.id<>?)", Boolean.class,
+                command.hospitalId(), command.laboratoryId(), command.effectiveTo(), to, command.effectiveFrom(), from, excludedId))) {
+            throw new BusinessException(409, "同医院和实验室已存在效期重叠的有效签约");
+        }
     }
 
     @Transactional
@@ -88,7 +107,12 @@ public class ContractService {
 
     public Resolution priceForOrder(int hospitalId, int laboratoryId, List<Integer> testTypeIds) {
         var contracts = store.jdbc().queryForList("SELECT c.id,c.settlement_type FROM lin_contract c WHERE c.hospital_id=? AND c.laboratory_id=? AND c.status='ACTIVE' AND c.effective_from<=CURDATE() AND (c.effective_to IS NULL OR c.effective_to>=CURDATE()) ORDER BY c.id DESC LIMIT 2", hospitalId, laboratoryId);
-        if (contracts.isEmpty()) return new Resolution(0, false, "CASH", Map.of());
+        if (contracts.isEmpty()) {
+            if (Boolean.TRUE.equals(store.jdbc().queryForObject("SELECT EXISTS(SELECT 1 FROM lin_contract c WHERE c.hospital_id=? AND c.laboratory_id=? AND c.status='INACTIVE')", Boolean.class, hospitalId, laboratoryId))) {
+                throw new BusinessException(409, "医院签约已停用，不能创建新订单");
+            }
+            return new Resolution(0, false, "CASH", Map.of());
+        }
         if (contracts.size() != 1) throw new BusinessException("医院存在重叠的有效签约，请联系管理员");
         long contractId = ((Number) contracts.get(0).get("id")).longValue();
         Map<Integer, ItemPrice> result = new LinkedHashMap<>();
