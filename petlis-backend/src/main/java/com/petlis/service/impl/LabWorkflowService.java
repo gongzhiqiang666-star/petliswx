@@ -60,7 +60,7 @@ public class LabWorkflowService {
     public Map<String, Object> assignees(int laboratoryId) {
         CurrentActor actor = access.current();
         if (!actor.isAdmin()) access.requireLaboratory(laboratoryId);
-        var items = store.jdbc().queryForList("SELECT u.id,u.nickname AS name,u.account FROM lin_user u JOIN lin_user_role r ON r.user_id=u.id WHERE r.laboratory_id=? AND r.role_code='LAB_STAFF' AND r.is_active=1 AND u.status='normal' ORDER BY u.id", laboratoryId);
+        var items = store.jdbc().queryForList("SELECT u.id,u.nickname AS name,u.username FROM lin_user u JOIN lin_user_role r ON r.user_id=u.id WHERE r.laboratory_id=? AND r.role_code='LAB_STAFF' AND r.is_active=1 AND u.status='normal' ORDER BY u.id", laboratoryId);
         return Map.of("items", items, "total", items.size(), "page", 0, "size", Math.max(1, items.size()));
     }
 

@@ -344,9 +344,6 @@ Page({
     if (!deliveryInfo.masterName || !deliveryInfo.masterName.trim()) {
       return '请填写畜主中文名';
     }
-    if (!deliveryInfo.masterNameEn || !deliveryInfo.masterNameEn.trim()) {
-      return '请填写畜主英文名';
-    }
     if (!deliveryInfo.doctorName || !deliveryInfo.doctorName.trim()) {
       return '请填写送检医师姓名';
     }

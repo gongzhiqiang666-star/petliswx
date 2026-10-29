@@ -105,19 +105,19 @@ public class ReportWorkflowService {
         long resultId = number(order.get("test_result_id")).longValue();
         Map<String, Object> task = store.one("SELECT t.id,t.status FROM lin_lab_task t JOIN lin_test_result r ON r.lab_task_id=t.id WHERE r.id=? FOR UPDATE OF t", resultId);
         labActor();
-        Map<String, Object> report = manageable(workflowId);
+        Map<String, Object> report = new java.util.LinkedHashMap<>(manageable(workflowId));
         String status = String.valueOf(report.get("status"));
         if (!List.of("APPROVED", "PUBLISHED").contains(status)) throw invalidState();
         int detailId = number(report.get("detail_id")).intValue();
         if ("APPROVED".equals(status)) {
             if (report.get("result_status") != null && !"ENTERED".equals(report.get("result_status"))) throw new BusinessException(409, "检测结果已作废，不能发布报告");
             if (!isMonthly(report) && number(report.get("is_pay_money")).intValue() != 1) throw new BusinessException(422, "现结订单未支付，不能发布报告");
-            String fileName = report.get("storage_path") == null ? "report-" + report.get("pdf_file_id") + ".pdf" : report.get("storage_path").toString();
-            String pdfUrl = serverDomain + "/Content/FilePdf/" + fileName;
+            String pdfUrl = "/api/pdf/view/" + detailId;
             String result = legacyContent(workflowId, report);
             store.jdbc().update("INSERT INTO lin_lb_diagnosisdetail_info(diagnosisdetail_id,ReportResult,MailReport) VALUES(?,?,?) ON DUPLICATE KEY UPDATE ReportResult=VALUES(ReportResult),MailReport=VALUES(MailReport)", detailId, result, result);
             store.jdbc().update("UPDATE lin_lb_diagnosisdetail SET DiagnosisStatus=2,IsSendMail=1,PDFHttpUrl=?,SendMailDt=NOW() WHERE DiagnosisDetailId=?", pdfUrl, detailId);
             store.jdbc().update("UPDATE lin_report_workflow SET status='PUBLISHED',payment_checked=1,published_by=?,published_at=NOW(),legacy_synced_at=NOW(),version=version+1 WHERE id=?", access.current().userId(), workflowId);
+            report.put("status", "PUBLISHED");
         }
         Map<String, Object> completion = store.one("SELECT COUNT(DISTINCT d.DiagnosisDetailId) AS total,COUNT(DISTINCT CASE WHEN w.status='PUBLISHED' THEN d.DiagnosisDetailId END) AS published FROM lin_lb_diagnosisdetail d LEFT JOIN lin_report_workflow w ON w.detail_id=d.DiagnosisDetailId WHERE d.ListDiagnosisProjectId=? AND d.IsCheckPass=0 AND d.IsActive=1 FOR UPDATE", orderId);
         if (number(completion.get("total")).intValue() == number(completion.get("published")).intValue()) {

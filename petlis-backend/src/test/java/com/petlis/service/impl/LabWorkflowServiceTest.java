@@ -39,6 +39,16 @@ class LabWorkflowServiceTest {
     }
 
     @Test
+    void assigneesUseLegacyUsernameColumn() {
+        when(access.current()).thenReturn(new CurrentActor(1, Set.of(PlatformRole.ADMIN), Set.of(), Set.of(),
+                new DataScope(true, Set.of(), Set.of(), null)));
+        when(jdbc.queryForList(anyString(), eq(2))).thenReturn(List.of());
+        service.assignees(2);
+        verify(jdbc).queryForList(contains("u.username"), eq(2));
+        verify(jdbc, never()).queryForList(contains("u.account"), eq(2));
+    }
+
+    @Test
     void assigneeMustHaveActiveRoleInTheSameLaboratory() {
         when(store.one(contains("lin_shipment"), eq(8))).thenReturn(Map.of(
                 "id", 11L, "order_id", 8, "laboratory_id", 2, "status", "RECEIVED", "doctor_user_id", 7));

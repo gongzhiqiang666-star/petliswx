@@ -1,5 +1,6 @@
 // components/report-modal/report-modal.js
 const api = require('../../api/index.js')
+const request = require('../../utils/request.js')
 
 Component({
   properties: {
@@ -55,6 +56,7 @@ Component({
         // 下载文件到本地
         wx.downloadFile({
           url: pdfUrl,
+          header: request.getHeaders(true),
           success: (res) => {
             if (res.statusCode === 200) {
               const filePath = res.tempFilePath
@@ -124,6 +126,7 @@ Component({
         // 下载文件到本地
         wx.downloadFile({
           url: pdfUrl,
+          header: request.getHeaders(true),
           success: (res) => {
             if (res.statusCode === 200) {
               wx.hideLoading()
