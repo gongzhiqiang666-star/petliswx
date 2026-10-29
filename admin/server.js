@@ -67,6 +67,7 @@ export function createStaticServer({ root = path.dirname(fileURLToPath(import.me
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   const port = Number(process.env.PORT || 4173);
+  const host = process.env.HOST || '0.0.0.0';
   const server = createStaticServer();
-  server.listen(port, '127.0.0.1', () => console.log(`Petlis admin: http://127.0.0.1:${port} (API: ${process.env.API_ORIGIN || 'http://localhost:8080'})`));
+  server.listen(port, host, () => console.log(`Petlis admin: http://127.0.0.1:${port} (API: ${process.env.API_ORIGIN || 'http://localhost:8080'})`));
 }
