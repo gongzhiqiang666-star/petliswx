@@ -87,3 +87,15 @@
 - [ ] Verify old schema snapshots unchanged and repeat migrations/tests; check browser screenshots and mini-program PDF.
 - [ ] Run WeChat DevTools compilation if credentials permit; record external limits honestly.
 - [ ] Update documentation, commit in Chinese, push and create a Chinese PR to `001-vet-lab-system`.
+
+---
+
+### Task 7: Legacy PHP Admin Integration
+
+**Files:** `petlis-backend/src/main/java/com/petlis/service/impl/LegacyOrderEventBridge.java`, legacy API/report/PDF bridges, `integration/**`, `docs/FUNCTION-MATRIX.md`.
+**Interfaces:** read/write the same `laboklin` DB legacy fields; legacy notification bridge keyed `legacy:{id}`; legacy report/PDF URL and download auth.
+
+- [ ] Add failing tests for legacy order/report/notification ID, amount (`PayType`/`PayStatus2`/`IsPayMoney`) and status consistency, and single-event dedupe.
+- [ ] Verify old PHP admin writes (order status, report publish, notification) are observed by the new system, and new writes are visible to the legacy admin.
+- [ ] Validate legacy report/PDF path/URL and download permission; unpaid/unauthorized access blocked.
+- [ ] Run on an isolated MySQL copy with before/after schema snapshot; record integration log, transition/rollback steps and residual issues.
