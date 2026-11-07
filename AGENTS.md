@@ -1,5 +1,45 @@
 # Petlis 项目约定
 
+## 数据库变更管控（最高优先级 · 硬性规则）
+
+> 结论：**任何表结构、触发器、视图、字段类型/长度/精度、索引、外键、字符集/排序规则的变更，必须先经过用户（项目负责人）明确同意；未获同意一律不得执行。**
+
+### 1. 未经批准禁止执行
+
+- 结构变更：`CREATE / ALTER / DROP / RENAME / TRUNCATE TABLE`，增删改列，改字段类型/长度/精度/字符集/排序规则/默认值/可空性/自增，改主键/唯一键/索引/外键，分区。
+- 对象变更：`CREATE / ALTER / DROP TRIGGER / VIEW / FUNCTION / PROCEDURE`，修改触发器逻辑或通知文案。
+- 数据破坏：对旧 `lin_*` 表的批量 `UPDATE / DELETE`、`DROP`、`TRUNCATE`、全量测试 fixture、清理脚本。
+- 迁移重放：重放或修改既有 Flyway 迁移；启动时设置 `DB_MIGRATIONS_ENABLED=false`。
+- 环境越界：连接或写入 Mac mini 原库、远程库、默认 3306 端口的非隔离库。
+
+### 2. 数据库基线（只读不改）
+
+- 现状：**88 张表 = 72 张旧表 + 16 张新增工作流表**；7 个视图；1 个触发器 `trg_order_status_change`（`AFTER UPDATE ON lin_lb_listdiagnosisproject`，写 `lin_lb_notification`）。
+- **72 张旧表、7 个视图、1 个触发器只读不改**；旧主键/ID 语义、`SampleStatus` 等粗粒度状态保留。
+- 新增只允许以下 16 张平台工作流表：`lin_user_role`、`lin_shipment`、`lin_lab_task`、`lin_test_result`、`lin_report_workflow`、`lin_report_template`、`lin_order_clinical`、`lin_order_idempotency`、`lin_order_pricing_snapshot`、`lin_contract`、`lin_contract_item_price`、`lin_monthly_bill`、`lin_monthly_bill_item`、`lin_file`、`lin_audit_record`、`lin_operational_config`；DDL 放 `petlis-backend/src/main/resources/db/platform/`，默认关闭。
+- 完整表/字段/视图/触发器清单以 `docs/DATABASE-SCHEMA.md` 为准。
+
+### 3. 字段类型与语义（不得随意改动）
+
+- **金额**：旧字段为 `decimal(10,2)`、`decimal(18,2)`、`decimal(18,4)` 等（如 `money`、`amount`、`TestPrice`、`PayMoney`）。新计算用 `BigDecimal` / 整数分，**禁止 `Double`**；接口边界保持“元”，不改精度。
+- **状态/支付标志**：`SampleStatus int`、`PayType int`、`PayStatus2 int`、`IsPayMoney int` 等为整数语义，保持原值含义，不改成字符串或枚举。
+- **时间**：旧 `createtime` / `updatetime` 为 `UNIX_TIMESTAMP()` 整数秒；与新 `datetime` 字段并存时不得混改类型。
+- **ID / 外键**：旧 ID 为整数类型，新表外键列需与旧 ID 类型一致；跨新旧表外键单独评审后再加。
+
+### 4. 变更审批与执行流程
+
+1. 提交申请，说明：目的、影响的表/字段/触发器/视图、完整 SQL、回滚方案、对旧系统与小程序契约的兼容影响。
+2. 获得用户**明确同意**后才可执行。
+3. 仅在**隔离 MySQL 副本**执行：`--isolated-copy`、主机 `127.0.0.1 / localhost`、端口非 3306。
+4. 执行前全量备份；执行后运行 `integration/schema_guard.py` 做前后对比，确认旧表/视图/触发器数量与定义未变、无重复主表。
+5. 记录变更与验证结果；旧结构不一致立即回滚。
+
+### 5. 联调与通知一致性
+
+- 保留 `trg_order_status_change` 定义，不修改其通知文案；旧通知经应用层状态映射修正。
+- 新报告发布与旧桥接通知按 `legacy:{通知ID}` 去重；每次状态变更只产生一条业务事件与一条推送。
+- 原 PHP 系统（`petlis-reference/macmini/laboklin_cn`）仅作字段/逻辑参考，不在其目录改代码，不在原库执行任何写操作。
+
 ## 提交与 PR 规范
 
 - 所有提交信息（commit message）和 PR 标题、正文一律使用中文。
@@ -12,7 +52,7 @@
 - 页面与组件视觉、间距、图标、表单、按钮、空态等统一遵循 `docs/DESIGN-SYSTEM.md`。
 - 小程序仅使用 `assets/icons/brand-*` 图标，不使用 emoji 或文字箭头充当图标。
 - 选择类交互优先当前页底部弹层，非必要不跳新页面。
-- 不执行数据库结构变更（CREATE/ALTER/DROP）前必须先获得用户批准；本机只使用 MySQL 副本，禁止写 Mac mini 原库。
+- 数据库结构变更一律先按上方「数据库变更管控」申请并获批后再执行；本机只使用 MySQL 隔离副本，禁止写 Mac mini 原库。
 - 不使用真实支付；本地开发仅使用 mock 支付与合成测试数据。
 
 ## 新环境启动与小程序联调
