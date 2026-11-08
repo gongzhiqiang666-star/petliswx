@@ -14,30 +14,30 @@ import java.util.*;
  * Every network call is outside DB transactions. There is no background worker.
  */
 public class LegacyBusinessMailService {
- public enum Kind { SAMPLE_NOTICE, REPORT_MAIL }
+ public enum Kind { SAMPLE_NOTICE, REPORT_MAIL, FINANCE_MAIL }
  private final Kind kind;private final LegacyReportFiles files;
- private final FeatureStore store;private final AccessService access;private final LegacyOrderDetailService renderer;
- private final LegacyMailTransport transport;private final TransactionTemplate tx;private final int profileId;
- private final String overrideTo;private final byte[] signingKey;
+ protected final FeatureStore store;protected final AccessService access;private final LegacyOrderDetailService renderer;
+ protected final LegacyMailTransport transport;protected final TransactionTemplate tx;protected final int profileId;
+ protected final String overrideTo;private final byte[] signingKey;
  protected LegacyBusinessMailService(FeatureStore store,AccessService access,LegacyOrderDetailService renderer,LegacyMailTransport transport,PlatformTransactionManager manager,int profileId,String overrideTo,String secret,Kind kind,LegacyReportFiles files){this.kind=kind;this.files=files;this.store=store;this.access=access;this.renderer=renderer;this.transport=transport;this.tx=new TransactionTemplate(manager);this.profileId=profileId;this.overrideTo=overrideTo;this.signingKey=secret.getBytes(StandardCharsets.UTF_8);}
  public record Command(long contactId,String title,String html,String requestKey,String expectedToken,String pdfTitle){public Command(long contactId,String title,String html,String requestKey,String expectedToken){this(contactId,title,html,requestKey,expectedToken,null);}}
  public record ReconcileCommand(String resolution,String note,boolean evidenceConfirmed,boolean workerStoppedConfirmed,String expectedToken,String requestKey){}
- private boolean[] policy(boolean lock){
+ protected boolean[] policy(boolean lock){
   access.requireAdmin();var rows=store.jdbc().queryForList("SELECT config_value FROM lin_operational_config WHERE config_key='"+configKey()+"' AND scope_type='GLOBAL' AND scope_id=0 AND status='ACTIVE'"+(lock?" FOR UPDATE":""));
   if(rows.size()!=1)return new boolean[]{false,false,false,false};
   try{var j=new ObjectMapper().readTree(rows.get(0).get("config_value").toString());boolean read=flag(j,"enabled"),write=read&&flag(j,"writeEnabled");return new boolean[]{read,write,write&&flag(j,"sendEnabled"),write&&flag(j,"reconcileEnabled")};}catch(Exception e){throw error(409,"业务邮件参数无效");}
  }
  private boolean flag(com.fasterxml.jackson.databind.JsonNode node,String key){return node.path(key).isBoolean()&&node.path(key).asBoolean();}
- private String configKey(){return kind==Kind.SAMPLE_NOTICE?"legacy-sample-notice":"legacy-report-mail";}
- private String prefix(){return kind==Kind.SAMPLE_NOTICE?"sampleNotice":"reportMail";}
+ private String configKey(){return switch(kind){case SAMPLE_NOTICE->"legacy-sample-notice";case REPORT_MAIL->"legacy-report-mail";case FINANCE_MAIL->"legacy-finance-mail";};}
+ private String prefix(){return switch(kind){case SAMPLE_NOTICE->"sampleNotice";case REPORT_MAIL->"reportMail";case FINANCE_MAIL->"financeMail";};}
  private String resourceType(){return "LEGACY_"+kind.name();}
  private String action(String suffix){return kind.name()+"_"+suffix;}
- private LegacyMailRoutingRules.Kind routingKind(){return kind==Kind.SAMPLE_NOTICE?LegacyMailRoutingRules.Kind.SAMPLE_NOTICE:LegacyMailRoutingRules.Kind.REPORT;}
+ private LegacyMailRoutingRules.Kind routingKind(){return switch(kind){case SAMPLE_NOTICE->LegacyMailRoutingRules.Kind.SAMPLE_NOTICE;case REPORT_MAIL->LegacyMailRoutingRules.Kind.REPORT;case FINANCE_MAIL->LegacyMailRoutingRules.Kind.FINANCE;};}
  public Map<String,Boolean> capabilities(){var p=policy(false);return Map.of(prefix(),p[0],prefix()+"Writes",p[1],prefix()+"Send",p[2]&&transport.available(),prefix()+"Reconcile",p[3]);}
- private void read(){if(!policy(false)[0])throw error(409,"业务邮件尚未开启");}
+ protected void read(){if(!policy(false)[0])throw error(409,"业务邮件尚未开启");}
  private Map<String,Object> order(long id,boolean lock){if(id<1||id>Integer.MAX_VALUE)throw error(400,"送检单编号无效");return store.one("SELECT * FROM lin_lb_listdiagnosisproject WHERE ListDiagnosisProjectId=?"+(lock?" FOR UPDATE":""),id);}
  private List<Map<String,Object>> contacts(Map<String,Object> order,boolean lock){return store.jdbc().queryForList("SELECT InfoHospitalContactId,Name,Mail FROM lin_lb_infohospitalcontact WHERE InfoHospitalId=? ORDER BY InfoHospitalContactId"+(lock?" FOR UPDATE":""),order.get("InfoHospitalId"));}
- private String fingerprint(Object value){try{var mac=Mac.getInstance("HmacSHA256");mac.init(new SecretKeySpec(signingKey,"HmacSHA256"));return HexFormat.of().formatHex(mac.doFinal(((kind==Kind.SAMPLE_NOTICE?"sample-notice-v1:":"report-mail-v1:")+store.encode(value)).getBytes(StandardCharsets.UTF_8)));}catch(Exception e){throw new IllegalStateException("业务邮件校验失败");}}
+ protected String fingerprint(Object value){try{var mac=Mac.getInstance("HmacSHA256");mac.init(new SecretKeySpec(signingKey,"HmacSHA256"));return HexFormat.of().formatHex(mac.doFinal(((kind==Kind.SAMPLE_NOTICE?"sample-notice-v1:":kind==Kind.REPORT_MAIL?"report-mail-v1:":"finance-mail-v1:")+store.encode(value)).getBytes(StandardCharsets.UTF_8)));}catch(Exception e){throw new IllegalStateException("业务邮件校验失败");}}
  private record Source(long orderId,Map<String,Object> order,Map<String,Object> detail){}
  private Source source(long id,boolean lock){if(kind==Kind.SAMPLE_NOTICE)return new Source(id,order(id,lock),Map.of());var peek=store.one("SELECT ListDiagnosisProjectId FROM lin_lb_diagnosisdetail WHERE DiagnosisDetailId=?",id);long parent=((Number)peek.get("ListDiagnosisProjectId")).longValue();var order=order(parent,lock);var detail=store.one("SELECT d.*,i.MailReport,i.ReportResult FROM lin_lb_diagnosisdetail d LEFT JOIN lin_lb_diagnosisdetail_info i ON i.diagnosisdetail_id=d.DiagnosisDetailId WHERE d.DiagnosisDetailId=? AND d.ListDiagnosisProjectId=?"+(lock?" FOR UPDATE":""),id,parent);return new Source(parent,order,detail);}
  private String version(Source source,List<Map<String,Object>> contacts){var payload=new TreeMap<String,Object>();payload.put("order",new TreeMap<>(source.order()));payload.put("contacts",contacts);if(kind==Kind.REPORT_MAIL)payload.put("detail",new TreeMap<>(source.detail()));return fingerprint(payload);}
@@ -69,7 +69,7 @@ public class LegacyBusinessMailService {
   long id=store.insert("INSERT INTO lin_mail_message(business_type,business_id,requested_by,request_key,request_fingerprint,smtp_profile_id,sender_address,sender_name,recipients_json,bcc_json,subject,body_html,attachments_json,source_version,callback_json) VALUES('"+kind.name()+"',?,?,?,?,?,?,?,?,?,?,?,?,?,?)",String.valueOf(orderId),actor,c.requestKey(),hash,profileId,sender,LegacyMailAddressRules.senderName(sender),store.encode(Map.of("raw",routing.to())),store.encode(Map.of("raw",routing.bcc())),c.title(),c.html(),artifacts,c.expectedToken(),store.encode(Map.of("orderId",source.orderId(),"hospitalId",order.get("InfoHospitalId"),"detailId",kind==Kind.SAMPLE_NOTICE?0:orderId)));
   audit(actor,action("QUEUED"),id,c.requestKey());return id;
  }));}
- private void audit(int actor,String action,long id,String request){store.insert("INSERT INTO lin_audit_record(actor_user_id,action,resource_type,resource_id,request_id,after_json) VALUES(?,?,'"+resourceType()+"',?,?,?)",actor,action,String.valueOf(id),request,store.encode(Map.of("messageId",id)));}
+ protected void audit(int actor,String action,long id,String request){store.insert("INSERT INTO lin_audit_record(actor_user_id,action,resource_type,resource_id,request_id,after_json) VALUES(?,?,'"+resourceType()+"',?,?,?)",actor,action,String.valueOf(id),request,store.encode(Map.of("messageId",id)));}
  private Map<String,Object> rawMessage(long id,boolean lock){if(id<1)throw error(400,"通知编号无效");return store.one("SELECT * FROM lin_mail_message WHERE id=? AND business_type='"+kind.name()+"'"+(lock?" FOR UPDATE":""),id);}
  private Map<String,Object> latestAttempt(long id,boolean lock){var rows=store.jdbc().queryForList("SELECT * FROM lin_mail_attempt WHERE message_id=? ORDER BY attempt_no DESC LIMIT 1"+(lock?" FOR UPDATE":""),id);return rows.isEmpty()?Map.of():rows.get(0);}
  private String reconcileToken(Map<String,Object> message,Map<String,Object> attempt){return fingerprint(new TreeMap<>(Map.of("message",new TreeMap<>(message),"attempt",new TreeMap<>(attempt))));}
@@ -93,26 +93,33 @@ public class LegacyBusinessMailService {
    store.insert("INSERT INTO lin_audit_record(actor_user_id,action,resource_type,resource_id,request_id,before_json,after_json) VALUES(?,'"+action("RECONCILED")+"','"+resourceType()+"',?,?,?,?)",actor,String.valueOf(id),c.requestKey(),store.encode(Map.of("messageStatus",current,"attemptId",attempt.get("id"),"attemptStatus",attempt.get("status"))),store.encode(Map.of("messageId",id,"requestFingerprint",hash,"resolution",c.resolution(),"note",c.note(),"workerStoppedConfirmed",c.workerStoppedConfirmed(),"evidenceConfirmed",true)));
   });completeCallback(id);return message(id);
  }
- private record Claim(Map<String,Object> message,LegacyMailTransport.Profile profile,String claimToken,String smtpMessageId){}
+ private record Claim(Map<String,Object> message,LegacyMailTransport.Profile profile,String claimToken,String smtpMessageId,List<LegacyMailTransport.Attachment> attachments){Claim(Map<String,Object> message,LegacyMailTransport.Profile profile,String token,String messageId){this(message,profile,token,messageId,List.of());}}
+ protected boolean sourceUnchanged(Map<String,Object> row){long id=Long.parseLong(row.get("business_id").toString());var source=source(id,true);return version(source,contacts(source.order(),true)).equals(row.get("source_version"));}
+ protected List<LegacyMailTransport.Attachment> deliveryAttachments(Map<String,Object> row){if(kind==Kind.REPORT_MAIL){var expected=json(row.get("attachments_json")).path("requiredPdf");var actual=files.inspect(expected.path("path").asText());if(!expected.path("sha256").asText().equals(actual.get("sha256")))throw error(409,"PDF已变更");}return List.of();}
+ protected void businessCallback(Map<String,Object> row){
+  var callback=json(row.get("callback_json"));long orderId=callback.path("orderId").asLong(),hospital=callback.path("hospitalId").asLong();var order=order(orderId,true);if(((Number)order.get("InfoHospitalId")).longValue()!=hospital)throw error(409,"送检单医院已变化，已接受邮件需人工核对回写");
+  if(kind==Kind.SAMPLE_NOTICE)store.jdbc().update("UPDATE lin_lb_listdiagnosisproject SET IsSendNoticeMail=1 WHERE ListDiagnosisProjectId=?",orderId);
+  else{long detail=callback.path("detailId").asLong();store.one("SELECT DiagnosisDetailId FROM lin_lb_diagnosisdetail WHERE DiagnosisDetailId=? AND ListDiagnosisProjectId=? FOR UPDATE",detail,orderId);var day=java.time.LocalDate.now(java.time.ZoneId.of("Asia/Shanghai")).atStartOfDay();store.jdbc().update("UPDATE lin_lb_diagnosisdetail SET IsSendMail=1,SendMailDt=? WHERE DiagnosisDetailId=?",day,detail);store.jdbc().update("UPDATE lin_lb_listdiagnosisproject SET SendReportDt=?,SampleStatus=3 WHERE ListDiagnosisProjectId=?",day,orderId);}
+ }
+
  public Map<String,Object> dispatch(long id){
   if(org.springframework.transaction.support.TransactionSynchronizationManager.isActualTransactionActive())throw error(409,"邮件投递必须在独立事务之外执行");
   Claim claim=tx.execute(status->{
    var p=policy(true);if(!p[1])throw error(409,"通知处理尚未开启");var row=rawMessage(id,true);String current=row.get("status").toString();
    if(current.equals("SENT")||current.equals("ACCEPTED"))return new Claim(row,null,null,null);
    if(!p[2]||!transport.available())throw error(409,"邮件发送尚未开启");if(!current.equals("READY"))throw error(409,"当前投递不能重试；结果未确认时请先核对");
-   long orderId=Long.parseLong(row.get("business_id").toString());var source=source(orderId,true);var order=source.order();
-   if(!version(source,contacts(order,true)).equals(row.get("source_version"))){store.jdbc().update("UPDATE lin_mail_message SET status='BLOCKED',last_error_code='SOURCE_CHANGED',last_error_message='送检单或联系人已变化，请重新核对正文' WHERE id=?",id);return new Claim(row,null,null,null);}
-   if(kind==Kind.REPORT_MAIL){try{var expected=json(row.get("attachments_json")).path("requiredPdf");var currentPdf=files.inspect(expected.path("path").asText());if(!expected.path("sha256").asText().equals(currentPdf.get("sha256")))throw error(409,"PDF已变更");}catch(BusinessException e){store.jdbc().update("UPDATE lin_mail_message SET status='BLOCKED',last_error_code='PDF_CHANGED',last_error_message='报告PDF缺失或已变更，请重新核对' WHERE id=?",id);return new Claim(row,null,null,null);}}
-   Boolean recent=store.jdbc().queryForObject("SELECT EXISTS(SELECT 1 FROM lin_mail_message WHERE business_type='"+kind.name()+"' AND accepted_at>DATE_SUB(NOW(),INTERVAL 5 SECOND))",Boolean.class);if(Boolean.TRUE.equals(recent))throw error(409,"发送频繁，请稍后尝试");
+   if(!sourceUnchanged(row)){store.jdbc().update("UPDATE lin_mail_message SET status='BLOCKED',last_error_code='SOURCE_CHANGED',last_error_message='业务资料或联系人已变化，请重新核对正文' WHERE id=?",id);return new Claim(row,null,null,null);}
+   List<LegacyMailTransport.Attachment> attachments;try{attachments=deliveryAttachments(row);}catch(BusinessException e){store.jdbc().update("UPDATE lin_mail_message SET status='BLOCKED',last_error_code='PDF_CHANGED',last_error_message='报告PDF缺失或已变更，请重新核对' WHERE id=?",id);return new Claim(row,null,null,null);}
+   Boolean recent=store.jdbc().queryForObject("SELECT EXISTS(SELECT 1 FROM lin_mail_message WHERE business_type='"+kind.name()+"' AND accepted_at>DATE_SUB(NOW(),INTERVAL 5 SECOND))",Boolean.class);if(kind!=Kind.FINANCE_MAIL&&Boolean.TRUE.equals(recent))throw error(409,"发送频繁，请稍后尝试");
    var smtp=store.one("SELECT ServerHost,Port,UserName,Psw FROM lin_lb_dictmailserver WHERE DictMailServerId=? FOR SHARE",row.get("smtp_profile_id"));if(!Objects.equals(smtp.get("UserName"),row.get("sender_address")))throw error(409,"发件人配置已变化，请重新创建通知");
    int attempt=((Number)row.get("attempt_count")).intValue()+1;String token=UUID.randomUUID().toString();
-   String smtpMessageId="<petlis-"+(kind==Kind.SAMPLE_NOTICE?"notice":"report")+"-"+id+"-"+attempt+"-"+token+"@petlis.invalid>";store.insert("INSERT INTO lin_mail_attempt(message_id,attempt_no,claim_token,status,smtp_message_id) VALUES(?,?,?,'SENDING',?)",id,attempt,token,smtpMessageId);store.jdbc().update("UPDATE lin_mail_message SET status='SENDING',attempt_count=? WHERE id=?",attempt,id);
-   return new Claim(row,new LegacyMailTransport.Profile(smtp.get("ServerHost").toString(),((Number)smtp.get("Port")).intValue(),smtp.get("UserName").toString(),smtp.get("Psw").toString(),jsonRaw(row.get("bcc_json"))),token,smtpMessageId);
+   String smtpMessageId="<petlis-"+(kind==Kind.SAMPLE_NOTICE?"notice":kind==Kind.REPORT_MAIL?"report":"finance")+"-"+id+"-"+attempt+"-"+token+"@petlis.invalid>";store.insert("INSERT INTO lin_mail_attempt(message_id,attempt_no,claim_token,status,smtp_message_id) VALUES(?,?,?,'SENDING',?)",id,attempt,token,smtpMessageId);store.jdbc().update("UPDATE lin_mail_message SET status='SENDING',attempt_count=? WHERE id=?",attempt,id);
+   return new Claim(row,new LegacyMailTransport.Profile(smtp.get("ServerHost").toString(),((Number)smtp.get("Port")).intValue(),smtp.get("UserName").toString(),smtp.get("Psw").toString(),jsonRaw(row.get("bcc_json"))),token,smtpMessageId,attachments);
   });
   if(claim==null)throw error(409,"未取得邮件投递任务");
   if(claim.profile()!=null){
    String outcome="ACCEPTED",code="",description="";
-   try{transport.send(claim.profile(),new LegacyMailTransport.Message(jsonRaw(claim.message().get("recipients_json")),null,claim.message().get("subject").toString(),claim.message().get("body_html").toString(),List.of(),claim.smtpMessageId()),routingKind());}
+   try{transport.send(claim.profile(),new LegacyMailTransport.Message(jsonRaw(claim.message().get("recipients_json")),null,claim.message().get("subject").toString(),claim.message().get("body_html").toString(),claim.attachments(),claim.smtpMessageId()),routingKind());}
    catch(IllegalArgumentException e){outcome="FAILED";code="INVALID_MESSAGE";description="邮件地址或内容无效，未完成发送，请重新编辑";}
    catch(LegacyMailTransport.DeliveryUncertainException e){outcome="UNKNOWN";code="SMTP_UNCERTAIN";description="SMTP结果未确认，禁止直接重复发送，请先核对";}
    final String result=outcome,errorCode=code,errorMessage=description;
@@ -122,13 +129,11 @@ public class LegacyBusinessMailService {
  }
  private void completeCallback(long id){
   try{tx.executeWithoutResult(status->{if(!policy(true)[1])return;var row=rawMessage(id,true);if(!"ACCEPTED".equals(row.get("status")))return;
-   var callback=json(row.get("callback_json"));long orderId=callback.path("orderId").asLong(),hospital=callback.path("hospitalId").asLong();var order=order(orderId,true);if(((Number)order.get("InfoHospitalId")).longValue()!=hospital)throw error(409,"送检单医院已变化，已接受邮件需人工核对回写");
-   if(kind==Kind.SAMPLE_NOTICE)store.jdbc().update("UPDATE lin_lb_listdiagnosisproject SET IsSendNoticeMail=1 WHERE ListDiagnosisProjectId=?",orderId);
-   else{long detail=callback.path("detailId").asLong();store.one("SELECT DiagnosisDetailId FROM lin_lb_diagnosisdetail WHERE DiagnosisDetailId=? AND ListDiagnosisProjectId=? FOR UPDATE",detail,orderId);var day=java.time.LocalDate.now(java.time.ZoneId.of("Asia/Shanghai")).atStartOfDay();store.jdbc().update("UPDATE lin_lb_diagnosisdetail SET IsSendMail=1,SendMailDt=? WHERE DiagnosisDetailId=?",day,detail);store.jdbc().update("UPDATE lin_lb_listdiagnosisproject SET SendReportDt=?,SampleStatus=3 WHERE ListDiagnosisProjectId=?",day,orderId);}
+   businessCallback(row);
 store.jdbc().update("UPDATE lin_mail_message SET status='SENT',callback_status='DONE',last_error_code='',last_error_message='' WHERE id=?",id);audit(access.current().userId(),action("COMPLETED"),id,row.get("request_key").toString());
   });}catch(Exception e){tx.executeWithoutResult(status->store.jdbc().update("UPDATE lin_mail_message SET callback_status='FAILED',last_error_code='CALLBACK_PENDING',last_error_message='邮件已接受，业务回写待恢复；不能再次发送' WHERE id=? AND status='ACCEPTED'",id));}
  }
- private com.fasterxml.jackson.databind.JsonNode json(Object value){try{return new ObjectMapper().readTree(value.toString());}catch(Exception e){throw error(409,"邮件快照无效");}}
+ protected com.fasterxml.jackson.databind.JsonNode json(Object value){try{return new ObjectMapper().readTree(value.toString());}catch(Exception e){throw error(409,"邮件快照无效");}}
  private String jsonRaw(Object json){try{return new ObjectMapper().readTree(json.toString()).path("raw").asText();}catch(Exception e){throw error(409,"邮件收件快照无效");}}
  private static BusinessException error(int code,String message){return new BusinessException(code,message);}
 }
