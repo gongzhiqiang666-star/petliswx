@@ -1,4 +1,5 @@
 <view class="page">
+  <view class="draft-section-title">个人草稿</view>
   <view wx:if="{{error}}" class="error petlis-empty"><image class="empty-icon" src="/assets/icons/brand-empty.png" mode="aspectFit" /><view class="petlis-empty-text">{{error}}</view><button class="petlis-btn petlis-btn-outline" bindtap="load">重试</button></view>
   <view wx:for="{{items}}" wx:key="id" class="card petlis-list-card">
     <view>{{item.animalName || '送检草稿'}}</view>
@@ -10,6 +11,30 @@
   </view>
   <view wx:if="{{!busy && !items.length && !error}}" class="empty petlis-empty">
     <image class="empty-icon" src="/assets/icons/brand-empty.png" mode="aspectFit" aria-hidden="true" />
-    <view>暂无保存的草稿</view>
+    <view>暂无个人草稿</view>
+  </view>
+
+  <view wx:if="{{legacyEnabled}}" class="legacy-section">
+    <view class="draft-section-title">本院历史草稿</view>
+    <view class="hint">可继续维护原送检资料。当前保存不会提交审核。</view>
+    <view wx:if="{{legacyError}}" class="legacy-error">{{legacyError}}</view>
+    <view wx:for="{{legacyItems}}" wx:key="orderId" class="card petlis-list-card">
+      <view>{{item.animalName || '未命名草稿'}}</view><view class="meta">畜主：{{item.ownerName || '未记录'}} · 医师：{{item.doctorName || '未记录'}}</view><view class="meta">创建：{{item.createdAt}}</view>
+      <button class="petlis-btn petlis-btn-outline legacy-open" bindtap="openLegacy" data-id="{{item.orderId}}" disabled="{{legacySaving}}">继续填写资料</button>
+    </view>
+    <view wx:if="{{!legacyBusy && !legacyError && !legacyItems.length}}" class="hint">暂无本院历史草稿</view>
+    <button wx:if="{{legacyMore}}" class="petlis-btn petlis-btn-outline" bindtap="moreLegacy" disabled="{{legacyBusy}}">加载更多历史草稿</button>
+    <view wx:if="{{legacyOrderId}}" class="card legacy-editor">
+      <view class="draft-section-title">送检资料</view>
+      <block wx:for="{{legacyTextFields}}" wx:key="key" wx:for-item="field"><view class="legacy-label">{{field.label}}</view><input class="petlis-input legacy-input" value="{{legacyFields[field.key]}}" data-key="{{field.key}}" bindinput="legacyInput" maxlength="{{field.max}}" disabled="{{!legacyWritable || legacySaving}}" /></block>
+      <view class="legacy-label">采样日期</view><picker mode="date" value="{{legacyFields.CollectDt === '1900-01-01' ? '' : legacyFields.CollectDt}}" data-key="CollectDt" bindchange="legacyInput" disabled="{{!legacyWritable || legacySaving}}"><view class="petlis-input legacy-input">{{!legacyFields.CollectDt || legacyFields.CollectDt === '1900-01-01' ? '未记录采样日期' : legacyFields.CollectDt}}</view></picker>
+      <view wx:for="{{legacyChoiceKinds}}" wx:key="kind" wx:for-item="choice">
+        <view class="legacy-label">{{choice.label}}</view><picker range="{{legacyChoices[choice.kind]}}" range-key="name" value="{{legacyChoiceIndex[choice.kind]}}" data-kind="{{choice.kind}}" bindchange="legacyChoice" disabled="{{!legacyWritable || legacySaving}}"><view class="petlis-input legacy-input">{{legacyChoices[choice.kind][legacyChoiceIndex[choice.kind]].name}}</view></picker>
+        <view wx:if="{{legacyWritable}}" class="legacy-choice-search"><input class="petlis-input" value="{{legacyChoiceQuery[choice.kind]}}" data-kind="{{choice.kind}}" bindinput="legacyChoiceQuery" placeholder="搜索{{choice.label}}" /><button class="petlis-btn petlis-btn-outline" data-kind="{{choice.kind}}" bindtap="searchLegacyChoices">搜索</button><button wx:if="{{legacyChoiceMore[choice.kind]}}" class="petlis-btn petlis-btn-outline" data-kind="{{choice.kind}}" bindtap="moreLegacyChoices">更多</button></view>
+      </view>
+      <view wx:if="{{legacyRemarkText}}" class="legacy-note"><view class="legacy-label">原备注 · 文字预览</view><text>{{legacyRemarkText}}</text><view class="hint">原备注的图片与格式保持不变，本页暂不编辑备注。</view></view>
+      <view class="row"><button class="petlis-btn petlis-btn-outline" bindtap="closeLegacy" disabled="{{legacySaving}}">收起</button><button wx:if="{{legacyWritable}}" class="petlis-btn petlis-btn-primary" bindtap="saveLegacy" loading="{{legacySaving}}" disabled="{{legacySaving || legacyBusy}}">保存资料</button></view>
+    </view>
+    <button wx:if="{{legacyError}}" class="petlis-btn petlis-btn-outline" bindtap="loadLegacy" disabled="{{legacyBusy}}">刷新历史草稿</button>
   </view>
 </view>
