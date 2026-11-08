@@ -15,6 +15,32 @@ class LegacyMainOrderLocalDatabaseTest {
  @BeforeEach void setup(){assertTrue(System.getenv("DB_URL").startsWith("jdbc:mysql://127.0.0.1:13306/laboklin?"));String prefix="it_mainorder_"+UUID.randomUUID().toString().substring(0,8);actor=(int)store.insert("INSERT INTO lin_user(username,nickname,status) VALUES(?,'主单测试','normal')",prefix);order=LegacyDetailFixtures.order(store,prefix,actor);store.jdbc().update("UPDATE lin_lb_listdiagnosisproject SET CollectDt='2024-05-06',TestFee=125.50,IsPayMoney=1 WHERE ListDiagnosisProjectId=?",order);access=mock(AccessService.class);when(access.current()).thenReturn(new CurrentActor(actor,Set.of(PlatformRole.ADMIN),Set.of(),Set.of(),new DataScope(true,Set.of(),Set.of(),null)));service=new LegacyMainOrderService(store,access);gate(true,true);}
  void gate(boolean read,boolean write){store.jdbc().update("INSERT INTO lin_operational_config(config_key,config_value,description,updated_by) VALUES('legacy-main-orders',?,'transaction-only main order test',?) ON DUPLICATE KEY UPDATE config_value=VALUES(config_value),status='ACTIVE'",store.encode(Map.of("enabled",read,"writeEnabled",write)),actor);}
  String key(){return "main_"+UUID.randomUUID().toString().replace("-","");}
+ void mapListAdmin(String groups,String status){
+  long admin=store.insert("INSERT INTO lin_admin(username,datagroup,status) VALUES(?,?,?)","it_scope_"+actor,groups,status);
+  store.jdbc().update("UPDATE lin_operational_config SET config_value=? WHERE config_key='legacy-main-orders' AND scope_type='GLOBAL' AND scope_id=0",store.encode(Map.of("enabled",true,"writeEnabled",true,"adminMappings",Map.of(String.valueOf(actor),admin))));
+ }
+ @Test void listUsesMappedOriginalGroupsAndExcludesNegativeStates(){
+  long group=900000000L+actor;mapListAdmin(String.valueOf(group),"normal");
+  store.jdbc().update("UPDATE lin_lb_listdiagnosisproject SET CreateDataTypeIId=?,SampleStatus=2 WHERE ListDiagnosisProjectId=?",group,order);
+  long foreign=LegacyDetailFixtures.order(store,"it_scope_foreign_"+actor,actor),hidden=LegacyDetailFixtures.order(store,"it_scope_hidden_"+actor,actor);
+  store.jdbc().update("UPDATE lin_lb_listdiagnosisproject SET CreateDataTypeIId=?,SampleStatus=2 WHERE ListDiagnosisProjectId=?",group+1,foreign);
+  store.jdbc().update("UPDATE lin_lb_listdiagnosisproject SET CreateDataTypeIId=?,SampleStatus=-1 WHERE ListDiagnosisProjectId=?",group,hidden);
+  var result=service.list(null,0,100);assertEquals(1,((Number)result.get("total")).intValue());
+  @SuppressWarnings("unchecked") var items=(List<Map<String,Object>>)result.get("items");assertEquals(order,((Number)items.get(0).get("orderId")).longValue());
+  assertEquals(0,((Number)service.list(-1,0,100).get("total")).intValue());
+  assertEquals(1,((Number)service.list(2,0,100).get("total")).intValue());
+  store.jdbc().update("UPDATE lin_admin SET datagroup=? WHERE username=?",group+","+(group+1)+","+group,"it_scope_"+actor);
+  assertEquals(2,((Number)service.list(null,0,100).get("total")).intValue());
+ }
+ @Test void listDoesNotTreatJavaAdminAsAllOriginalGroups(){
+  assertEquals(409,assertThrows(BusinessException.class,()->service.list(null,0,20)).getCode());
+  mapListAdmin("1,2","hidden");assertEquals(403,assertThrows(BusinessException.class,()->service.list(null,0,20)).getCode());
+ }
+ @Test void emptyOriginalGroupHasNoRecordsAndMalformedGroupFailsClosed(){
+  mapListAdmin("","normal");assertEquals(0,((Number)service.list(null,0,20).get("total")).intValue());
+  store.jdbc().update("UPDATE lin_admin SET datagroup=? WHERE username=?","1,2 OR 1=1","it_scope_"+actor);
+  assertEquals(409,assertThrows(BusinessException.class,()->service.list(null,0,20)).getCode());
+ }
  LegacyMainOrderService.Command command(Map<String,String> values){return new LegacyMainOrderService.Command(values,key(),service.detail(order).get("editToken").toString());}
  @Test void hospitalSettlementRetainsOriginalTypeAndGeneratesOnlyConfiguredLink(){
   long hospital=store.insert("INSERT INTO lin_lb_infohospital(HospitalName,HospitalName_en,PayType,amount) VALUES('test settlement','test',1,0)");
