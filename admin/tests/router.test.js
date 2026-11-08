@@ -37,3 +37,5 @@ test('迁移字典入口同时受管理员角色和服务端能力开关控制',
 });
 
 test('原网银核价仅管理员且业务开关开启可见',()=>{assert.equal(isRouteAllowed('legacyBankPayments',{roles:['ADMIN']},{bankPayments:true}),true);assert.equal(isRouteAllowed('legacyBankPayments',{roles:['ADMIN']},{}),false);assert.equal(isRouteAllowed('legacyBankPayments',{roles:['DOCTOR']},{bankPayments:true}),false);});
+
+test('客户账单核对仅管理员且显式开关开启可见',()=>{assert.equal(isRouteAllowed('legacyCustomerViews',{roles:['ADMIN']},{legacyCustomerViews:true}),true);assert.equal(isRouteAllowed('legacyCustomerViews',{roles:['ADMIN']},{}),false);assert.equal(isRouteAllowed('legacyCustomerViews',{roles:['DOCTOR']},{legacyCustomerViews:true}),false);});

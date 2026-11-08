@@ -1,7 +1,8 @@
 """Owned local quote, preparation and simulated settlement; never calls a payment provider."""
-import sys,importlib.util,json,secrets,subprocess,socket,time,os,signal,re,stat,hashlib
+import base64,sys,importlib.util,json,secrets,subprocess,socket,time,os,signal,re,stat,hashlib
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[2]
+CUSTOMER='--customer-views' in sys.argv
 REFUND='--refund' in sys.argv
 NOTIFY='--notify' in sys.argv
 DISPATCH_ROLLBACK='--dispatch-rollback' in sys.argv
@@ -13,22 +14,23 @@ def lit(v):return 'CONVERT(0x'+v.encode().hex()+' USING utf8mb4) COLLATE utf8mb4
 try:
  with socket.create_connection(('127.0.0.1',18082),timeout=.2):raise AssertionError('Dedicated port already in use')
 except ConnectionRefusedError:pass
-keys=['legacy-bank-payments','legacy-order-details'];old={}
+keys=['legacy-bank-payments','legacy-order-details']+(['legacy-customer-views'] if CUSTOMER else []);old={}
 for key in keys:
  value=sql("SELECT HEX(JSON_OBJECT('config_value',config_value,'status',status,'updated_at',DATE_FORMAT(updated_at,'%Y-%m-%d %H:%i:%s'))) FROM lin_operational_config WHERE config_key="+lit(key)+" AND scope_type='GLOBAL' AND scope_id=0")
  old[key]=json.loads(bytes.fromhex(value).decode()) if value else None
  assert not old[key] or (old[key]['config_value'] if isinstance(old[key]['config_value'],dict) else json.loads(old[key]['config_value'])).get('enabled') is False,'Do not override an enabled development gate'
-private=Path.home()/'.local/share/petlis/qa';private.mkdir(mode=0o700,parents=True,exist_ok=True);process=None;hospital=test=None;orders=[];details=[];payments=[];request_keys=[];gateway_fixture=None
+private=Path.home()/'.local/share/petlis/qa';private.mkdir(mode=0o700,parents=True,exist_ok=True);process=None;hospital=test=None;orders=[];details=[];payments=[];request_keys=[];gateway_fixture=None;animal=None;paid=None;customer_proof={}
 def make_order(number,date):
  columns=[line.split('\t') for line in sql("SELECT COLUMN_NAME,DATA_TYPE,IS_NULLABLE,IFNULL(COLUMN_DEFAULT,'<NULL>'),EXTRA FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='lin_lb_listdiagnosisproject' ORDER BY ORDINAL_POSITION").splitlines()];names=[];values=[]
  for parts in columns:
   name,kind,nullable,default,extra=(parts+['']*5)[:5]
   if 'auto_increment' in extra:continue
-  if name not in ['UserNO','AnimalName','MasterName','SampleStatus','TestFee','InfoHospitalId','ReceiveSampleDt'] and (nullable=='YES' or default!='<NULL>'):continue
+  if name not in (['UserNO','AnimalName','MasterName','SampleStatus','TestFee','InfoHospitalId','ReceiveSampleDt']+(['InfoAnimalId'] if CUSTOMER else [])) and (nullable=='YES' or default!='<NULL>'):continue
   assert re.fullmatch('[A-Za-z0-9_]+',name);names.append('`'+name+'`')
   if name=='UserNO':v=lit(number)
   elif name in ['AnimalName','MasterName']:v=lit(prefix)
   elif name=='InfoHospitalId':v=str(hospital)
+  elif name=='InfoAnimalId' and CUSTOMER:v=str(animal)
   elif name=='ReceiveSampleDt':v=lit(date)
   elif kind in ['int','tinyint','smallint','mediumint','bigint','decimal','double','float']:v='0'
   elif kind in ['datetime','timestamp']:v=lit('1900-01-01 00:00:00')
@@ -52,11 +54,14 @@ def snapshot(ignore_payments=False):
   rows=sql('SELECT SHA2(CAST(JSON_OBJECT('+','.join("'"+n+"',"+expressions[n] for n in names)+') AS CHAR),256) FROM '+table+where).splitlines();result[table]=hashlib.sha256('\n'.join(sorted(rows)).encode()).hexdigest()
  return result
 try:
- hospital=int(sql('INSERT INTO lin_lb_infohospital(HospitalName,HospitalName_en,PayType,amount) VALUES('+lit(prefix)+','+lit(prefix)+',1,20);SELECT LAST_INSERT_ID()'))
+ hospital=int(sql('INSERT INTO lin_lb_infohospital(HospitalName,HospitalName_en,PayType,amount) VALUES('+lit(prefix)+','+lit(prefix)+','+('0' if CUSTOMER else '1')+',20);SELECT LAST_INSERT_ID()'))
  test=int(sql('INSERT INTO lin_lb_infotesttype(TestName,TestNO,Price,CtoG,GtoC,DiscountReal,DiscountNext,TextModel,CreateDt,type,IsActive) VALUES('+lit(prefix)+','+lit(prefix)+",0,0,0,0,0,'',NOW(),0,1);SELECT LAST_INSERT_ID()"))
+ if CUSTOMER:animal=int(sql('SELECT MIN(InfoAnimalId) FROM lin_lb_infoanimal'))
  unreceived=make_order(prefix,'1900-01-01 00:00:00');received=make_order(prefix+'_received','2024-02-29 23:59:58')
+ if CUSTOMER:paid=make_order(prefix+'_paid','2024-03-01 12:00:00')
  for key in keys:
   value=json.dumps({'enabled':True,**({'writeEnabled':True} if key=='legacy-order-details' else ({'prepareEnabled':True,**({'sendEnabled':True,'queryEnabled':True,**({'notifyEnabled':True} if NOTIFY else {}),**({'refundEnabled':True,'refundQueryEnabled':True} if REFUND else {})} if DISPATCH else {})} if PREPARE else {}))})
+  if key=='legacy-customer-views':value=json.dumps({'enabled':True})
   sql('INSERT INTO lin_operational_config(config_key,config_value,description,updated_by) VALUES('+lit(key)+','+lit(value)+",'bank quote UI fixture',(SELECT MIN(id) FROM lin_user)) ON DUPLICATE KEY UPDATE config_value=VALUES(config_value),status='ACTIVE'")
  command='set -a; source "$HOME/.local/share/petlis/mysql/backend.env"; set +a; [[ "$DB_URL" == "jdbc:mysql://127.0.0.1:13306/laboklin?"* ]] || exit 17; export JAVA_HOME="$HOME/.local/share/petlis/tools/Home" MAVEN_HOME="$HOME/.local/share/petlis/tools/libexec" APP_SCHEDULING_ENABLED=false DB_MIGRATIONS_ENABLED=false PDF_STORAGE_PATH="$HOME/.local/share/petlis/reports"; exec ./petlis-backend/mvnw -o -q -f petlis-backend/pom.xml spring-boot:run -Dspring-boot.run.profiles=dev -Dspring-boot.run.arguments=--server.port=18082'
  if PREPARE:command=command.replace('-Dspring-boot.run.arguments=--server.port=18082',"'-Dspring-boot.run.arguments=--server.port=18082 --app.legacy-bank.merchant=TESTLOCAL'")
@@ -70,6 +75,7 @@ try:
    assert sql('SELECT IsPayMoney FROM lin_lb_listdiagnosisproject WHERE ListDiagnosisProjectId='+str(unreceived))==str(original_parent_pay)
   gateway_fixture=BankGatewayFixture(private,prefix,DISPATCH_ROLLBACK,verify_settlement_rollback if DISPATCH_ROLLBACK else None)
   command=command.replace("--app.legacy-bank.merchant=TESTLOCAL'","--app.legacy-bank.merchant=TESTLOCAL --app.legacy-bank.mode=TEST_LOCAL --app.legacy-bank.app-id=owned-test --app.legacy-bank.endpoint="+gateway_fixture.endpoint+" --app.legacy-bank.private-key="+str(gateway_fixture.private_key)+" --app.legacy-bank.public-key="+str(gateway_fixture.public_key)+" --app.legacy-bank.timeout-ms=1500'")
+ if CUSTOMER:command=command.replace('exec ./petlis-backend/mvnw','export APP_LEGACY_LINK_KEY_PHRASE=public-customer-view-test; exec ./petlis-backend/mvnw')
  fd=os.open(private/(prefix+'.log'),os.O_WRONLY|os.O_CREAT|os.O_EXCL|os.O_NOFOLLOW,0o600)
  with os.fdopen(fd,'w') as log:process=subprocess.Popen(['/bin/zsh','-c',command],cwd=ROOT,stdout=log,stderr=subprocess.STDOUT,start_new_session=True)
  for attempt in range(60):
@@ -83,10 +89,17 @@ try:
  for key in ['username','password']:
   match=re.search(r"'"+key+r"'\s*=>\s*'((?:\\.|[^'])*)'",text);assert match;credentials[key]=match.group(1).replace("\\'","'").replace('\\\\','\\')
  session=staff.call('/auth/password/login',{'account':credentials['username'],'password':credentials['password']});assert 'ADMIN' in session['roles']
- for order,kind,price,paid,exempt in [(unreceived,246,'12.50',0,0),(unreceived,test,'9.99',0,0),(received,test,'7.25',0,0),(received,test,'1.00',1,0),(received,test,'2.00',0,1)]:
-  request=prefix+'_detail_'+str(len(details));body={'testTypeId':kind,'originalPrice':price,'originalDiscount':'10','testPrice':price,'detailRemark':prefix,'modelId':0,'mailTitle':'','isSendMail':0,'isCheckPass':exempt,'payStatus':paid,'diagnosisStatus':0,'mailReport':'','reportResult':'','requestKey':request};detail=int(staff.call(f'/admin/legacy/order-details/orders/{order}',body,session['token']));details.append((detail,order,request))
+ fixture_details=[(unreceived,246,'12.50',0,0),(unreceived,test,'9.99',0,0),(received,test,'7.25',0,0),(received,test,'1.00',1,0),(received,test,'2.00',0,1)]
+ if CUSTOMER:fixture_details.append((paid,test,'4.50',1,0))
+ for order,kind,price,paid_status,exempt in fixture_details:
+  request=prefix+'_detail_'+str(len(details));body={'testTypeId':kind,'originalPrice':price,'originalDiscount':'10','testPrice':price,'detailRemark':prefix,'modelId':0,'mailTitle':'','isSendMail':0,'isCheckPass':exempt,'payStatus':paid_status,'diagnosisStatus':0,'mailReport':'','reportResult':'','requestKey':request};detail=int(staff.call(f'/admin/legacy/order-details/orders/{order}',body,session['token']));details.append((detail,order,request))
+ if CUSTOMER:
+  sql('UPDATE lin_lb_diagnosisdetail SET PDFHttpUrl='+lit('https://petlis.invalid/owned.pdf')+' WHERE DiagnosisDetailId='+str(details[-1][0]))
+  def cipher(value):
+   key=hashlib.md5(b'DDMpublic-customer-view-testDDM').hexdigest()[:8].encode().hex();r=subprocess.run(['/usr/bin/openssl','enc','-des-cbc','-nosalt','-K',key,'-iv',key],input=str(value).encode(),capture_output=True,timeout=10);assert r.returncode==0,'Owned public-key cipher fixture failed';return base64.b64encode(r.stdout).decode().replace('+','!').replace('=','-')
+  customer_proof={'detail':details[0][0],'paidDetail':details[-1][0],'detailToken':cipher(details[0][0]),'hospitalToken':cipher(hospital)}
  original_parent_pay=int(sql(f'SELECT IsPayMoney FROM lin_lb_listdiagnosisproject WHERE ListDiagnosisProjectId={unreceived}'))
- before=snapshot(ignore_payments=PREPARE);run=subprocess.run(['node','scripts/editor-parity/bank-payment-quote-live.js'],cwd=ROOT,input=json.dumps({'token':session['token'],'prefix':prefix,'hospital':hospital,'prepare':PREPARE,'dispatch':DISPATCH,'dispatchRollback':DISPATCH_ROLLBACK,'notify':NOTIFY,'refund':REFUND,'noticeUrl':(gateway_fixture.endpoint.rsplit('/',1)[0]+'/notification' if NOTIFY else None),'screenshot':str(private/(prefix+'.png'))}),capture_output=True,text=True,timeout=90);assert run.returncode==0,'Browser failed: '+run.stderr[-1000:];proof=json.loads(run.stdout)
+ before=snapshot(ignore_payments=PREPARE);run=subprocess.run(['node','scripts/editor-parity/'+('legacy-customer-views-live.js' if CUSTOMER else 'bank-payment-quote-live.js')],cwd=ROOT,input=json.dumps({'token':session['token'],'prefix':prefix,'hospital':hospital,'prepare':PREPARE,'dispatch':DISPATCH,'dispatchRollback':DISPATCH_ROLLBACK,'notify':NOTIFY,'refund':REFUND,'noticeUrl':(gateway_fixture.endpoint.rsplit('/',1)[0]+'/notification' if NOTIFY else None),'screenshot':str(private/(prefix+'.png')),**customer_proof}),capture_output=True,text=True,timeout=90);assert run.returncode==0,'Browser failed: '+run.stderr[-1000:];proof=json.loads(run.stdout)
  if PREPARE:
   rows=sql('SELECT OrderId FROM lin_lb_payordermain WHERE Remark='+lit('订单:'+prefix)).splitlines();payments.extend(rows);assert len(rows)==1,'Expected one payment despite uncertain first response'
   request_keys.extend(proof['requestKeys']);assert len(set(request_keys))==1

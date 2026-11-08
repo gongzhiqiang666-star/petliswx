@@ -14,6 +14,7 @@ export const routes = [
   { id: 'legacyTemplateBindings', path: '/legacy-template-bindings', label: '模板变量绑定', group: '资源管理', icon: '◇', roles: ['ADMIN'], capability: 'templateBindings' },
   { id: 'catalog', path: '/catalog', label: '项目与签约定价', group: '资源管理', icon: '◇', roles: ['ADMIN'] },
   { id: 'legacyFinance', path: '/legacy-finance', label: '原业务财务明细', group: '财务运营', icon: '¥', roles: ['ADMIN'], capability: 'legacyFinance' },
+  { id: 'legacyCustomerViews', path: '/legacy-customer-views', label: '客户账单与报告核对', group: '财务运营', icon: '◇', roles: ['ADMIN'], capability: 'legacyCustomerViews' },
   { id: 'legacyBankPayments', path: '/legacy-bank-payments', label: '原网银付款核价', group: '财务运营', icon: '¥', roles: ['ADMIN'], capability: 'bankPayments' },
   { id: 'legacyPaymentLogs', path: '/legacy-payment-logs', label: '网银交易流水', group: '财务运营', icon: '¥', roles: ['ADMIN'], capability: 'paymentLogs' },
   { id: 'legacyMonthlyReports', path: '/legacy-monthly-reports', label: '原医院月报', group: '财务运营', icon: '¥', roles: ['ADMIN'], capability: 'legacyMonthlyReports' },

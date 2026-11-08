@@ -8,6 +8,11 @@ import java.net.URI;
 public class LegacyReportLinks {
  private final String base,phrase;
  public LegacyReportLinks(@Value("${APP_LEGACY_PUBLIC_BASE_URL:}") String base,@Value("${APP_LEGACY_LINK_KEY_PHRASE:}") String phrase){this.base=base;this.phrase=phrase;}
+ public long decodeId(String token){
+  if(phrase==null||phrase.isBlank())throw new BusinessException(409,"原链接兼容密钥尚未配置");
+  if(token==null||token.length()>256)throw new BusinessException(400,"原链接参数无效");String value=LegacyLinkCodec.decrypt(token,phrase);
+  try{if(!value.matches("[0-9]{1,10}"))throw new IllegalArgumentException();long id=Long.parseLong(value);if(id<1||id>4294967295L)throw new IllegalArgumentException();return id;}catch(IllegalArgumentException e){throw new BusinessException(400,"原链接参数无效");}
+ }
  public String detail(long id){return build(id,"CID");}
  public String hospital(long id){return build(id,"HospID");}
  private String build(long id,String parameter){
