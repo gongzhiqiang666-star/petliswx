@@ -18,12 +18,13 @@ import * as operations from './pages/operations.js';
 import * as messages from './pages/messages.js';
 import * as system from './pages/system.js';
 import * as legacyTestCatalog from './pages/legacy-test-catalog.js';
+import * as legacyMonthlyReports from './pages/legacy-monthly-reports.js';
 import * as legacyFinance from './pages/legacy-finance.js';
 import * as legacyTemplateBindings from './pages/legacy-template-bindings.js';
 import * as legacyTemplates from './pages/legacy-templates.js';
 import * as legacyDictionaries from './pages/legacy-dictionaries.js';
 
-const pages = { legacyFinance, legacyTemplateBindings, legacyTemplates, legacyTestCatalog, legacyDictionaries, dashboard, reviews, organizations, hospitalDocuments, orders, logistics, laboratory, reports, catalog, finance, operations, messages, system };
+const pages = { legacyMonthlyReports, legacyFinance, legacyTemplateBindings, legacyTemplates, legacyTestCatalog, legacyDictionaries, dashboard, reviews, organizations, hospitalDocuments, orders, logistics, laboratory, reports, catalog, finance, operations, messages, system };
 const root = document.querySelector('#app');
 let api;
 const store = createStore({
@@ -65,7 +66,7 @@ async function renderShell() {
   const version = ++shellSequence, token = store.getState().token;
   let capabilities = {};
   if (user.roles?.includes('ADMIN')) {
-    const results = await Promise.allSettled([api.request('/admin/legacy/capabilities'),api.request('/admin/legacy/test-catalog/capabilities'),api.request('/admin/legacy/templates/capabilities'),api.request('/admin/legacy/template-bindings/capabilities'),api.request('/admin/legacy/finance/capabilities')]);
+    const results = await Promise.allSettled([api.request('/admin/legacy/capabilities'),api.request('/admin/legacy/test-catalog/capabilities'),api.request('/admin/legacy/templates/capabilities'),api.request('/admin/legacy/template-bindings/capabilities'),api.request('/admin/legacy/finance/capabilities'),api.request('/admin/legacy/monthly-reports/capabilities')]);
     for(const result of results)if(result.status==='fulfilled')Object.assign(capabilities,result.value||{});
   }
   if (version !== shellSequence || token !== store.getState().token) return;
