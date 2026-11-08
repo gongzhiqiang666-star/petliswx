@@ -12,6 +12,7 @@ export const routes = [
   { id: 'legacyTemplates', path: '/legacy-templates', label: '业务模板', group: '资源管理', icon: '◇', roles: ['ADMIN'], capability: 'templates' },
   { id: 'legacyTemplateBindings', path: '/legacy-template-bindings', label: '模板变量绑定', group: '资源管理', icon: '◇', roles: ['ADMIN'], capability: 'templateBindings' },
   { id: 'catalog', path: '/catalog', label: '项目与签约定价', group: '资源管理', icon: '◇', roles: ['ADMIN'] },
+  { id: 'legacyFinance', path: '/legacy-finance', label: '原业务财务明细', group: '财务运营', icon: '¥', roles: ['ADMIN'], capability: 'legacyFinance' },
   { id: 'finance', path: '/finance', label: '财务处理', group: '财务运营', icon: '¥', roles: ['ADMIN', 'HOSPITAL_ADMIN', 'LAB_STAFF'] },
   { id: 'operations', path: '/operations', label: '运营管理', group: '财务运营', icon: '✦', roles: ['ADMIN'] },
   { id: 'messages', path: '/messages', label: '消息中心', group: '财务运营', icon: '✉', roles: ['ADMIN', 'LAB_STAFF', 'HOSPITAL_ADMIN', 'DOCTOR', 'COURIER'] },
