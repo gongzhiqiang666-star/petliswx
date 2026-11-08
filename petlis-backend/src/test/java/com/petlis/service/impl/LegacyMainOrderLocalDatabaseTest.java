@@ -16,6 +16,27 @@ class LegacyMainOrderLocalDatabaseTest {
  void gate(boolean read,boolean write){store.jdbc().update("INSERT INTO lin_operational_config(config_key,config_value,description,updated_by) VALUES('legacy-main-orders',?,'transaction-only main order test',?) ON DUPLICATE KEY UPDATE config_value=VALUES(config_value),status='ACTIVE'",store.encode(Map.of("enabled",read,"writeEnabled",write)),actor);}
  String key(){return "main_"+UUID.randomUUID().toString().replace("-","");}
  LegacyMainOrderService.Command command(Map<String,String> values){return new LegacyMainOrderService.Command(values,key(),service.detail(order).get("editToken").toString());}
+ @Test void hospitalSettlementRetainsOriginalTypeAndGeneratesOnlyConfiguredLink(){
+  long hospital=store.insert("INSERT INTO lin_lb_infohospital(HospitalName,HospitalName_en,PayType,amount) VALUES('test settlement','test',1,0)");
+  assertEquals("月结",service.hospitalSettlement(hospital).get("message"));assertEquals(false,service.hospitalSettlement(hospital).get("linkConfigured"));
+  service=new LegacyMainOrderService(store,access,null,new LegacyReportLinks("https://petlis.invalid/","petlis-public-test-key"));var result=service.hospitalSettlement(hospital);assertEquals(true,result.get("linkConfigured"));assertTrue(result.get("url").toString().contains("?HospID="));
+  store.jdbc().update("UPDATE lin_lb_infohospital SET PayType=0 WHERE InfoHospitalId=?",hospital);assertEquals("次结",service.hospitalSettlement(hospital).get("message"));assertEquals(false,service.hospitalSettlement(0).get("found"));
+ }
+ @Test void groupNumberUsesLatestOrderAndIgnoresDisplayedStartNumberForCalculation(){
+  long group=store.insert("INSERT INTO lin_lb_kuhuirightdatagroup(GroupName,GroupRemark,StartWord,StartNO,ParentIID,CreateDt,UpdateDt) VALUES('test group','','X-','90000','0',NOW(),NOW())");
+  store.jdbc().update("UPDATE lin_lb_listdiagnosisproject SET CreateDataTypeIId=?,UserNO='X-00009' WHERE ListDiagnosisProjectId=?",group,order);
+  var result=service.groupNumber(group);assertEquals("X-00010",result.get("userno"));assertEquals("90000",result.get("startNo"));assertEquals(false,result.get("reserved"));assertEquals(result,service.groupNumber(group));assertEquals("X-00009",service.detail(order).get("UserNO"));
+  long empty=store.insert("INSERT INTO lin_lb_kuhuirightdatagroup(GroupName,GroupRemark,StartWord,StartNO,ParentIID,CreateDt,UpdateDt) VALUES('empty group','','','99999','0',NOW(),NOW())");assertEquals("00001",service.groupNumber(empty).get("userno"));
+ }
+ @Test void choicesRetainDisabledIdsAndRejectTableInjection(){
+  String name="it_main_choice_"+UUID.randomUUID().toString().substring(0,8);
+  long id=store.insert("INSERT INTO lin_lb_infoanimal(AnimalName,AnimalName_en,IsActive,createtime,updatetime) VALUES(?,?,0,UNIX_TIMESTAMP(),UNIX_TIMESTAMP())",name,name);
+  var result=service.choices("species",name,null,0,20);assertEquals(1,((Number)result.get("total")).intValue());
+  @SuppressWarnings("unchecked") var rows=(List<Map<String,Object>>)service.choices("species","not-matching",id,0,1).get("items");assertEquals(String.valueOf(id),rows.get(0).get("id"));assertEquals(name,rows.get(0).get("name"));
+  long variety=store.insert("INSERT INTO lin_lb_infovariety(Variety_CN,Variety_EN,createtime,updatetime) VALUES(?,?,UNIX_TIMESTAMP(),UNIX_TIMESTAMP())",name,"Breed reference");
+  @SuppressWarnings("unchecked") var varieties=(List<Map<String,Object>>)service.choices("variety",null,variety,0,1).get("items");assertEquals(name,varieties.get(0).get("Variety_CN"));assertEquals("Breed reference",varieties.get(0).get("Variety_EN"));
+  assertEquals(400,assertThrows(BusinessException.class,()->service.choices("lin_user","",null,0,20)).getCode());assertEquals(400,assertThrows(BusinessException.class,()->service.choices("species","",null,-1,20)).getCode());
+ }
  @Test void autoCreateAddsExactlyOneOriginalFreightDetailAndBodyCopy(){
   var admin=store.one("SELECT id,datagroup FROM lin_admin WHERE status='normal' AND datagroup<>'' ORDER BY id LIMIT 1");
   store.jdbc().update("UPDATE lin_operational_config SET config_value=? WHERE config_key='legacy-main-orders' AND scope_type='GLOBAL' AND scope_id=0",store.encode(Map.of("enabled",true,"writeEnabled",true,"createEnabled",true,"adminMappings",Map.of(String.valueOf(actor),admin.get("id")))));

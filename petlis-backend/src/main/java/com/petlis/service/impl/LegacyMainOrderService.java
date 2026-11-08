@@ -10,7 +10,8 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 @Service @RequiredArgsConstructor(onConstructor_=@org.springframework.beans.factory.annotation.Autowired)
 public class LegacyMainOrderService {
- private final FeatureStore store;private final AccessService access;private final LegacyOrderDetailService details;
+ private final FeatureStore store;private final AccessService access;private final LegacyOrderDetailService details;private final LegacyReportLinks links;
+ public LegacyMainOrderService(FeatureStore store,AccessService access,LegacyOrderDetailService details){this(store,access,details,new LegacyReportLinks("",""));}
  public LegacyMainOrderService(FeatureStore store,AccessService access){this(store,access,null);}
  public record CreateCommand(boolean autoLogistics,String requestKey){}
  public record Command(Map<String,String> fields,String requestKey,String expectedToken){}
@@ -21,6 +22,36 @@ public class LegacyMainOrderService {
  @Transactional(readOnly=true) public Map<String,Boolean> capabilities(){var p=policy(false);return Map.of("mainOrders",p[0],"mainOrderWrites",p[1],"mainOrderCreates",p[2]);}
  private Map<String,Object> raw(long id,boolean lock){if(id<1||id>4294967295L)throw new BusinessException(400,"主单编号无效");return new LinkedHashMap<>(store.one("SELECT * FROM lin_lb_listdiagnosisproject WHERE ListDiagnosisProjectId=?"+(lock?" FOR UPDATE":""),id));}
  private String token(Map<String,Object> row){try{return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(store.encode(new TreeMap<>(row)).getBytes(StandardCharsets.UTF_8)));}catch(Exception e){throw new IllegalStateException(e);}}
+ private static final Map<String,List<String>> CHOICES=Map.of(
+  "dataGroup",List.of("lin_lb_kuhuirightdatagroup","IID","GroupName"),
+  "hospital",List.of("lin_lb_infohospital","InfoHospitalId","HospitalName"),
+  "species",List.of("lin_lb_infoanimal","InfoAnimalId","AnimalName"),
+  "sex",List.of("lin_lb_dictsex","DictSexId","SexName"),
+  "sampleType",List.of("lin_lb_infosampletype","InfoSampleTypeId","SampleName"),
+  "variety",List.of("lin_lb_infovariety","IID","Variety_CN"));
+ @Transactional(readOnly=true) public Map<String,Object> choices(String kind,String q,Long selectedId,int page,int size){
+  if(!policy(false)[0])throw new BusinessException(409,"原主单尚未开启");var d=CHOICES.get(kind);if(d==null)throw new BusinessException(400,"未知选项类型");
+  if(page<0||size<1||size>100||q!=null&&q.length()>250||selectedId!=null&&selectedId<1)throw new BusinessException(400,"选项查询无效");
+  String table=d.get(0),id=d.get(1),name=d.get(2),where=selectedId==null?" WHERE "+name+" LIKE ?":" WHERE "+id+"=?";Object value=selectedId==null?"%"+(q==null?"":q)+"%":selectedId;
+  // Original form has no IsActive filter; historical disabled choices must remain reachable.
+  var result=store.page("SELECT COUNT(*) FROM "+table+where,"SELECT CAST("+id+" AS CHAR) AS id,"+name+" AS name"+(kind.equals("variety")?",Variety_CN,Variety_EN":"")+" FROM "+table+where+" ORDER BY "+id,page,size,value);
+  @SuppressWarnings("unchecked") var items=(List<Map<String,Object>>)result.get("items");for(var row:items)row.put("name",LegacyDictionarySelector.display(row.get("name")));return result;
+ }
+ @Transactional(readOnly=true) public Map<String,Object> hospitalSettlement(long id){
+  if(!policy(false)[0])throw new BusinessException(409,"原主单尚未开启");if(id<0||id>4294967295L)throw new BusinessException(400,"医院编号无效");
+  var rows=store.jdbc().queryForList("SELECT InfoHospitalId,PayType FROM lin_lb_infohospital WHERE InfoHospitalId=?",id);if(rows.isEmpty())return Map.of("found",false,"message","未找到医院信息");
+  var result=new LinkedHashMap<String,Object>();result.put("found",true);result.put("hospitalId",id);result.put("message",Objects.toString(rows.get(0).get("PayType"),"0").equals("1")?"月结":"次结");
+  try{result.put("url",links.hospital(id));result.put("linkConfigured",true);}catch(BusinessException e){if(e.getCode()!=409)throw e;result.put("linkConfigured",false);result.put("linkMessage",e.getMessage());}return result;
+ }
+ @Transactional(readOnly=true) public Map<String,Object> groupNumber(long groupId){
+  if(!policy(false)[0])throw new BusinessException(409,"原主单尚未开启");if(groupId<1)throw new BusinessException(400,"数据组编号无效");
+  var group=store.one("SELECT IID,GroupName,StartWord,StartNO FROM lin_lb_kuhuirightdatagroup WHERE IID=?",groupId);
+  var rows=store.jdbc().queryForList("SELECT UserNO FROM lin_lb_listdiagnosisproject WHERE CreateDataTypeIId=? ORDER BY ListDiagnosisProjectId DESC LIMIT 1",groupId);
+  String latest=rows.isEmpty()?null:Objects.toString(rows.get(0).get("UserNO"),"");
+  long count=store.jdbc().queryForObject("SELECT COUNT(*) FROM lin_lb_listdiagnosisproject WHERE CreateDataTypeIId=?",Long.class,groupId);
+  String prefix=Objects.toString(group.get("StartWord"),"");
+  return Map.of("userno",LegacyGroupNumberRules.preview(prefix,latest,count),"groupName",Objects.toString(group.get("GroupName"),""),"prefix",prefix,"startNo",Objects.toString(group.get("StartNO"),""),"latest",latest==null?"0":latest,"reserved",false);
+ }
  @Transactional(readOnly=true) public Map<String,Object> list(Integer status,int page,int size){
   if(!policy(false)[0])throw new BusinessException(409,"原主单尚未开启");if(page<0||size<1||size>100)throw new BusinessException(400,"分页无效");
   String from=" FROM lin_lb_listdiagnosisproject o LEFT JOIN lin_lb_infohospital h ON h.InfoHospitalId=o.InfoHospitalId LEFT JOIN lin_order_extension e ON e.order_id=o.ListDiagnosisProjectId"+(status==null?"":" WHERE o.SampleStatus=?");
