@@ -49,7 +49,7 @@ public class SecurityConfig {
                 // 配置授权规则
                 .authorizeHttpRequests(auth -> auth
                         // 仅支付通知接收微信服务器回调，业务内仍校验签名、金额和商户。
-                        .requestMatchers(org.springframework.http.HttpMethod.POST, "/payment/notify").permitAll()
+                        .requestMatchers(org.springframework.http.HttpMethod.POST, "/payment/notify", "/payment/legacy-bank/notify").permitAll()
                         // 公开接口:认证相关
                         .requestMatchers("/auth/password/change", "/auth/mobile/change", "/auth/wechat/bind").authenticated()
                         .requestMatchers("/auth/**").permitAll()

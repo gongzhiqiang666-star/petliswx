@@ -31,6 +31,10 @@ public class LegacyBankGatewayClient {
  }
  public boolean available(){return mode!=Mode.DISABLED;}
  public String merchant(){return merchant;}
+ public JsonNode verifyNotification(byte[] raw){
+  if(mode==Mode.DISABLED)throw new BusinessException(409,"原网银通道尚未开启");
+  var body=LegacyBankProtocol.verify(raw,publicKey).path("response").path("msgBody");if(!body.isObject())throw new BusinessException(400,"网银通知格式无效");return body;
+ }
  public JsonNode exchange(LegacyBankProtocol.Method method,Map<String,Object> parameters){
   if(mode==Mode.DISABLED)throw new BusinessException(409,"原网银通道尚未开启");if(TransactionSynchronizationManager.isActualTransactionActive())throw new BusinessException(409,"网银请求必须在数据库事务提交后执行");
   var packet=LegacyBankProtocol.request(appId,merchant,notifyUrl,method,parameters,LocalDateTime.now(ZoneId.of("Asia/Shanghai")),privateKey);

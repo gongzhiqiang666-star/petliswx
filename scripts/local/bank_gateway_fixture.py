@@ -15,6 +15,11 @@ class BankGatewayFixture:
   fixture=self
   class Handler(BaseHTTPRequestHandler):
    def log_message(self,*args):pass
+   def do_GET(self):
+    if self.path!='/notification' or not fixture.order:self.send_error(404);return
+    response={'tradeStatus':'00','oriMerOrdrNo':fixture.order,'trxTtlAmt':'1250','chnlMerOrdrNo':fixture.prefix+'_channel','buyerLgnId':'owned-notice-buyer','subOpenId':'wrong-notice-query-buyer'}
+    raw=json.dumps({'response':{'msgBody':response}},separators=(',',':')).encode();signature=fixture.gateway.sign(raw,padding.PKCS1v15(),hashes.SHA256()).hex();packet=raw[:-1]+b',"sign":"'+signature.encode()+b'"}'
+    self.send_response(200);self.send_header('Content-Length',str(len(packet)));self.end_headers();self.wfile.write(packet)
    def do_POST(self):
     try:
      length=int(self.headers['Content-Length']);assert 0<length<=1024*1024

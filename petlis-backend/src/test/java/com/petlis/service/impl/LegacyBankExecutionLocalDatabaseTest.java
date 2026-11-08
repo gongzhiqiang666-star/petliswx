@@ -24,7 +24,7 @@ class LegacyBankExecutionLocalDatabaseTest {
   var expectedParent=new LinkedHashMap<>(parent);expectedParent.put("IsPayMoney",3);assertEquals(expectedParent,store.one("SELECT * FROM lin_lb_listdiagnosisproject WHERE ListDiagnosisProjectId=?",f.order));
   var expectedDetail=new LinkedHashMap<>(detail);expectedDetail.put("PayStatus2",3);assertEquals(expectedDetail,store.one("SELECT * FROM lin_lb_diagnosisdetail WHERE DiagnosisDetailId=?",detail.get("DiagnosisDetailId")));
   assertEquals(body,store.one("SELECT * FROM lin_lb_diagnosisdetail_info WHERE diagnosisdetail_id=?",detail.get("DiagnosisDetailId")));
-  var log=store.one("SELECT * FROM lin_lb_paylog WHERE TradeNoUser=?",send.orderId());assertEquals("test-buyer",log.get("BuyerId"));assertEquals("TRADE_SUCCESS",log.get("TradeStatus"));
+  var log=store.one("SELECT * FROM lin_lb_paylog WHERE TradeNoUser=?",send.orderId());assertEquals("test-buyer",log.get("BuyerId"));assertEquals("TRADE_SUCCESS",log.get("TradeStatus"));store.jdbc().update("UPDATE lin_operational_config SET config_value=JSON_SET(config_value,'$.notifyEnabled',true) WHERE config_key='legacy-bank-payments'");var notice=response.deepCopy();((com.fasterxml.jackson.databind.node.ObjectNode)notice).put("buyerLgnId","different-notice-buyer");assertTrue(execution.notification(notice,"LOCALTEST"));assertEquals("test-buyer",store.one("SELECT BuyerId FROM lin_lb_paylog WHERE TradeNoUser=?",send.orderId()).get("BuyerId"));
  }
  @Test void mismatchedAmountOrOrderCannotSettleAndLateSendCannotOverwriteQuery()throws Exception{
   var send=execution.claim(key,"LOCALTEST",false);var query=execution.claim(key,"LOCALTEST",true);
@@ -44,5 +44,22 @@ class LegacyBankExecutionLocalDatabaseTest {
   }finally{manager.setNestedTransactionAllowed(nestedBefore);}
   assertEquals("QUERYING",state());assertEquals("",store.one("SELECT AliTradeId FROM lin_lb_payordermain WHERE OrderId=?",send.orderId()).get("AliTradeId"));assertEquals(0,((Number)store.one("SELECT PayStatus2 FROM lin_lb_diagnosisdetail WHERE ListDiagnosisProjectId=?",f.order).get("PayStatus2")).intValue());
   execution.finish(key,query.token(),true,response);assertEquals("SUCCEEDED",state());assertEquals(1,store.jdbc().queryForObject("SELECT COUNT(*) FROM lin_lb_paylog WHERE TradeNoUser=?",Integer.class,send.orderId()));
+ }
+ @Test void notificationUsesBuyerLgnIdWithoutLoginAndDuplicateDoesNotAddLedger()throws Exception{
+  store.jdbc().update("UPDATE lin_operational_config SET config_value=JSON_SET(config_value,'$.notifyEnabled',true) WHERE config_key='legacy-bank-payments'");
+  var send=execution.claim(key,"LOCALTEST",false);var payload=json.readTree("{\"tradeStatus\":\"00\",\"oriMerOrdrNo\":\""+send.orderId()+"\",\"trxTtlAmt\":\"1250\",\"chnlMerOrdrNo\":\"notice-channel\",\"buyerLgnId\":\"notice-buyer\",\"subOpenId\":\"wrong-query-buyer\"}");
+  org.mockito.Mockito.clearInvocations(f.access);assertTrue(execution.notification(payload,"LOCALTEST"));assertTrue(execution.notification(payload,"LOCALTEST"));
+  org.mockito.Mockito.verifyNoInteractions(f.access);assertEquals("SUCCEEDED",state());assertEquals("notice-buyer",store.one("SELECT BuyerId FROM lin_lb_paylog WHERE TradeNoUser=?",send.orderId()).get("BuyerId"));assertEquals(1,store.jdbc().queryForObject("SELECT COUNT(*) FROM lin_lb_paylog WHERE TradeNoUser=?",Integer.class,send.orderId()));
+  execution.finish(key,send.token(),false,json.readTree("{\"retCode\":\"00000\",\"chnlUrl\":\"https://cashier.example.test/pay\"}"));assertEquals("SUCCEEDED",state());
+ }
+ @Test void notificationCannotSettleUnsentOrderOrBypassIndependentGate()throws Exception{
+  var order=store.one("SELECT OrderId FROM lin_lb_payordermain WHERE Remark=?","订单:"+key).get("OrderId");var payload=json.readTree("{\"tradeStatus\":\"00\",\"oriMerOrdrNo\":\""+order+"\",\"trxTtlAmt\":\"1250\",\"chnlMerOrdrNo\":\"notice-channel\"}");
+  assertThrows(BusinessException.class,()->execution.notification(payload,"LOCALTEST"));store.jdbc().update("UPDATE lin_operational_config SET config_value=JSON_SET(config_value,'$.notifyEnabled',true) WHERE config_key='legacy-bank-payments'");assertFalse(execution.notification(payload,"LOCALTEST"));assertEquals("READY",state());assertEquals(0,store.jdbc().queryForObject("SELECT COUNT(*) FROM lin_lb_paylog WHERE TradeNoUser=?",Integer.class,order));
+ }
+ @Test void notificationRejectsWrongAmountAndMerchantWithoutDowngradingPaidReceipt()throws Exception{
+  store.jdbc().update("UPDATE lin_operational_config SET config_value=JSON_SET(config_value,'$.notifyEnabled',true) WHERE config_key='legacy-bank-payments'");var send=execution.claim(key,"LOCALTEST",false);
+  var payload=(com.fasterxml.jackson.databind.node.ObjectNode)json.readTree("{\"tradeStatus\":\"00\",\"oriMerOrdrNo\":\""+send.orderId()+"\",\"trxTtlAmt\":\"1\",\"chnlMerOrdrNo\":\"notice-channel\"}");
+  assertFalse(execution.notification(payload,"OTHER"));assertEquals("SENDING",state());assertFalse(execution.notification(payload,"LOCALTEST"));assertEquals("UNKNOWN",state());assertEquals(0,store.jdbc().queryForObject("SELECT COUNT(*) FROM lin_lb_paylog WHERE TradeNoUser=?",Integer.class,send.orderId()));
+  payload.put("trxTtlAmt","1250");assertTrue(execution.notification(payload,"LOCALTEST"));payload.put("trxTtlAmt","1");assertFalse(execution.notification(payload,"LOCALTEST"));assertEquals("SUCCEEDED",state());assertEquals(1,store.jdbc().queryForObject("SELECT COUNT(*) FROM lin_lb_paylog WHERE TradeNoUser=?",Integer.class,send.orderId()));
  }
 }

@@ -2,8 +2,9 @@
 import sys,importlib.util,json,secrets,subprocess,socket,time,os,signal,re,stat,hashlib
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[2]
+NOTIFY='--notify' in sys.argv
 DISPATCH_ROLLBACK='--dispatch-rollback' in sys.argv
-DISPATCH='--dispatch' in sys.argv or DISPATCH_ROLLBACK
+DISPATCH='--dispatch' in sys.argv or DISPATCH_ROLLBACK or NOTIFY
 PREPARE='--prepare' in sys.argv or DISPATCH
 spec=importlib.util.spec_from_file_location('staff',Path(__file__).with_name('setup-php-lab.py'));staff=importlib.util.module_from_spec(spec);spec.loader.exec_module(staff)
 staff.config.BASE='http://127.0.0.1:18082/api';sql=staff.config.sql;prefix='it_bank_quote_live_'+secrets.token_hex(5)
@@ -54,7 +55,7 @@ try:
  test=int(sql('INSERT INTO lin_lb_infotesttype(TestName,TestNO,Price,CtoG,GtoC,DiscountReal,DiscountNext,TextModel,CreateDt,type,IsActive) VALUES('+lit(prefix)+','+lit(prefix)+",0,0,0,0,0,'',NOW(),0,1);SELECT LAST_INSERT_ID()"))
  unreceived=make_order(prefix,'1900-01-01 00:00:00');received=make_order(prefix+'_received','2024-02-29 23:59:58')
  for key in keys:
-  value=json.dumps({'enabled':True,**({'writeEnabled':True} if key=='legacy-order-details' else ({'prepareEnabled':True,**({'sendEnabled':True,'queryEnabled':True} if DISPATCH else {})} if PREPARE else {}))})
+  value=json.dumps({'enabled':True,**({'writeEnabled':True} if key=='legacy-order-details' else ({'prepareEnabled':True,**({'sendEnabled':True,'queryEnabled':True,**({'notifyEnabled':True} if NOTIFY else {})} if DISPATCH else {})} if PREPARE else {}))})
   sql('INSERT INTO lin_operational_config(config_key,config_value,description,updated_by) VALUES('+lit(key)+','+lit(value)+",'bank quote UI fixture',(SELECT MIN(id) FROM lin_user)) ON DUPLICATE KEY UPDATE config_value=VALUES(config_value),status='ACTIVE'")
  command='set -a; source "$HOME/.local/share/petlis/mysql/backend.env"; set +a; [[ "$DB_URL" == "jdbc:mysql://127.0.0.1:13306/laboklin?"* ]] || exit 17; export JAVA_HOME="$HOME/.local/share/petlis/tools/Home" MAVEN_HOME="$HOME/.local/share/petlis/tools/libexec" APP_SCHEDULING_ENABLED=false DB_MIGRATIONS_ENABLED=false PDF_STORAGE_PATH="$HOME/.local/share/petlis/reports"; exec ./petlis-backend/mvnw -o -q -f petlis-backend/pom.xml spring-boot:run -Dspring-boot.run.profiles=dev -Dspring-boot.run.arguments=--server.port=18082'
  if PREPARE:command=command.replace('-Dspring-boot.run.arguments=--server.port=18082',"'-Dspring-boot.run.arguments=--server.port=18082 --app.legacy-bank.merchant=TESTLOCAL'")
@@ -84,7 +85,7 @@ try:
  for order,kind,price,paid,exempt in [(unreceived,246,'12.50',0,0),(unreceived,test,'9.99',0,0),(received,test,'7.25',0,0),(received,test,'1.00',1,0),(received,test,'2.00',0,1)]:
   request=prefix+'_detail_'+str(len(details));body={'testTypeId':kind,'originalPrice':price,'originalDiscount':'10','testPrice':price,'detailRemark':prefix,'modelId':0,'mailTitle':'','isSendMail':0,'isCheckPass':exempt,'payStatus':paid,'diagnosisStatus':0,'mailReport':'','reportResult':'','requestKey':request};detail=int(staff.call(f'/admin/legacy/order-details/orders/{order}',body,session['token']));details.append((detail,order,request))
  original_parent_pay=int(sql(f'SELECT IsPayMoney FROM lin_lb_listdiagnosisproject WHERE ListDiagnosisProjectId={unreceived}'))
- before=snapshot(ignore_payments=PREPARE);run=subprocess.run(['node','scripts/editor-parity/bank-payment-quote-live.js'],cwd=ROOT,input=json.dumps({'token':session['token'],'prefix':prefix,'hospital':hospital,'prepare':PREPARE,'dispatch':DISPATCH,'dispatchRollback':DISPATCH_ROLLBACK,'screenshot':str(private/(prefix+'.png'))}),capture_output=True,text=True,timeout=90);assert run.returncode==0,'Browser failed: '+run.stderr[-1000:];proof=json.loads(run.stdout)
+ before=snapshot(ignore_payments=PREPARE);run=subprocess.run(['node','scripts/editor-parity/bank-payment-quote-live.js'],cwd=ROOT,input=json.dumps({'token':session['token'],'prefix':prefix,'hospital':hospital,'prepare':PREPARE,'dispatch':DISPATCH,'dispatchRollback':DISPATCH_ROLLBACK,'notify':NOTIFY,'noticeUrl':(gateway_fixture.endpoint.rsplit('/',1)[0]+'/notification' if NOTIFY else None),'screenshot':str(private/(prefix+'.png'))}),capture_output=True,text=True,timeout=90);assert run.returncode==0,'Browser failed: '+run.stderr[-1000:];proof=json.loads(run.stdout)
  if PREPARE:
   rows=sql('SELECT OrderId FROM lin_lb_payordermain WHERE Remark='+lit('订单:'+prefix)).splitlines();payments.extend(rows);assert len(rows)==1,'Expected one payment despite uncertain first response'
   request_keys.extend(proof['requestKeys']);assert len(set(request_keys))==1
@@ -92,10 +93,11 @@ try:
   assert sql('SELECT COUNT(*) FROM lin_lb_payorderdetail WHERE MainOrderId='+lit(rows[0]))=='1'
  if DISPATCH:
   assert not gateway_fixture.errors,'Gateway fixture failed: '+str(gateway_fixture.errors)
-  assert gateway_fixture.prepay==1 and gateway_fixture.queries==(2 if DISPATCH_ROLLBACK else 1),'Duplicate network execution'
+  assert gateway_fixture.prepay==1 and gateway_fixture.queries in ([0,1] if NOTIFY else [2 if DISPATCH_ROLLBACK else 1]),'Duplicate network execution'
   assert sql('SELECT COUNT(*) FROM lin_lb_paylog WHERE TradeNoUser='+lit(payments[0]))=='1'
   assert sql('SELECT CONCAT(PayStatus2) FROM lin_lb_diagnosisdetail WHERE DiagnosisDetailId='+str(details[0][0]))=='3'
   assert sql('SELECT IsPayMoney FROM lin_lb_listdiagnosisproject WHERE ListDiagnosisProjectId='+str(unreceived))=='3'
+  if NOTIFY:assert sql('SELECT BuyerId FROM lin_lb_paylog WHERE TradeNoUser='+lit(payments[0])) in ['owned-notice-buyer','owned-test-buyer']
   proof.update(providerSendCount=gateway_fixture.prepay,providerQueryCount=gateway_fixture.queries,ledgerRows=1,settlementRollbackRecovered=DISPATCH_ROLLBACK)
  assert snapshot(ignore_payments=PREPARE)==before,'Clinical, fund or unrelated business records changed';proof['onlyExpectedClinicalPaymentFlagsChanged' if DISPATCH else 'clinicalAndFundRecordsUnchanged']=True;proof['unrelatedPaymentRecordsUnchanged']=True;proof['fundAndReportRecordsUnchanged']=True
 finally:
