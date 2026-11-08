@@ -45,3 +45,11 @@ test('品种编辑不新增原表不存在的状态字段',async()=>{
  assert.equal(dictionaryCommand(schema,{name:'猫',englishName:'Cat'},'request_1234567890').active,null);
  let modal;await openDictionaryEditor({dialog:x=>modal=x,api:{},toast(){}},schema,null,()=>{});assert.ok(!modal.body.includes('name="active"'));
 });
+
+test('single-name check-received dictionary does not invent a required English value',async()=>{
+ const {dictionaryCommand,openDictionaryEditor}=await import('../src/components/legacy-dictionary-editor.js');
+ const schema={kind:'checkReceived',label:'验收方式',hasEnglishName:false,hasStatus:true,maxNameLength:250,createDefaultIsActive:0,columns:[{key:'InfoCheckReceivedId',label:'Id'},{key:'CheckType',label:'确认方式'},{key:'IsActive',label:'状态'}]};
+ const command=dictionaryCommand(schema,{name:'签字确认',active:'1'},'request_1234567890');assert.equal(command.name,'签字确认');assert.equal(command.active,1);
+ let dialog;await openDictionaryEditor({api:{},dialog:value=>dialog=value},schema,null,()=>{});
+ assert.ok(dialog.body.includes('name="name"'));assert.ok(!dialog.body.includes('name="englishName"'));assert.ok(dialog.body.includes('name="active"'));
+});

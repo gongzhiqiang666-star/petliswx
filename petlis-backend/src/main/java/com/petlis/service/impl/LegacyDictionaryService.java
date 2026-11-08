@@ -27,11 +27,12 @@ public class LegacyDictionaryService {
  public record BatchCommand(List<Target> targets,Integer active,String requestKey){}
  public record Command(String name,String englishName,Integer active,String requestKey,String expectedToken){}
  public record Query(String name,String englishName,Integer active,Long createdFrom,Long createdTo,Long updatedFrom,Long updatedTo,String sort,String order,int page,int size){}
- private record Definition(String kind,String table,String id,String name,String englishName,String label,String nameLabel,int maxLength){boolean hasStatus(){return !kind.equals("variety");}long maxId(){return hasStatus()?4294967295L:Long.MAX_VALUE;}}
+ private record Definition(String kind,String table,String id,String name,String englishName,String label,String nameLabel,int maxLength){boolean hasEnglish(){return !kind.equals("checkReceived");}boolean hasStatus(){return !kind.equals("variety");}long maxId(){return hasStatus()?4294967295L:Long.MAX_VALUE;}}
  private static final List<Definition> DEFINITIONS=List.of(
   new Definition("species","lin_lb_infoanimal","InfoAnimalId","AnimalName","AnimalName_en","物种","物种名称",250),
   new Definition("sex","lin_lb_dictsex","DictSexId","SexName","SexName_en","性别","性别名称",50),
   new Definition("sampleType","lin_lb_infosampletype","InfoSampleTypeId","SampleName","SampleName_en","采样类型","采样类型",250),
+  new Definition("checkReceived","lin_lb_infocheckreceived","InfoCheckReceivedId","CheckType","CheckType","验收方式","确认方式",250),
   new Definition("variety","lin_lb_infovariety","IID","Variety_CN","Variety_EN","品种","中文名称",50));
 
  private record Policy(boolean enabled,boolean canWrite,boolean canDelete){}
@@ -50,10 +51,10 @@ public class LegacyDictionaryService {
  public List<Map<String,Object>> schemas(){
   requireEnabled();var policy=policy(false);boolean canWrite=policy.canWrite();var result=new ArrayList<Map<String,Object>>();
   for(var d:DEFINITIONS){
-   var columns=new ArrayList<Map<String,String>>();columns.add(Map.of("key",d.id(),"label","Id"));columns.add(Map.of("key",d.name(),"label",d.nameLabel()));columns.add(Map.of("key",d.englishName(),"label",d.hasStatus()?d.nameLabel()+"(英文)":"英文名称"));
+   var columns=new ArrayList<Map<String,String>>();columns.add(Map.of("key",d.id(),"label","Id"));columns.add(Map.of("key",d.name(),"label",d.nameLabel()));if(d.hasEnglish())columns.add(Map.of("key",d.englishName(),"label",d.hasStatus()?d.nameLabel()+"(英文)":"英文名称"));
    if(d.hasStatus())columns.add(Map.of("key","IsActive","label","状态"));
    columns.add(Map.of("key","createtime","label",d.kind().equals("sampleType")||!d.hasStatus()?"添加时间":"创建时间"));columns.add(Map.of("key","updatetime","label","更新时间"));
-   var schema=new LinkedHashMap<String,Object>();schema.put("kind",d.kind());schema.put("label",d.label());schema.put("columns",columns);schema.put("hasStatus",d.hasStatus());schema.put("canWrite",canWrite);schema.put("canDelete",policy.canDelete());schema.put("maxNameLength",d.maxLength());
+   var schema=new LinkedHashMap<String,Object>();schema.put("kind",d.kind());schema.put("label",d.label());schema.put("columns",columns);schema.put("hasStatus",d.hasStatus());schema.put("hasEnglishName",d.hasEnglish());schema.put("canWrite",canWrite);schema.put("canDelete",policy.canDelete());schema.put("maxNameLength",d.maxLength());
    if(d.hasStatus()){schema.put("createDefaultIsActive",0);schema.put("statusLabels",Map.of("0","禁用","1","正常"));}result.add(schema);
   }
   return result;
@@ -98,7 +99,7 @@ public class LegacyDictionaryService {
  }
 
  private Definition definition(String kind){return DEFINITIONS.stream().filter(x->x.kind().equals(kind)).findFirst().orElseThrow(()->invalid("未知字典类型"));}
- private String fields(Definition d){return d.id()+","+d.name()+","+d.englishName()+(d.hasStatus()?",IsActive":"")+",createtime,updatetime";}
+ private String fields(Definition d){return d.id()+","+d.name()+(d.hasEnglish()?","+d.englishName():"")+(d.hasStatus()?",IsActive":"")+",createtime,updatetime";}
  private Map<String,Object> row(Definition d,long id,boolean lock){
   if(id<1 || id>d.maxId())throw invalid("字典编号无效");
   return store.one("SELECT "+fields(d)+" FROM "+d.table()+" WHERE "+d.id()+"=?"+(lock?" FOR UPDATE":""),id);
@@ -127,13 +128,15 @@ public class LegacyDictionaryService {
   }
   Map<String,Object> before=null;long resultId;
   if(id==null){
-   if(d.hasStatus())resultId=store.insert("INSERT INTO "+d.table()+"("+d.name()+","+d.englishName()+",IsActive,createtime,updatetime) VALUES(?,?,?,UNIX_TIMESTAMP(),UNIX_TIMESTAMP())",c.name(),c.englishName(),c.active()==null?0:c.active());
+   if(!d.hasEnglish())resultId=store.insert("INSERT INTO "+d.table()+"("+d.name()+",IsActive,createtime,updatetime) VALUES(?,?,UNIX_TIMESTAMP(),UNIX_TIMESTAMP())",c.name(),c.active()==null?0:c.active());
+   else if(d.hasStatus())resultId=store.insert("INSERT INTO "+d.table()+"("+d.name()+","+d.englishName()+",IsActive,createtime,updatetime) VALUES(?,?,?,UNIX_TIMESTAMP(),UNIX_TIMESTAMP())",c.name(),c.englishName(),c.active()==null?0:c.active());
    else resultId=store.insert("INSERT INTO "+d.table()+"("+d.name()+","+d.englishName()+",createtime,updatetime) VALUES(?,?,UNIX_TIMESTAMP(),UNIX_TIMESTAMP())",c.name(),c.englishName());
   }else{
    before=row(d,id,true);if(!token(before).equals(c.expectedToken()))throw new BusinessException(409,"字典记录已变更，请刷新后核对再保存");
    int active=!d.hasStatus()?0:c.active()==null?((Number)before.get("IsActive")).intValue():c.active();
-   if(!Objects.equals(before.get(d.name()),c.name()) || !Objects.equals(before.get(d.englishName()),c.englishName()) || d.hasStatus() && ((Number)before.get("IsActive")).intValue()!=active){
-    if(d.hasStatus())store.jdbc().update("UPDATE "+d.table()+" SET "+d.name()+"=?,"+d.englishName()+"=?,IsActive=?,updatetime=UNIX_TIMESTAMP() WHERE "+d.id()+"=?",c.name(),c.englishName(),active,id);
+   if(!Objects.equals(before.get(d.name()),c.name()) || d.hasEnglish() && !Objects.equals(before.get(d.englishName()),c.englishName()) || d.hasStatus() && ((Number)before.get("IsActive")).intValue()!=active){
+    if(!d.hasEnglish())store.jdbc().update("UPDATE "+d.table()+" SET "+d.name()+"=?,IsActive=?,updatetime=UNIX_TIMESTAMP() WHERE "+d.id()+"=?",c.name(),active,id);
+    else if(d.hasStatus())store.jdbc().update("UPDATE "+d.table()+" SET "+d.name()+"=?,"+d.englishName()+"=?,IsActive=?,updatetime=UNIX_TIMESTAMP() WHERE "+d.id()+"=?",c.name(),c.englishName(),active,id);
     else store.jdbc().update("UPDATE "+d.table()+" SET "+d.name()+"=?,"+d.englishName()+"=?,updatetime=UNIX_TIMESTAMP() WHERE "+d.id()+"=?",c.name(),c.englishName(),id);
    }
    resultId=id;
@@ -144,8 +147,8 @@ public class LegacyDictionaryService {
   return resultId;
  }
  private void validate(Definition d,Command c){
-  if(c==null || c.name()==null || c.name().isBlank() || c.englishName()==null || c.englishName().isBlank())throw invalid("中英文名称均不能为空");
-  if(c.name().codePointCount(0,c.name().length())>d.maxLength() || c.englishName().codePointCount(0,c.englishName().length())>d.maxLength())throw invalid("名称长度超出原字段限制");
+  if(c==null || c.name()==null || c.name().isBlank() || d.hasEnglish()&&(c.englishName()==null || c.englishName().isBlank()))throw invalid("中英文名称均不能为空");
+  if(c.name().codePointCount(0,c.name().length())>d.maxLength() || d.hasEnglish()&&c.englishName().codePointCount(0,c.englishName().length())>d.maxLength())throw invalid("名称长度超出原字段限制");
   if(c.active()!=null && (!d.hasStatus() || c.active()!=0 && c.active()!=1))throw invalid("状态无效");
   if(c.requestKey()==null || !c.requestKey().matches("[A-Za-z0-9_-]{16,64}"))throw invalid("字典请求号无效");
  }

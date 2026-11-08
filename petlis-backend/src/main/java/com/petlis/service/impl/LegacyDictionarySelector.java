@@ -20,7 +20,7 @@ final class LegacyDictionarySelector {
   if(q.page()<1||q.size()<1||q.size()>100||((long)q.page()-1)*q.size()>Integer.MAX_VALUE)throw invalid("分页无效");
   if(q.active()!=null&&q.active()!=0&&q.active()!=1)throw invalid("状态无效");
   var fields=q.searchFields()==null||q.searchFields().isEmpty()?List.of(name):q.searchFields();
-  if(fields.stream().anyMatch(f->!Set.of(id,name,englishName,"IsActive","createtime","updatetime").contains(f)))throw invalid("搜索字段无效");
+  if(fields.stream().anyMatch(f->!new java.util.HashSet<>(java.util.List.of(id,name,englishName,"IsActive","createtime","updatetime")).contains(f)))throw invalid("搜索字段无效");
   var words=new LinkedHashSet<String>();
   if(q.words()!=null)for(String word:q.words()){String clean=filter(word);if(!clean.isEmpty()&&!clean.equals("0"))words.add(clean);}
   var clauses=new ArrayList<String>();var args=new ArrayList<Object>();

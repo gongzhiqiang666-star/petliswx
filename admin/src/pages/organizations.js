@@ -1,3 +1,4 @@
+import {openHospitalContacts} from '../components/hospital-contacts.js';
 import { rolePayload, userStatusPayload } from '../adapters.js';
 import { formData } from './shared.js';
 import { escapeHtml, pageItems, roleLabel } from '../utils.js';
@@ -11,6 +12,8 @@ export async function render(container, context) {
   const { api, dialog } = context;
   let fundCapabilities={};
   if(context.store?.getState().user?.roles?.includes('ADMIN'))try{fundCapabilities=await api.request('/admin/legacy/hospital-funds/capabilities')}catch(_){}
+  let contactCapabilities={};
+  if(context.store?.getState().user?.roles?.includes('ADMIN'))try{contactCapabilities=await api.request('/admin/legacy/hospital-contacts/capabilities')}catch(_){}
   let tab = 'users';
   let status = 'ACTIVE';
   container.innerHTML = `${pageHeader('用户与医院', '查询真实账号、维护角色归属与医院状态', context.store?.getState().user?.roles?.includes('ADMIN') ? '<button class="button" id="staff-new">新增员工</button>' : '')}
@@ -47,7 +50,7 @@ export async function render(container, context) {
           { label: '医院名称', key: 'name' }, { label: '登录编码', key: 'code' }, { label: '状态', render: (row) => badge(row.status) }
         ],
         actions: (row) => tab === 'hospitals'
-          ? `<button class="button text" data-hospital="${row.id}">查看档案</button><button class="button text" data-hospital-documents="${row.id}">资料文件</button>${fundCapabilities.hospitalFunds===true?`<button class="button text" data-hospital-funds="${row.id}">医院资金</button>`:''}`
+          ? `${contactCapabilities.hospitalContacts===true?`<button class="button text" data-hospital-contacts="${row.id}">联系人</button>`:''}<button class="button text" data-hospital="${row.id}">查看档案</button><button class="button text" data-hospital-documents="${row.id}">资料文件</button>${fundCapabilities.hospitalFunds===true?`<button class="button text" data-hospital-funds="${row.id}">医院资金</button>`:''}`
           : `<button class="button text" data-user-roles="${row.id}">角色</button><button class="button ${row.status === 'ACTIVE' ? 'danger' : ''} text" data-user-status="${row.id}" data-current-status="${row.status}">${row.status === 'ACTIVE' ? '停用' : '启用'}</button>`
       });
     } catch (error) { list.innerHTML = renderState(error.status === 403 ? 'forbidden' : 'error', error); }
@@ -82,6 +85,7 @@ export async function render(container, context) {
   }
 
   container.addEventListener('click', async (event) => {
+    const contacts=event.target.closest('[data-hospital-contacts]');if(contacts){try{await openHospitalContacts(context,Number(contacts.dataset.hospitalContacts))}catch(error){context.toast(error.message,'error')}return;}
     const funds=event.target.closest('[data-hospital-funds]');if(funds){try{await openHospitalFunds(context,Number(funds.dataset.hospitalFunds),fundCapabilities.hospitalFundWrites===true)}catch(error){context.toast(error.message,'error')}return;}
     const documents=event.target.closest('[data-hospital-documents]');if(documents){try{await openHospitalDocuments(context,Number(documents.dataset.hospitalDocuments));}catch(error){context.toast(error.message,'error');}return;}
     const tabButton = event.target.closest('[data-tab]');

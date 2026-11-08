@@ -28,6 +28,16 @@ class LegacyDictionaryLocalDatabaseTest {
  long species(String suffix,int active,long time){return store.insert("INSERT INTO lin_lb_infoanimal(AnimalName,AnimalName_en,IsActive,createtime,updatetime) VALUES(?,?,?,?,?)",prefix+suffix,"English "+prefix+suffix,active,time,time);}
  LegacyDictionaryService.Query q(Integer active,Long from,Long to,int page,int size){return new LegacyDictionaryService.Query(prefix,null,active,from,to,null,null,"InfoAnimalId","ASC",page,size);}
  @SuppressWarnings("unchecked") List<Map<String,Object>> items(Map<String,Object> page){return (List<Map<String,Object>>)page.get("items");}
+ @Test void checkReceivedMaintainsSingleNameAndOriginalIntegerTimes(){
+  var schema=service.schemas().stream().filter(r->"checkReceived".equals(r.get("kind"))).findFirst().orElseThrow();assertEquals(false,schema.get("hasEnglishName"));
+  var c=new LegacyDictionaryService.Command(prefix,null,1,"check_"+UUID.randomUUID().toString().replace("-",""),null);
+  long id=service.create("checkReceived",c);var row=service.get("checkReceived",id);assertEquals(prefix,row.get("CheckType"));assertTrue(((Number)row.get("createtime")).longValue()>0);
+  service.update("checkReceived",id,new LegacyDictionaryService.Command(prefix+"修改",null,0,"check_"+UUID.randomUUID().toString().replace("-",""),row.get("editToken").toString()));
+  var changed=service.get("checkReceived",id);assertEquals(prefix+"修改",changed.get("CheckType"));assertEquals(0,((Number)changed.get("IsActive")).intValue());assertEquals(row.get("createtime"),changed.get("createtime"));
+  assertEquals(0,((Number)service.select("checkReceived",List.of(prefix),null,"AND",null,1,20,1).get("total")).intValue());
+  assertEquals(1,((Number)service.select("checkReceived",null,null,"AND",List.of(id),1,20,1).get("total")).intValue());
+
+ }
  @Test void preservesDisabledRowsRawFieldsAndInclusiveTimeFilters(){
   long disabled=species("猫",0,100),enabled=species("犬",1,200);var all=service.list("species",q(null,100L,200L,0,20));
   assertEquals(2,((Number)all.get("total")).intValue());assertEquals(2,items(all).size());var row=items(all).get(0);
