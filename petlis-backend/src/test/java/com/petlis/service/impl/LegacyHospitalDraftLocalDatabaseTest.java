@@ -44,8 +44,8 @@ class LegacyHospitalDraftLocalDatabaseTest {
   store.jdbc().update("UPDATE lin_lb_infohospital SET IsActive=1,CityId=1 WHERE InfoHospitalId=?",f.f.hospital);store.jdbc().update("UPDATE lin_user SET hospital_id=? WHERE id=?",f.f.hospital,f.f.actor);String token=sessions.issue(f.f.actor).getToken();String path="/api/orders/hospital-history/drafts/"+f.f.order;
   mvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get(path).contextPath("/api").param("hospitalId",String.valueOf(f.f.hospital))).andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isUnauthorized());
   mvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get(path).contextPath("/api").param("hospitalId","2147483647").header("Authorization","Bearer "+token)).andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath("$.code").value(403));
-  var c=command(Map.of("AnimalName","HTTP重开名字"));for(int i=0;i<2;i++)mvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put(path).contextPath("/api").header("Authorization","Bearer "+token).contentType("application/json").content(json.writeValueAsString(c))).andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath("$.code").value(200));
-  mvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get(path).contextPath("/api").param("hospitalId",String.valueOf(f.f.hospital)).header("Authorization","Bearer "+token)).andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath("$.data.fields.AnimalName").value("HTTP重开名字"));
+  var c=command(Map.of("AnimalName","HTTP重开名字","Remark","<p><strong>HTTP原生备注</strong></p>"));for(int i=0;i<2;i++)mvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put(path).contextPath("/api").header("Authorization","Bearer "+token).contentType("application/json").content(json.writeValueAsString(c))).andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath("$.code").value(200));
+  mvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get(path).contextPath("/api").param("hospitalId",String.valueOf(f.f.hospital)).header("Authorization","Bearer "+token)).andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath("$.data.fields.AnimalName").value("HTTP重开名字")).andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath("$.data.fields.Remark").value("<p><strong>HTTP原生备注</strong></p>"));
  }
 
  @Test void sampleDateSavesAsOriginalDayAndInvalidDateCannotOverwriteIt(){
@@ -75,6 +75,11 @@ class LegacyHospitalDraftLocalDatabaseTest {
   var broken=new LegacyHospitalDraftService(faulty,f.f.access,f.service);var tx=new org.springframework.transaction.support.TransactionTemplate(transactions);tx.setPropagationBehavior(org.springframework.transaction.TransactionDefinition.PROPAGATION_NESTED);var manager=(org.springframework.transaction.support.AbstractPlatformTransactionManager)transactions;boolean previous=manager.isNestedTransactionAllowed();manager.setNestedTransactionAllowed(true);
   try{assertThrows(BusinessException.class,()->tx.execute(status->broken.create(c)));}finally{manager.setNestedTransactionAllowed(previous);}
   assertEquals(before,store.jdbc().queryForObject("SELECT COUNT(*) FROM lin_lb_listdiagnosisproject WHERE InfoHospitalId=?",Integer.class,f.f.hospital));long id=service.create(c);assertEquals(id,service.create(c));
+ }
+
+ @Test void hospitalRemarkHtmlSavesReopensReplaysAndCanBeClearedWithoutOtherChanges(){
+  String html="<p><strong>冷藏样本</strong>当天寄出</p><table><tbody><tr><td>原表格</td></tr></tbody></table>";var before=new LinkedHashMap<>(store.one("SELECT * FROM lin_lb_listdiagnosisproject WHERE ListDiagnosisProjectId=?",f.f.order));var c=command(Map.of("Remark",html));service.update(f.f.order,c);service.update(f.f.order,c);before.put("Remark",html);assertEquals(before,store.one("SELECT * FROM lin_lb_listdiagnosisproject WHERE ListDiagnosisProjectId=?",f.f.order));assertEquals(html,fields().get("Remark"));
+  service.update(f.f.order,command(Map.of("Remark","")));before.put("Remark","");assertEquals(before,store.one("SELECT * FROM lin_lb_listdiagnosisproject WHERE ListDiagnosisProjectId=?",f.f.order));assertEquals("",fields().get("Remark"));
  }
 
 }

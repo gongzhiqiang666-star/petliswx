@@ -1,0 +1,8 @@
+<view class="remark-card">
+  <view class="remark-toolbar" wx:if="{{ready}}">
+    <button data-format="bold" bindtap="format" disabled="{{disabled}}">加粗</button><button data-format="italic" bindtap="format" disabled="{{disabled}}">斜体</button><button data-format="underline" bindtap="format" disabled="{{disabled}}">下划线</button><button bindtap="undo" disabled="{{disabled}}">撤销</button><button bindtap="redo" disabled="{{disabled}}">重做</button>
+  </view>
+  <editor id="remark-editor" class="remark-editor" hidden="{{!ready}}" placeholder="补充送检说明" read-only="{{disabled || !ready}}" bindready="ready" bindinput="input" />
+  <view class="remark-error" wx:if="{{error}}">{{error}}</view>
+  <view class="remark-hint">本页可编辑段落、加粗、斜体与下划线；其他原格式保持不变。编辑后请保存资料。</view>
+</view>

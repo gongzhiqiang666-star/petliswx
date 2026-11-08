@@ -33,8 +33,10 @@
         <view class="legacy-label">{{choice.label}}</view><picker range="{{legacyChoices[choice.kind]}}" range-key="name" value="{{legacyChoiceIndex[choice.kind]}}" data-kind="{{choice.kind}}" bindchange="legacyChoice" disabled="{{!legacyWritable || legacySaving}}"><view class="petlis-input legacy-input">{{legacyChoices[choice.kind][legacyChoiceIndex[choice.kind]].name}}</view></picker>
         <view wx:if="{{legacyWritable}}" class="legacy-choice-search"><input class="petlis-input" value="{{legacyChoiceQuery[choice.kind]}}" data-kind="{{choice.kind}}" bindinput="legacyChoiceQuery" placeholder="搜索{{choice.label}}" /><button class="petlis-btn petlis-btn-outline" data-kind="{{choice.kind}}" bindtap="searchLegacyChoices">搜索</button><button wx:if="{{legacyChoiceMore[choice.kind]}}" class="petlis-btn petlis-btn-outline" data-kind="{{choice.kind}}" bindtap="moreLegacyChoices">更多</button></view>
       </view>
-      <view wx:if="{{legacyRemarkText}}" class="legacy-note"><view class="legacy-label">原备注 · 文字预览</view><text>{{legacyRemarkText}}</text><view class="hint">原备注的图片与格式保持不变，本页暂不编辑备注。</view></view>
+      <view wx:if="{{legacyRemarkText}}" class="legacy-note"><view class="legacy-label">原备注 · 文字预览</view><text>{{legacyRemarkText}}</text><view class="hint">文字预览不展示全部图片与格式；未编辑的原文保持不变。</view></view>
 
+      <view wx:if="{{!legacyCreating && legacyWritable}}" class="legacy-label">编辑送检备注</view>
+      <legacy-remark wx:if="{{!legacyCreating && legacyWritable}}" html="{{legacyRemarkOriginal}}" disabled="{{legacySaving || legacyItemBusy || legacySubmitting}}" data-id="{{legacyOrderId}}" bindchange="legacyRemarkChange" />
       <button wx:if="{{!legacyCreating}}" class="petlis-btn petlis-btn-outline legacy-projects-toggle" bindtap="openLegacyItems" disabled="{{legacySaving || legacyItemBusy}}">查看与选择检测项目</button>
       <view wx:if="{{legacyItemsExpanded}}" class="legacy-projects">
         <view class="draft-section-title">已选检测项目</view>
