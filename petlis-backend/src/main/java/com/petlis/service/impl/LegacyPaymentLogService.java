@@ -18,22 +18,22 @@ import java.util.*;
 public class LegacyPaymentLogService {
  private final FeatureStore store;
  private final AccessService access;
- private static final List<String> FIELDS=List.of("BuyMail","BuyerId","TradeNoAli","TradeNoUser","TotalFee","TradeStatus","Subject","TradeBody","Exterface","CreateDt");
+ static final List<String> FIELDS=List.of("BuyMail","BuyerId","TradeNoAli","TradeNoUser","TotalFee","TradeStatus","Subject","TradeBody","Exterface","CreateDt");
  private static final String COLUMNS="PayLogId,"+String.join(",",FIELDS);
  private static final DateTimeFormatter DATE=DateTimeFormatter.ofPattern("uuuu-MM-dd HH:mm:ss").withResolverStyle(ResolverStyle.STRICT);
  public record Command(Map<String,String> fields,String requestKey,String expectedToken){}
  public record DeleteCommand(String requestKey,String expectedToken){}
- private boolean[] policy(boolean lock){
+ boolean[] policy(boolean lock){
   access.requireAdmin();var rows=store.jdbc().queryForList("SELECT config_value FROM lin_operational_config WHERE config_key='legacy-payment-logs' AND scope_type='GLOBAL' AND scope_id=0 AND status='ACTIVE'"+(lock?" FOR UPDATE":""));
-  if(rows.size()!=1)return new boolean[]{false,false,false};
-  try{var json=new ObjectMapper().readTree(rows.get(0).get("config_value").toString());boolean read=json.path("enabled").isBoolean()&&json.path("enabled").asBoolean(),write=read&&json.path("writeEnabled").isBoolean()&&json.path("writeEnabled").asBoolean();return new boolean[]{read,write,write&&json.path("deleteEnabled").isBoolean()&&json.path("deleteEnabled").asBoolean()};}catch(Exception e){throw new BusinessException(409,"交易流水参数无效");}
+  if(rows.size()!=1)return new boolean[]{false,false,false,false};
+  try{var json=new ObjectMapper().readTree(rows.get(0).get("config_value").toString());boolean read=json.path("enabled").isBoolean()&&json.path("enabled").asBoolean(),write=read&&json.path("writeEnabled").isBoolean()&&json.path("writeEnabled").asBoolean();return new boolean[]{read,write,write&&json.path("deleteEnabled").isBoolean()&&json.path("deleteEnabled").asBoolean(),write&&json.path("importEnabled").isBoolean()&&json.path("importEnabled").asBoolean()};}catch(Exception e){throw new BusinessException(409,"交易流水参数无效");}
  }
- @Transactional(readOnly=true) public Map<String,Boolean> capabilities(){var p=policy(false);return Map.of("paymentLogs",p[0],"paymentLogWrites",p[1],"paymentLogDeletes",p[2]);}
+ @Transactional(readOnly=true) public Map<String,Boolean> capabilities(){var p=policy(false);return Map.of("paymentLogs",p[0],"paymentLogWrites",p[1],"paymentLogDeletes",p[2],"paymentLogImports",p[3]);}
  private void read(){if(!policy(false)[0])throw new BusinessException(409,"交易流水维护尚未开启");}
  private void id(long id){if(id<1||id>4294967295L)throw new BusinessException(400,"交易流水编号无效");}
- private Map<String,Object> raw(long id,boolean lock){id(id);return new LinkedHashMap<>(store.one("SELECT "+COLUMNS+" FROM lin_lb_paylog WHERE PayLogId=?"+(lock?" FOR UPDATE":""),id));}
- private String token(Map<String,Object> row){try{return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(store.encode(new TreeMap<>(row)).getBytes(StandardCharsets.UTF_8)));}catch(Exception e){throw new IllegalStateException(e);}}
- private Map<String,Object> display(Map<String,Object> raw){var row=new LinkedHashMap<>(raw);row.put("TotalFee",((BigDecimal)raw.get("TotalFee")).toPlainString());Object date=raw.get("CreateDt");if(date instanceof java.sql.Timestamp t)date=t.toLocalDateTime();if(date instanceof LocalDateTime t)date=DATE.format(t);row.put("CreateDt",date);return row;}
+ Map<String,Object> raw(long id,boolean lock){id(id);return new LinkedHashMap<>(store.one("SELECT "+COLUMNS+" FROM lin_lb_paylog WHERE PayLogId=?"+(lock?" FOR UPDATE":""),id));}
+ String token(Map<String,Object> row){try{return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(store.encode(new TreeMap<>(row)).getBytes(StandardCharsets.UTF_8)));}catch(Exception e){throw new IllegalStateException(e);}}
+ Map<String,Object> display(Map<String,Object> raw){var row=new LinkedHashMap<>(raw);row.put("TotalFee",((BigDecimal)raw.get("TotalFee")).toPlainString());Object date=raw.get("CreateDt");if(date instanceof java.sql.Timestamp t)date=t.toLocalDateTime();if(date instanceof LocalDateTime t)date=DATE.format(t);row.put("CreateDt",date);return row;}
  @Transactional(readOnly=true) public Map<String,Object> list(String q,int page,int size){
   read();if(page<0||size<1||size>100||q!=null&&q.length()>1000)throw new BusinessException(400,"交易流水查询无效");
   String term="%"+(q==null?"":q)+"%",where=" FROM lin_lb_paylog WHERE TradeNoAli LIKE ? OR TradeNoUser LIKE ? OR BuyerId LIKE ? OR Subject LIKE ?";
@@ -51,6 +51,7 @@ public class LegacyPaymentLogService {
    else{int max=field.equals("TradeNoAli")||field.equals("TradeNoUser")?50:250;if(v.codePointCount(0,v.length())>max||v.indexOf('\0')>=0)throw new BusinessException(400,"交易流水文本过长或含无效字符");values.add(v);}
   }return values;
  }
+ Map<String,String> normalized(Map<String,String> fields){var args=values(fields);var normalized=new TreeMap<String,String>();for(int i=0;i<FIELDS.size();i++){Object value=args.get(i);normalized.put(FIELDS.get(i),value instanceof LocalDateTime t?DATE.format(t):value instanceof BigDecimal m?m.toPlainString():value.toString());}return normalized;}
  private Long replay(int actor,String key,String canonical){var rows=store.jdbc().queryForList("SELECT after_json FROM lin_audit_record WHERE actor_user_id=? AND resource_type='LEGACY_PAYMENT_LOG' AND request_id=? ORDER BY id DESC LIMIT 1",actor,key);if(rows.isEmpty())return null;try{var mapper=new ObjectMapper();var data=mapper.readTree(rows.get(0).get("after_json").toString());if(!mapper.readTree(canonical).equals(data.path("canonicalRequest")))throw new BusinessException(409,"请求号已用于其他流水操作");return data.path("paymentLogId").asLong();}catch(com.fasterxml.jackson.core.JsonProcessingException e){throw new BusinessException(409,"交易流水请求无法核对");}}
  private void audit(int actor,String action,long id,String key,Map<String,Object> before,Map<String,Object> canonical){store.insert("INSERT INTO lin_audit_record(actor_user_id,action,resource_type,resource_id,request_id,before_json,after_json) VALUES(?,?,'LEGACY_PAYMENT_LOG',?,?,?,?)",actor,action,String.valueOf(id),key,before==null?null:store.encode(before),store.encode(Map.of("paymentLogId",id,"canonicalRequest",canonical)));}
  @Transactional public long save(Long id,Command c){

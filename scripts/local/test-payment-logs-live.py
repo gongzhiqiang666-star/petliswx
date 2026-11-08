@@ -1,10 +1,11 @@
 """Actual PC -> Java -> isolated DB payment-log maintenance. No provider calls or money posting."""
-import importlib.util,json,secrets,subprocess,socket,time,os,signal,re,stat,hashlib
+import importlib.util,json,secrets,subprocess,socket,time,os,signal,re,stat,hashlib,sys,shutil
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[2]
 spec=importlib.util.spec_from_file_location('staff',Path(__file__).with_name('setup-php-lab.py'));staff=importlib.util.module_from_spec(spec);spec.loader.exec_module(staff)
 staff.config.BASE='http://127.0.0.1:18082/api';sql=staff.config.sql
 prefix='it_paylog_live_'+secrets.token_hex(5)
+import_mode='--import' in sys.argv
 def literal(value):return 'CONVERT(0x'+value.encode().hex()+' USING utf8mb4) COLLATE utf8mb4_unicode_ci'
 try:
  with socket.create_connection(('127.0.0.1',18082),timeout=.2):raise AssertionError('Dedicated test port already in use')
@@ -19,9 +20,15 @@ def snapshot(table):
  rows=sql('SELECT SHA2(CAST(JSON_OBJECT('+','.join("'"+c+"',`"+c+'`' for c in columns)+') AS CHAR),256) FROM '+table).splitlines()
  return hashlib.sha256('\n'.join(sorted(rows)).encode()).hexdigest()
 tables=['lin_lb_infohospital','lin_lb_listdiagnosisproject','lin_lb_diagnosisdetail','lin_lb_payordermain'];before={t:snapshot(t) for t in tables}
-process=None;private=Path.home()/'.local/share/petlis/qa';private.mkdir(mode=0o700,parents=True,exist_ok=True)
+process=None;fixture_dir=None;actor=None;private=Path.home()/'.local/share/petlis/qa';private.mkdir(mode=0o700,parents=True,exist_ok=True)
 try:
- sql("INSERT INTO lin_operational_config(config_key,config_value,description,updated_by) VALUES('legacy-payment-logs','{\"enabled\":true,\"writeEnabled\":true,\"deleteEnabled\":true}','payment log UI fixture',(SELECT MIN(id) FROM lin_user)) ON DUPLICATE KEY UPDATE config_value=VALUES(config_value),status='ACTIVE'")
+ if import_mode:
+  fixture_dir=private/(prefix+'-files');fixture_dir.mkdir(mode=0o700)
+  env=os.environ.copy();env.update(JAVA_HOME=str(Path.home()/'.local/share/petlis/tools/Home'),MAVEN_HOME=str(Path.home()/'.local/share/petlis/tools/libexec'))
+  cp=fixture_dir/'classpath.txt'
+  built=subprocess.run(['./petlis-backend/mvnw','-o','-q','-f','petlis-backend/pom.xml','dependency:build-classpath','-Dmdep.outputFile='+str(cp)],cwd=ROOT,env=env,capture_output=True,text=True,timeout=45);assert built.returncode==0,'Fixture classpath generation failed'
+  made=subprocess.run([str(Path(env['JAVA_HOME'])/'bin/java'),'--class-path',cp.read_text().strip(),'scripts/local/PaymentLogImportFixtures.java',str(fixture_dir),prefix],cwd=ROOT,capture_output=True,text=True,timeout=30);assert made.returncode==0,'Synthetic workbook generation failed: '+made.stderr[-500:]
+ sql("INSERT INTO lin_operational_config(config_key,config_value,description,updated_by) VALUES('legacy-payment-logs','{\"enabled\":true,\"writeEnabled\":true,\"deleteEnabled\":true,\"importEnabled\":true}','payment log UI fixture',(SELECT MIN(id) FROM lin_user)) ON DUPLICATE KEY UPDATE config_value=VALUES(config_value),status='ACTIVE'")
  command='set -a; source "$HOME/.local/share/petlis/mysql/backend.env"; set +a; [[ "$DB_URL" == "jdbc:mysql://127.0.0.1:13306/laboklin?"* ]] || exit 17; export JAVA_HOME="$HOME/.local/share/petlis/tools/Home" MAVEN_HOME="$HOME/.local/share/petlis/tools/libexec" APP_SCHEDULING_ENABLED=false DB_MIGRATIONS_ENABLED=false PDF_STORAGE_PATH="$HOME/.local/share/petlis/reports"; exec ./petlis-backend/mvnw -o -q -f petlis-backend/pom.xml spring-boot:run -Dspring-boot.run.profiles=dev -Dspring-boot.run.arguments=--server.port=18082'
  fd=os.open(private/(prefix+'.log'),os.O_WRONLY|os.O_CREAT|os.O_EXCL|os.O_NOFOLLOW,0o600)
  with os.fdopen(fd,'w') as log:process=subprocess.Popen(['/bin/zsh','-c',command],cwd=ROOT,stdout=log,stderr=subprocess.STDOUT,start_new_session=True)
@@ -36,12 +43,12 @@ try:
  text=mapping.read_text();credentials={}
  for key in ['username','password']:
   match=re.search(r"'"+key+r"'\s*=>\s*'((?:\\.|[^'])*)'",text);assert match;credentials[key]=match.group(1).replace("\\'","'").replace('\\\\','\\')
- session=staff.call('/auth/password/login',{'account':credentials['username'],'password':credentials['password']});assert 'ADMIN' in session['roles']
- run=subprocess.run(['node','scripts/editor-parity/payment-logs-live.js'],cwd=ROOT,input=json.dumps({'token':session['token'],'prefix':prefix,'screenshot':str(private/(prefix+'.png'))}),capture_output=True,text=True,timeout=90)
+ session=staff.call('/auth/password/login',{'account':credentials['username'],'password':credentials['password']});assert 'ADMIN' in session['roles'];actor=int(session['userId'])
+ run=subprocess.run(['node','scripts/editor-parity/payment-log-import-live.js' if import_mode else 'scripts/editor-parity/payment-logs-live.js'],cwd=ROOT,input=json.dumps({'token':session['token'],'prefix':prefix,'screenshot':str(private/(prefix+'.png')),'fixtureDir':str(fixture_dir) if fixture_dir else None}),capture_output=True,text=True,timeout=90)
  assert run.returncode==0,'Browser failed: '+run.stderr[-1200:]
  proof=json.loads(run.stdout)
- assert sql('SELECT COUNT(*) FROM lin_lb_paylog WHERE TradeNoUser='+literal(prefix))=='0'
- assert sql("SELECT COUNT(*) FROM lin_audit_record WHERE actor_user_id="+str(session['userId'])+" AND resource_type='LEGACY_PAYMENT_LOG' AND JSON_EXTRACT(after_json,'$.canonicalRequest.command.fields.TradeNoUser')="+literal(prefix))=='2'
+ assert sql('SELECT COUNT(*) FROM lin_lb_paylog WHERE TradeNoUser='+literal(prefix))==('4' if import_mode else '0')
+ assert sql("SELECT COUNT(*) FROM lin_audit_record WHERE actor_user_id="+str(session['userId'])+" AND resource_type='LEGACY_PAYMENT_LOG' AND JSON_EXTRACT(after_json,'$.canonicalRequest.command.fields.TradeNoUser')="+literal(prefix))==('6' if import_mode else '2')
  assert before=={t:snapshot(t) for t in tables},'Unrelated business records changed'
  proof.update(unrelatedBusinessRecordsUnchanged=True)
 finally:
@@ -51,11 +58,20 @@ finally:
   except subprocess.TimeoutExpired:os.killpg(process.pid,signal.SIGKILL);process.wait(timeout=5)
  # Select only records/audits owning this unpredictable test marker, including failures before UI deletion.
  ids=sql("SELECT resource_id FROM lin_audit_record WHERE resource_type='LEGACY_PAYMENT_LOG' AND JSON_EXTRACT(after_json,'$.canonicalRequest.command.fields.TradeNoUser')="+literal(prefix)).splitlines()
+ if actor is not None and import_mode:
+  owned=set(ids)
+  groups=sql("SELECT id,HEX(after_json) FROM lin_audit_record WHERE resource_type='LEGACY_PAYMENT_LOG_IMPORT' AND actor_user_id="+str(actor)).splitlines()
+  for line in groups:
+   audit,encoded=line.split('\t');assert audit.isdecimal() and int(audit)>0
+   result=json.loads(bytes.fromhex(encoded).decode());batch_ids={str(i) for i in result.get('result',{}).get('ids',[])}
+   if batch_ids and batch_ids<=owned:sql("DELETE FROM lin_audit_record WHERE resource_type='LEGACY_PAYMENT_LOG_IMPORT' AND id="+audit+" AND actor_user_id="+str(actor))
  for value in ids:
   assert value.isdecimal() and int(value)>0
   sql("DELETE FROM lin_audit_record WHERE resource_type='LEGACY_PAYMENT_LOG' AND resource_id="+literal(value))
  sql('DELETE FROM lin_lb_paylog WHERE TradeNoUser='+literal(prefix))
  if old:sql('UPDATE lin_operational_config SET config_value='+literal(old['config_value'])+',status='+literal(old['status'])+',updated_at='+literal(old['updated_at'])+" WHERE config_key='legacy-payment-logs' AND scope_type='GLOBAL' AND scope_id=0")
  else:sql("DELETE FROM lin_operational_config WHERE config_key='legacy-payment-logs' AND description='payment log UI fixture'")
+ if fixture_dir and fixture_dir.exists():
+  assert fixture_dir.parent==private and fixture_dir.name==prefix+'-files' and not fixture_dir.is_symlink();shutil.rmtree(fixture_dir)
 proof.update(gateRestored=True,fixturesRemoved=True,backendStopped=True)
 print(json.dumps(proof))

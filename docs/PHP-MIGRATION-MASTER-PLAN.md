@@ -40,7 +40,7 @@
 
 ## 实施进度（2026-11-08）
 
-M23 新增[交易流水日常维护子项](php-parity/M23-PAYMENT-LOGS.md)：Java/PC 原业务列查询、新增、修改、删除已接通，7项数据库专项和141项PC测试通过，真实页面保存重开删除及无资金/订单副作用已验证。CSV/XLS/XLSX导入、对账联动及整模块两轮复核仍未完成。
+M23 新增[交易流水日常维护子项](php-parity/M23-PAYMENT-LOGS.md)：Java/PC 原业务列查询、新增、修改、删除已接通，现已接通CSV/XLS/XLSX预览及整批导入，支持原注释与字段名、主键部分及顺序更新；流水18项及相关回归共31项、PC144项通过，真实页面维护和三种文件导入已验证，无资金/订单副作用。完整批量/导出查询、历史接续、对账联动及整模块两轮复核仍未完成。
 
 B0已开始，见[首轮执行记录](php-parity/B0-EXECUTION-LOG.md)、[迁移动作台账](php-parity/migration-ledger.csv)、[模型回调契约](php-parity/model-hook-contracts.csv)。当前仅建立源契约及参考证据，未宣布B0或功能迁移完成。
 
