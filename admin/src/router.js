@@ -9,6 +9,7 @@ export const routes = [
   { id: 'reports', path: '/reports', label: '报告审核发布', group: '检测报告', icon: '▧', roles: ['ADMIN', 'LAB_STAFF', 'HOSPITAL_ADMIN', 'DOCTOR'] },
   { id: 'legacyDictionaries', path: '/legacy-dictionaries', label: '\u57fa\u7840\u6570\u636e\u7ba1\u7406', group: '\u8d44\u6e90\u7ba1\u7406', icon: '\u25c7', roles: ['ADMIN'], capability: 'dictionaries' },
   { id: 'legacyTestCatalog', path: '/legacy-test-catalog', label: '检测项目资料', group: '资源管理', icon: '◇', roles: ['ADMIN'], capability: 'testCatalog' },
+  { id: 'legacyMailSettings', path: '/legacy-mail-settings', label: '邮件服务器', group: '资源管理', icon: '◇', roles: ['ADMIN'], capability: 'mailSettings' },
   { id: 'legacyTemplates', path: '/legacy-templates', label: '业务模板', group: '资源管理', icon: '◇', roles: ['ADMIN'], capability: 'templates' },
   { id: 'legacyTemplateBindings', path: '/legacy-template-bindings', label: '模板变量绑定', group: '资源管理', icon: '◇', roles: ['ADMIN'], capability: 'templateBindings' },
   { id: 'catalog', path: '/catalog', label: '项目与签约定价', group: '资源管理', icon: '◇', roles: ['ADMIN'] },
