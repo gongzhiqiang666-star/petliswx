@@ -66,7 +66,17 @@ try:
  proof=json.loads(run.stdout)
  if pdf_enabled:
   text=subprocess.run(['pdftotext',str(private/(prefix+'.pdf')),'-'],capture_output=True,text=True,check=True).stdout
-  assert 'REPORT_EDIT_END' in text and '12.50' in text and '50.00' in text and 'MAIL_EDIT_ONLY' not in text
+  assert 'REPORT_EDIT_END' in text and '12.50' in text and 'MAIL_EDIT_ONLY' not in text
+  # Currency can wrap within a narrow source cell; verify that cell by its x position,
+  # instead of treating interleaved neighboring date text as lost money digits.
+  import xml.etree.ElementTree as ET
+  bbox=subprocess.run(['pdftotext','-bbox',str(private/(prefix+'.pdf')),'-'],capture_output=True,text=True,check=True).stdout
+  tree=ET.fromstring(bbox);ns={'x':'http://www.w3.org/1999/xhtml'};amounts=[]
+  for page in tree.findall('.//x:page',ns):
+   words=page.findall('x:word',ns);money=[w for w in words if '￥' in (w.text or '')]
+   if money:
+    x=float(money[0].get('xMin'));amounts.append(''.join(w.text or '' for w in words if abs(float(w.get('xMin'))-x)<12))
+  assert sorted(amounts)==sorted(['￥12.50','￥7.25','￥4.00','￥50.00']),amounts
   proof['pdfTextMatchesEditedBillAndAmounts']=True
  assert sql(f'SELECT COUNT(*) FROM lin_lb_noticemail WHERE HospId={hospital}')=='0'
  assert sql(f'SELECT SampleStatus FROM lin_lb_listdiagnosisproject WHERE ListDiagnosisProjectId={order}')=='2'

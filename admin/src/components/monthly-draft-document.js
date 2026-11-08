@@ -12,6 +12,6 @@ export function monthlyPdfFilename(title){
 export async function downloadMonthlyDraftPdf(api,document){
  const filename=monthlyPdfFilename(document.pdfTitle);
  const file=await api.download('/admin/legacy/html-pdf/preview',{method:'POST',data:{html:document.reportHtml}});
- if(!file?.blob||file.blob.type!=='application/pdf'||await file.blob.slice(0,5).text()!=='%PDF-')throw Error('未取得有效PDF，请重试');
+ if(!file?.blob||file.blob.type.split(';')[0].trim().toLowerCase()!=='application/pdf'||await file.blob.slice(0,5).text()!=='%PDF-')throw Error('未取得有效PDF，请重试');
  return {...file,filename};
 }
