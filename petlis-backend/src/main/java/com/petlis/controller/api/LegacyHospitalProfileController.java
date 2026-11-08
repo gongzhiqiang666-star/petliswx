@@ -9,5 +9,6 @@ public class LegacyHospitalProfileController {
  private final LegacyHospitalProfileService service;
  @GetMapping("/capabilities") public Result<Map<String,Boolean>> capabilities(){return Result.success(service.capabilities());}
  @GetMapping("/{id}") public Result<Map<String,Object>> detail(@PathVariable long id){return Result.success(service.detail(id));}
+ @PostMapping public Result<Long> create(@RequestBody LegacyHospitalProfileService.CreateCommand command){return Result.success(service.create(command));}
  @PutMapping("/{id}") public Result<Long> update(@PathVariable long id,@RequestBody LegacyHospitalProfileService.Command command){return Result.success(service.update(id,command));}
 }

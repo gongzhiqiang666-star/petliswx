@@ -21,7 +21,7 @@ export async function render(container, context) {
   let status = 'ACTIVE';
   container.innerHTML = `${pageHeader('用户与医院', '查询真实账号、维护角色归属与医院状态', context.store?.getState().user?.roles?.includes('ADMIN') ? '<button class="button" id="staff-new">新增员工</button>' : '')}
     <div class="tabs"><button class="tab active" data-tab="users">用户账号</button><button class="tab" data-tab="hospitals">医院档案</button></div>
-    <section class="panel"><div class="toolbar"><label>状态<select id="org-status"><option value="ACTIVE">启用</option><option value="INACTIVE">停用</option><option value="PENDING">待审核</option><option value="REJECTED">已驳回</option><option value="ALL">全部</option></select></label></div><div id="org-list"></div></section>`;
+    <section class="panel"><div class="toolbar">${profileCapabilities.hospitalProfileCreates===true?'<button type="button" class="button" data-hospital-new>新增医院</button>':''}<label>状态<select id="org-status"><option value="ACTIVE">启用</option><option value="INACTIVE">停用</option><option value="PENDING">待审核</option><option value="REJECTED">已驳回</option><option value="ALL">全部</option></select></label></div><div id="org-list"></div></section>`;
   container.querySelector('#staff-new')?.addEventListener('click',async()=>{
     try {
       const labs=pageItems(await api.request('/admin/catalog/laboratories')).filter(row=>row.active===undefined || Number(row.active)===1);
@@ -97,6 +97,7 @@ export async function render(container, context) {
       container.querySelectorAll('[data-tab]').forEach((button) => button.classList.toggle('active', button === tabButton));
       load();
     }
+    const newHospital=event.target.closest('[data-hospital-new]');if(newHospital){try{await openHospitalProfile(context,null,load)}catch(error){context.toast(error.message,'error')}return;}
     const profileButton=event.target.closest('[data-hospital-profile]');if(profileButton){try{await openHospitalProfile(context,Number(profileButton.dataset.hospitalProfile),load)}catch(error){context.toast(error.message,'error')}return;}
     const hospitalButton = event.target.closest('[data-hospital]');
     if (hospitalButton) {
