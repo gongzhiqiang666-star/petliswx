@@ -32,6 +32,7 @@ class LegacyMailTransportTest {
   var sender=new LegacyMailTransport("TEST_LOCAL",sink.port(),false);
   assertThrows(IllegalArgumentException.class,()->sender.send(profile(),new LegacyMailTransport.Message("not-an-address",null,"subject","body",List.of())));
   assertThrows(IllegalArgumentException.class,()->sender.send(profile(),new LegacyMailTransport.Message("a@example.test",null,"subject\r\nBcc:bad@example.test","body",List.of())));
+  assertThrows(IllegalArgumentException.class,()->sender.send(profile(),new LegacyMailTransport.Message("a@example.test",null,"subject","body",List.of(),"<bad\r\n@example.test>")));
   assertEquals(0,sink.connections);
  }}
  @Test void smtpCannotBeEnabledByModeAloneAndLocalModeNeedsExplicitPort(){

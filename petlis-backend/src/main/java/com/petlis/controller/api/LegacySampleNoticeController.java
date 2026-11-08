@@ -13,6 +13,7 @@ public class LegacySampleNoticeController {
  @GetMapping("/orders/{id}/messages") public Result<Map<String,Object>> messages(@PathVariable long id){return Result.success(service.messages(id));}
  @PostMapping("/orders/{id}") public Result<Long> queue(@PathVariable long id,@RequestBody LegacySampleNoticeService.Command command){return Result.success(service.queue(id,command));}
  @GetMapping("/messages/{id}") public Result<Map<String,Object>> message(@PathVariable long id){return Result.success(service.message(id));}
+ @PostMapping("/messages/{id}/reconcile") public Result<Map<String,Object>> reconcile(@PathVariable long id,@RequestBody LegacySampleNoticeService.ReconcileCommand command){return Result.success(service.reconcile(id,command));}
  @PostMapping("/messages/{id}/cancel") public Result<Map<String,Object>> cancel(@PathVariable long id){return Result.success(service.cancel(id));}
  @PostMapping("/messages/{id}/dispatch") public Result<Map<String,Object>> dispatch(@PathVariable long id){return Result.success(service.dispatch(id));}
 }

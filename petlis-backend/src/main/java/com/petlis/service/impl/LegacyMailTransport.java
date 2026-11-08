@@ -20,7 +20,7 @@ public class LegacyMailTransport {
  public LegacyMailTransport(@Value("${app.legacy-mail.mode:DISABLED}") String mode,@Value("${app.legacy-mail.local-test-port:0}") int localPort,@Value("${app.legacy-mail.smtp-enabled:false}") boolean smtpEnabled){this.mode=mode;this.localPort=localPort;this.smtpEnabled=smtpEnabled;}
  public record Profile(String host,int port,String username,String password,String bcc){@Override public String toString(){return "MailProfile[credentials=REDACTED]";}}
  /** overrideTo models PHP Env::get(app.email); its BCC behavior depends on business kind. */
- public record Message(String to,String overrideTo,String subject,String html,List<Attachment> attachments){}
+ public record Message(String to,String overrideTo,String subject,String html,List<Attachment> attachments,String messageId){public Message(String to,String overrideTo,String subject,String html,List<Attachment> attachments){this(to,overrideTo,subject,html,attachments,null);}}
  public record Attachment(String filename,String contentType,byte[] bytes){
   public Attachment{bytes=bytes==null?null:bytes.clone();}
   @Override public byte[] bytes(){return bytes==null?null:bytes.clone();}
@@ -38,6 +38,7 @@ public class LegacyMailTransport {
   if(profile==null||command==null)throw new IllegalArgumentException("邮件配置和内容必填");
   header(profile.username());header(command.subject());
   if(command.subject().isEmpty()||command.subject().length()>2000||command.html()==null||command.html().getBytes(StandardCharsets.UTF_8).length>2*1024*1024)throw new IllegalArgumentException("邮件标题或正文无效或过长");
+  if(command.messageId()!=null&&!command.messageId().matches("<[A-Za-z0-9._-]+@petlis\\.invalid>"))throw new IllegalArgumentException("邮件追溯编号无效");
   var from=address(profile.username(),LegacyMailAddressRules.senderName(profile.username()));
   var route=LegacyMailRoutingRules.route(kind,command.to(),command.overrideTo(),profile.bcc());
   var recipients=addresses(route.to());var bcc=addresses(route.bcc());
@@ -56,6 +57,7 @@ public class LegacyMailTransport {
   try{
    var mime=sender.createMimeMessage();var helper=new MimeMessageHelper(mime,attachments.isEmpty()?MimeMessageHelper.MULTIPART_MODE_NO:MimeMessageHelper.MULTIPART_MODE_MIXED,"UTF-8");helper.setFrom(from);helper.setTo(recipients);helper.setBcc(bcc);helper.setSubject(command.subject());helper.setText(command.html(),true);
    for(var attachment:attachments)helper.addAttachment(attachment.filename(),new ByteArrayResource(attachment.bytes()),attachment.contentType());
+   if(command.messageId()!=null)mime.setHeader("Message-ID",command.messageId());
    sender.send(mime);
   }catch(MailException e){throw new DeliveryUncertainException();}catch(MessagingException e){throw new IllegalArgumentException("邮件内容或附件无法编码");}
  }
