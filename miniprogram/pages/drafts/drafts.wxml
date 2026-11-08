@@ -16,7 +16,7 @@
   </view>
 
   <view wx:if="{{legacyEnabled}}" class="legacy-section">
-    <view class="draft-section-title">本院历史草稿</view>
+    <view class="draft-section-title">本院送检草稿</view><button wx:if="{{legacyCreateEnabled}}" class="petlis-btn petlis-btn-primary" bindtap="createLegacy" disabled="{{legacySaving || legacyItemBusy || legacySubmitting}}">新建医院送检草稿</button>
     <view class="hint">可继续维护原送检资料。当前保存不会提交审核。</view>
     <view wx:if="{{legacyError}}" class="legacy-error">{{legacyError}}</view>
     <view wx:for="{{legacyItems}}" wx:key="orderId" class="card petlis-list-card">
@@ -26,8 +26,8 @@
     <view wx:if="{{!legacyBusy && !legacyError && !legacyItems.length}}" class="hint">暂无本院历史草稿</view>
     <button wx:if="{{legacyMore}}" class="petlis-btn petlis-btn-outline" bindtap="moreLegacy" disabled="{{legacyBusy}}">加载更多历史草稿</button>
     <view wx:if="{{legacyOrderId && !legacyPreview}}" class="card legacy-editor">
-      <view class="draft-section-title">送检资料</view>
-      <block wx:for="{{legacyTextFields}}" wx:key="key" wx:for-item="field"><view class="legacy-label">{{field.label}}</view><input class="petlis-input legacy-input" value="{{legacyFields[field.key]}}" data-key="{{field.key}}" bindinput="legacyInput" maxlength="{{field.max}}" disabled="{{!legacyWritable || legacySaving}}" /></block>
+      <view class="draft-section-title">{{legacyCreating ? '新建送检草稿' : '送检资料'}}</view><view wx:if="{{legacyCreating}}" class="hint">先保存基本资料，再选择检测项目。生日和品种副本按原医院创建规则保存；采样部位、备注可在创建后补充。</view>
+      <block wx:for="{{legacyTextFields}}" wx:key="key" wx:for-item="field"><view wx:if="{{!legacyCreating || field.key !== 'SampleArea'}}"><view class="legacy-label">{{field.label}}</view><input class="petlis-input legacy-input" value="{{legacyFields[field.key]}}" data-key="{{field.key}}" bindinput="legacyInput" maxlength="{{field.max}}" disabled="{{!legacyWritable || legacySaving}}" /></view></block>
       <view class="legacy-label">采样日期</view><picker mode="date" value="{{legacyFields.CollectDt === '1900-01-01' ? '' : legacyFields.CollectDt}}" data-key="CollectDt" bindchange="legacyInput" disabled="{{!legacyWritable || legacySaving}}"><view class="petlis-input legacy-input">{{!legacyFields.CollectDt || legacyFields.CollectDt === '1900-01-01' ? '未记录采样日期' : legacyFields.CollectDt}}</view></picker>
       <view wx:for="{{legacyChoiceKinds}}" wx:key="kind" wx:for-item="choice">
         <view class="legacy-label">{{choice.label}}</view><picker range="{{legacyChoices[choice.kind]}}" range-key="name" value="{{legacyChoiceIndex[choice.kind]}}" data-kind="{{choice.kind}}" bindchange="legacyChoice" disabled="{{!legacyWritable || legacySaving}}"><view class="petlis-input legacy-input">{{legacyChoices[choice.kind][legacyChoiceIndex[choice.kind]].name}}</view></picker>
@@ -35,7 +35,7 @@
       </view>
       <view wx:if="{{legacyRemarkText}}" class="legacy-note"><view class="legacy-label">原备注 · 文字预览</view><text>{{legacyRemarkText}}</text><view class="hint">原备注的图片与格式保持不变，本页暂不编辑备注。</view></view>
 
-      <button class="petlis-btn petlis-btn-outline legacy-projects-toggle" bindtap="openLegacyItems" disabled="{{legacySaving || legacyItemBusy}}">查看与选择检测项目</button>
+      <button wx:if="{{!legacyCreating}}" class="petlis-btn petlis-btn-outline legacy-projects-toggle" bindtap="openLegacyItems" disabled="{{legacySaving || legacyItemBusy}}">查看与选择检测项目</button>
       <view wx:if="{{legacyItemsExpanded}}" class="legacy-projects">
         <view class="draft-section-title">已选检测项目</view>
         <view wx:if="{{legacyItemError}}" class="legacy-error">{{legacyItemError}}<button class="petlis-btn petlis-btn-outline" bindtap="openLegacyItems" disabled="{{legacyItemBusy}}">刷新项目</button></view>
@@ -49,8 +49,8 @@
         <view class="hint">项目按原价目规则加入当前草稿，此处不提交审核或扣款。</view>
       </view>
       <view wx:if="{{legacyPreviewError}}" class="legacy-error">{{legacyPreviewError}}</view>
-      <button class="petlis-btn petlis-btn-primary legacy-preview-button" bindtap="previewLegacy" loading="{{legacyPreviewBusy}}" disabled="{{legacySaving || legacyItemBusy || legacyPreviewBusy}}">预览并提交</button>
-      <view class="row"><button class="petlis-btn petlis-btn-outline" bindtap="closeLegacy" disabled="{{legacySaving || legacyItemBusy}}">收起</button><button wx:if="{{legacyWritable}}" class="petlis-btn petlis-btn-primary" bindtap="saveLegacy" loading="{{legacySaving}}" disabled="{{legacySaving || legacyBusy || legacyItemBusy}}">保存资料</button></view>
+      <button wx:if="{{!legacyCreating}}" class="petlis-btn petlis-btn-primary legacy-preview-button" bindtap="previewLegacy" loading="{{legacyPreviewBusy}}" disabled="{{legacySaving || legacyItemBusy || legacyPreviewBusy}}">预览并提交</button>
+      <view class="row"><button class="petlis-btn petlis-btn-outline" bindtap="closeLegacy" disabled="{{legacySaving || legacyItemBusy}}">收起</button><button wx:if="{{legacyWritable}}" class="petlis-btn petlis-btn-primary" bindtap="saveLegacy" loading="{{legacySaving}}" disabled="{{legacySaving || legacyBusy || legacyItemBusy}}">{{legacyCreating ? '创建草稿' : '保存资料'}}</button></view>
     </view>
 
     <view wx:if="{{legacyPreview}}" class="card legacy-preview">

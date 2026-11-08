@@ -26,7 +26,7 @@ Java LegacyHospitalDraftSubmissionService 实现 GET `/orders/hospital-history/d
 
 现有草稿页增加预览、返回资料、确认提交和成功后的送检历史入口。未保存资料必须先保存；结果不明保留预览和原请求号，不假定失败而另发请求。只读或品种模式待定时不提供确认提交。原备注当前仍是文字预览、原HTML保留，富文本维护未完成。
 
-## 实际审核接续：后台请求链已验证，PC专用入口未完成
+## 实际审核接续：后台请求链与PC专用入口已验证
 
 现有ReviewService待审列表可见旧单，但正式审核要求lin_order_extension。不得把原提交状态0误称已完成新审核接入。
 
@@ -53,3 +53,6 @@ Java LegacyHospitalDraftSubmissionService 实现 GET `/orders/hospital-history/d
 新增覆盖原提交只改状态/空项目、幂等、旧快照和越院/关闭拒绝、待定品种模式拒绝、审计失败回滚及明确接入后的真实审核链。未启用真实外发或作业，无DDL、无PHP源码修改。
 
 仍未完成：品种显示选择、原草稿创建及生日默认值、备注富文本维护、异常驳回重提/全场景并发与真实进程故障恢复、真实历史和模拟器/真机、整模块两轮复核。M11保持部分完成。
+
+
+创建增量及其未完成边界见 [M11-DRAFT-CREATE-CONTRACT.md](M11-DRAFT-CREATE-CONTRACT.md)，不能再将全部创建能力视作未开工，也不能因常规创建接通视作完整年龄算法迁完。

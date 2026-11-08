@@ -79,7 +79,9 @@ class Request {
     // 业务状态码检查
     if (data.code === 401) this.unauthorized()
     if (data.code !== undefined && data.code !== 200) {
-      throw new Error(data.message || '请求失败')
+      const error=new Error(data.message || '请求失败')
+      error.code=data.code
+      throw error
     }
 
     // 返回数据

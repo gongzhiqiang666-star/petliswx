@@ -13,7 +13,7 @@ class LegacyHospitalDraftLocalDatabaseTest {
  @Autowired org.springframework.transaction.PlatformTransactionManager transactions;
  @Autowired org.springframework.test.web.servlet.MockMvc mvc;
  @Autowired SessionService sessions;LegacyHospitalHistoryLocalDatabaseTest f;LegacyHospitalDraftService service;
- @BeforeEach void setup(){f=new LegacyHospitalHistoryLocalDatabaseTest();f.store=store;f.setup();f.gate("{\"enabled\":true,\"writeEnabled\":true,\"draftEnabled\":true,\"draftWriteEnabled\":true}");service=new LegacyHospitalDraftService(store,f.f.access,f.service);store.jdbc().update("UPDATE lin_lb_listdiagnosisproject SET SampleStatus=-2 WHERE ListDiagnosisProjectId=?",f.f.order);}
+ @BeforeEach void setup(){f=new LegacyHospitalHistoryLocalDatabaseTest();f.store=store;f.setup();f.gate("{\"enabled\":true,\"writeEnabled\":true,\"draftEnabled\":true,\"draftWriteEnabled\":true,\"draftCreateEnabled\":true}");store.jdbc().update("UPDATE lin_lb_infohospital SET IsActive=1 WHERE InfoHospitalId=?",f.f.hospital);service=new LegacyHospitalDraftService(store,f.f.access,f.service);store.jdbc().update("UPDATE lin_lb_listdiagnosisproject SET SampleStatus=-2 WHERE ListDiagnosisProjectId=?",f.f.order);}
  @SuppressWarnings("unchecked") Map<String,Object> fields(){return (Map<String,Object>)service.detail(f.f.order,(int)f.f.hospital).get("fields");}
  LegacyHospitalDraftService.Command command(Map<String,String> fields){return new LegacyHospitalDraftService.Command((int)f.f.hospital,fields,(String)service.detail(f.f.order,(int)f.f.hospital).get("editToken"),"draft_"+UUID.randomUUID().toString().replace("-",""));}
  @Test void onlyHospitalDraftsAreVisibleAndSubmittedOrdersCannotBeEdited(){assertEquals(1,((Number)service.list((int)f.f.hospital,0,10).get("total")).intValue());assertEquals(403,assertThrows(BusinessException.class,()->service.list(2147483647,0,10)).getCode());store.jdbc().update("UPDATE lin_lb_listdiagnosisproject SET SampleStatus=0 WHERE ListDiagnosisProjectId=?",f.f.order);assertEquals(0,((Number)service.list((int)f.f.hospital,0,10).get("total")).intValue());assertEquals(409,assertThrows(BusinessException.class,()->service.detail(f.f.order,(int)f.f.hospital)).getCode());}
@@ -53,4 +53,28 @@ class LegacyHospitalDraftLocalDatabaseTest {
   var before=store.one("SELECT * FROM lin_lb_listdiagnosisproject WHERE ListDiagnosisProjectId=?",f.f.order);
   assertEquals(400,assertThrows(BusinessException.class,()->service.update(f.f.order,command(Map.of("CollectDt","2024-02-30")))).getCode());assertEquals(before,store.one("SELECT * FROM lin_lb_listdiagnosisproject WHERE ListDiagnosisProjectId=?",f.f.order));
  }
+ @Test void hospitalCreationKeepsSourceDefaultsAndReplaysWithoutSecondOrder(){
+  var c=new LegacyHospitalDraftService.CreateCommand((int)f.f.hospital,Map.of("MasterName","新主人","AnimalName","新动物","Age","2岁3月","DoctorName","原送检医师","SampleArea","创建会清空","Remark","<p>创建会清空</p>"),"create_"+UUID.randomUUID().toString().replace("-",""));
+  long id=service.create(c);assertEquals(id,service.create(c));var row=store.one("SELECT * FROM lin_lb_listdiagnosisproject WHERE ListDiagnosisProjectId=?",id);
+  assertEquals(-2,((Number)row.get("SampleStatus")).intValue());assertEquals(2,((Number)row.get("CreateDataTypeIId")).intValue());assertEquals(f.f.hospital,((Number)row.get("InfoHospitalId")).longValue());
+  assertEquals("新主人",row.get("MasterName_en"));assertEquals("",row.get("UserNO"));assertEquals("",row.get("SampleArea"));assertEquals("",row.get("Remark"));
+  assertEquals(0,store.jdbc().queryForObject("SELECT COUNT(*) FROM lin_order_extension WHERE order_id=?",Integer.class,id));assertEquals(0,store.jdbc().queryForObject("SELECT COUNT(*) FROM lin_lb_diagnosisdetail WHERE ListDiagnosisProjectId=?",Integer.class,id));
+  assertEquals("新动物",((Map<?,?>)service.detail(id,(int)f.f.hospital).get("fields")).get("AnimalName"));
+ }
+ @Test void createRequiresIndependentGateHospitalScopeAndCannotReplayDifferentContent(){
+  var c=new LegacyHospitalDraftService.CreateCommand((int)f.f.hospital,Map.of("Age","1岁0月"),"create_"+UUID.randomUUID().toString().replace("-",""));long id=service.create(c);
+  assertEquals(409,assertThrows(BusinessException.class,()->service.create(new LegacyHospitalDraftService.CreateCommand(c.hospitalId(),Map.of("Age","2岁0月"),c.requestKey()))).getCode());
+  assertEquals(403,assertThrows(BusinessException.class,()->service.create(new LegacyHospitalDraftService.CreateCommand(2147483647,c.fields(),c.requestKey()))).getCode());
+  f.gate("{\"enabled\":true,\"writeEnabled\":true,\"draftEnabled\":true,\"draftWriteEnabled\":true}");assertEquals(409,assertThrows(BusinessException.class,()->service.create(c)).getCode());assertNotNull(service.detail(id,(int)f.f.hospital));
+ }
+
+ @Test void createAuditFailureRollsBackParentAndSameRequestCanRecover(){
+  var c=new LegacyHospitalDraftService.CreateCommand((int)f.f.hospital,Map.of("Age","1岁0月","AnimalName",f.f.prefix+"_create"),"create_"+UUID.randomUUID().toString().replace("-",""));
+  var before=store.jdbc().queryForObject("SELECT COUNT(*) FROM lin_lb_listdiagnosisproject WHERE InfoHospitalId=?",Integer.class,f.f.hospital);
+  var faulty=new FeatureStore(store.jdbc(),json){@Override public long insert(String sql,Object...args){if(sql.startsWith("INSERT INTO lin_audit_record"))throw new BusinessException(409,"owned creation audit failure");return super.insert(sql,args);}};
+  var broken=new LegacyHospitalDraftService(faulty,f.f.access,f.service);var tx=new org.springframework.transaction.support.TransactionTemplate(transactions);tx.setPropagationBehavior(org.springframework.transaction.TransactionDefinition.PROPAGATION_NESTED);var manager=(org.springframework.transaction.support.AbstractPlatformTransactionManager)transactions;boolean previous=manager.isNestedTransactionAllowed();manager.setNestedTransactionAllowed(true);
+  try{assertThrows(BusinessException.class,()->tx.execute(status->broken.create(c)));}finally{manager.setNestedTransactionAllowed(previous);}
+  assertEquals(before,store.jdbc().queryForObject("SELECT COUNT(*) FROM lin_lb_listdiagnosisproject WHERE InfoHospitalId=?",Integer.class,f.f.hospital));long id=service.create(c);assertEquals(id,service.create(c));
+ }
+
 }

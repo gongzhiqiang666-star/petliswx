@@ -17,6 +17,20 @@ public class LegacyHospitalDraftService {
  private final AccessService access;
  private final LegacyHospitalHistoryService history;
  public record Command(Integer hospitalId,Map<String,String> fields,String expectedToken,String requestKey) {}
+ public record CreateCommand(Integer hospitalId,Map<String,String> fields,String requestKey) {}
+ @Transactional(isolation=Isolation.READ_COMMITTED) public long create(CreateCommand command){
+  if(command==null)throw new BusinessException(400,"草稿资料缺失");require(command.hospitalId(),true);
+  if(!history.policy(true).get("legacyHospitalDraftCreates"))throw new BusinessException(409,"原医院草稿新建尚未开启");
+  if(command.fields()==null||!FIELDS.containsAll(command.fields().keySet())||command.requestKey()==null||!command.requestKey().matches("[A-Za-z0-9_-]{16,64}"))throw new BusinessException(400,"草稿创建请求无效");
+  var values=validate(command.fields());int actor=access.current().userId();store.one("SELECT id FROM lin_user WHERE id=? FOR UPDATE",actor);
+  String canonical=store.encode(command);var prior=store.jdbc().queryForList("SELECT resource_id,after_json FROM lin_audit_record WHERE actor_user_id=? AND resource_type='LEGACY_HOSPITAL_DRAFT_CREATE' AND request_id=? ORDER BY id DESC LIMIT 1",actor,command.requestKey());
+  if(!prior.isEmpty())try{var saved=new ObjectMapper().readTree(prior.get(0).get("after_json").toString());if(!LegacyCanonicalRequest.same(canonical,saved.path("canonicalRequest").asText()))throw new BusinessException(409,"创建请求号已用于其他内容");return Long.parseLong(prior.get(0).get("resource_id").toString());}catch(com.fasterxml.jackson.core.JsonProcessingException error){throw new BusinessException(409,"草稿创建记录无法核对");}
+  var hospital=store.one("SELECT InfoHospitalId,IsActive FROM lin_lb_infohospital WHERE InfoHospitalId=? FOR UPDATE",command.hospitalId());if(!(hospital.get("IsActive") instanceof Number active)||active.intValue()!=1)throw new BusinessException(409,"医院当前不可送检");
+  var breeds=store.jdbc().queryForList("SELECT Variety_CN,Variety_EN FROM lin_lb_infovariety WHERE IID=?",values.getOrDefault("AnimalTypeId",0));
+  var clock=store.one("SELECT DATE(CONVERT_TZ(UTC_TIMESTAMP(),'+00:00','+08:00')) AS today,CONVERT_TZ(UTC_TIMESTAMP(),'+00:00','+08:00') AS created");var row=LegacyHospitalDraftCreationRules.defaults(values,command.hospitalId(),LocalDate.parse(clock.get("today").toString()),breeds.isEmpty()?Map.of():breeds.get(0));row.put("CreateDt",clock.get("created"));
+  var columns=new ArrayList<>(row.keySet());long id=store.insert("INSERT INTO lin_lb_listdiagnosisproject (`"+String.join("`,`",columns)+"`) VALUES("+String.join(",",Collections.nCopies(columns.size(),"?"))+")",columns.stream().map(row::get).toArray());
+  store.insert("INSERT INTO lin_audit_record(actor_user_id,action,resource_type,resource_id,request_id,after_json) VALUES(?,'LEGACY_HOSPITAL_DRAFT_CREATED','LEGACY_HOSPITAL_DRAFT_CREATE',?,?,?)",actor,String.valueOf(id),command.requestKey(),store.encode(Map.of("canonicalRequest",canonical,"orderId",id)));return id;
+ }
  private static final Set<String> FIELDS=Set.of("MasterName","AnimalName","AnimalTypeId","Age","DictSexId","CollectDt","InfoSampleTypeId","SampleArea","DoctorName","Remark");
  private static final Map<String,List<String>> DICTIONARIES=Map.of("variety",List.of("lin_lb_infovariety","IID","Variety_CN"),"sex",List.of("lin_lb_dictsex","DictSexId","SexName"),"sampleType",List.of("lin_lb_infosampletype","InfoSampleTypeId","SampleName"));
  void require(Integer hospital,boolean write){

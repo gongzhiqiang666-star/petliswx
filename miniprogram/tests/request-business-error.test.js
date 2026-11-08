@@ -1,0 +1,2 @@
+const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm'),path=require('node:path')
+test('业务拒绝保留错误编号，让创建页面区分明确拒绝与结果不明',()=>{const context={module:{exports:{}},require:()=>({}),console};vm.runInNewContext(fs.readFileSync(path.join(__dirname,'../utils/request.js'),'utf8'),context);assert.throws(()=>context.module.exports.handleResponse({statusCode:200,data:{code:409,message:'年龄待核对'}}),e=>e.code===409&&e.message==='年龄待核对')})
