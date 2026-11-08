@@ -49,7 +49,7 @@ public class LegacyFinanceService {
   var project=store.one("SELECT AnimalName,MasterName,UserNO,ReportNO,DiagnosticResults FROM vwlistdiagnosisproject WHERE ListDiagnosisProjectId=?",order);
   String path="/Content/FilePdf/"+order+"_"+id+"/"+LegacyDetailUpdateRules.filename(project,effect,now);
   if(effect.completeParent())store.jdbc().update("UPDATE lin_lb_listdiagnosisproject SET SendReportDt=?,SampleStatus=3 WHERE ListDiagnosisProjectId=?",now,order);
-  Object discount=before.get("OrginalDiscount")==null?null:LegacyPricingRules.originalDiscount(new BigDecimal(before.get("OrginalDiscount").toString()));
+  Object discount=before.get("OrginalDiscount")==null?null:LegacyPricingRules.originalDiscount(before.get("OrginalDiscount"));
   store.jdbc().update("UPDATE lin_lb_diagnosisdetail SET PayStatus2=?,OrginalDiscount=?,IsSendMail=?,IsCheckPass=?,SendMailDt=?,PDFHttpUrl=? WHERE DiagnosisDetailId=?",status,discount,sent,exempt,effect.sentAt(),path,id);
   store.insert("INSERT INTO lin_audit_record(actor_user_id,action,resource_type,resource_id,request_id,before_json,after_json) VALUES(?,'LEGACY_SINGLE_WRITEOFF','LEGACY_FINANCE_WRITEOFF',?,?,?,?)",actor,String.valueOf(id),command.requestKey(),store.encode(before),store.encode(Map.of("canonicalRequest",canonical,"parentCompleted",effect.completeParent(),"bodiesPreserved",true,"pdfPath",path)));return id;
  }
