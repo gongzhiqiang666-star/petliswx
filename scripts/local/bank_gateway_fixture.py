@@ -7,7 +7,7 @@ from cryptography.hazmat.primitives.asymmetric import rsa,padding
 class BankGatewayFixture:
  def __init__(self,private,prefix,fail_first_query=False,before_second_query=None):
   self.folder=private/(prefix+'_gateway');self.folder.mkdir(mode=0o700)
-  self.merchant=rsa.generate_private_key(public_exponent=65537,key_size=2048);self.gateway=rsa.generate_private_key(public_exponent=65537,key_size=2048);self.prepay=0;self.queries=0;self.errors=[];self.order=None;self.prefix=prefix
+  self.merchant=rsa.generate_private_key(public_exponent=65537,key_size=2048);self.gateway=rsa.generate_private_key(public_exponent=65537,key_size=2048);self.prepay=0;self.queries=0;self.refunds=0;self.refund_queries=0;self.refund_order=None;self.errors=[];self.order=None;self.prefix=prefix
   self.private_key=self.folder/'merchant.der';self.public_key=self.folder/'gateway.der'
   for path,value in [(self.private_key,self.merchant.private_bytes(serialization.Encoding.DER,serialization.PrivateFormat.PKCS8,serialization.NoEncryption())),(self.public_key,self.gateway.public_key().public_bytes(serialization.Encoding.DER,serialization.PublicFormat.SubjectPublicKeyInfo))]:
    fd=os.open(path,os.O_WRONLY|os.O_CREAT|os.O_EXCL|os.O_NOFOLLOW,0o600)
@@ -28,6 +28,14 @@ class BankGatewayFixture:
      if method.endswith('.prePay'):
       fixture.prepay+=1;assert fixture.prepay==1,'Unexpected duplicate prePay';assert body['trxTtlAmt']=='1250';assert isinstance(body['userNo'],int);fixture.order=body['merOrdrNo'];assert fixture.order.startswith('TESTLOCAL')
       self.close_connection=True;self.connection.shutdown(socket.SHUT_RDWR);self.connection.close();return
+     if method.endswith('.refund'):
+      fixture.refunds+=1;assert fixture.refunds==1;assert body['oriMerOrdrNo']==fixture.order;assert isinstance(body['trxAmt'],int) and body['trxAmt']==1250;fixture.refund_order=body['merOrdrNo'];assert fixture.refund_order!=fixture.order
+      self.close_connection=True;self.connection.shutdown(socket.SHUT_RDWR);self.connection.close();return
+     if method.endswith('.refundQuery'):
+      fixture.refund_queries+=1;assert body['oriMerOrdrNo']==fixture.order;assert 'trxAmt' not in body
+      response={'retCode':'00000','refundStatus':'OWNED_RESPONSE','oriMerOrdrNo':fixture.order,'refundOrderNo':fixture.refund_order,'trxAmt':1250,'message':'<bank reply, display as text>'}
+      raw=json.dumps({'response':{'msgBody':response}},separators=(',',':')).encode();signature=fixture.gateway.sign(raw,padding.PKCS1v15(),hashes.SHA256()).hex();packet=raw[:-1]+b',"sign":"'+signature.encode()+b'"}'
+      self.send_response(200);self.send_header('Content-Length',str(len(packet)));self.end_headers();self.wfile.write(packet);return
      assert method.endswith('.payQuery');fixture.queries+=1;assert body['oriMerOrdrNo']==fixture.order;assert re.fullmatch('[0-9]{14}',body['oriTrxDt'])
      if fixture.queries==2 and before_second_query:before_second_query(fixture.order)
      response={'retCode':'00000','tradeStatus':'00','oriMerOrdrNo':fixture.order,'trxTtlAmt':'1250','chnlMerOrdrNo':fixture.prefix+'_channel','subOpenId':('x'*251 if fail_first_query and fixture.queries==1 else 'owned-test-buyer')}
