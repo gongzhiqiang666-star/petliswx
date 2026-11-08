@@ -13,7 +13,7 @@ import static org.mockito.Mockito.*;
 class LegacyPaymentLogLocalDatabaseTest {
  @Autowired FeatureStore store; LegacyPaymentLogService service; AccessService access; int actor; String prefix;
  @BeforeEach void setup(){assertTrue(System.getenv("DB_URL").startsWith("jdbc:mysql://127.0.0.1:13306/laboklin?"));prefix="it_paylog_"+UUID.randomUUID().toString().substring(0,8);actor=(int)store.insert("INSERT INTO lin_user(username,nickname,status) VALUES(?,'支付流水测试','normal')",prefix);access=mock(AccessService.class);when(access.current()).thenReturn(new CurrentActor(actor,Set.of(PlatformRole.ADMIN),Set.of(),Set.of(),new DataScope(true,Set.of(),Set.of(),null)));service=new LegacyPaymentLogService(store,access);gate(true,true,true);}
- void gate(boolean enabled,boolean write,boolean delete){store.jdbc().update("INSERT INTO lin_operational_config(config_key,config_value,description,updated_by) VALUES('legacy-payment-logs',?,'transaction-only test',?) ON DUPLICATE KEY UPDATE config_value=VALUES(config_value),status='ACTIVE'",store.encode(Map.of("enabled",enabled,"writeEnabled",write,"deleteEnabled",delete)),actor);}
+ void gate(boolean enabled,boolean write,boolean delete){store.jdbc().update("INSERT INTO lin_operational_config(config_key,config_value,description,updated_by) VALUES('legacy-payment-logs',?,'transaction-only test',?) ON DUPLICATE KEY UPDATE config_value=VALUES(config_value),status='ACTIVE'",store.encode(Map.of("enabled",enabled,"writeEnabled",write,"deleteEnabled",delete,"batchEnabled",true)),actor);}
  String key(){return "paylog_"+UUID.randomUUID().toString().replace("-","");}
  Map<String,String> fields(String money){var f=new LinkedHashMap<String,String>();for(String k:List.of("BuyMail","BuyerId","TradeNoAli","TradeNoUser","TradeStatus","Subject","TradeBody","Exterface"))f.put(k,"");f.put("TradeNoAli",prefix);f.put("TradeNoUser",prefix);f.put("TradeStatus","UNKNOWN_LEGACY_STATE");f.put("TotalFee",money);f.put("CreateDt","2020-02-29 13:14:15");return f;}
  LegacyPaymentLogService.Command command(Map<String,String> f,String version){return new LegacyPaymentLogService.Command(f,key(),version);}
@@ -36,5 +36,21 @@ class LegacyPaymentLogLocalDatabaseTest {
  }
  @Test void doesNotChangeHospitalFundsOrdersOrPaymentRecords(){
   var tables=List.of("lin_lb_infohospital","lin_lb_listdiagnosisproject","lin_lb_diagnosisdetail","lin_lb_payordermain");var counts=new LinkedHashMap<String,Long>();for(String t:tables)counts.put(t,store.jdbc().queryForObject("SELECT COUNT(*) FROM "+t,Long.class));long id=service.save(null,command(fields("-100"),null));var f=fields("200");service.save(id,command(f,service.detail(id).get("editToken").toString()));for(String t:tables)assertEquals(counts.get(t),store.jdbc().queryForObject("SELECT COUNT(*) FROM "+t,Long.class));
+ }
+ List<LegacyPaymentLogService.BatchTarget> targets(long... ids){var rows=new ArrayList<LegacyPaymentLogService.BatchTarget>();for(long id:ids)rows.add(new LegacyPaymentLogService.BatchTarget(id,service.detail(id).get("editToken").toString()));return rows;}
+ @Test void batchUpdateAndDeletePreserveOtherFieldsAndReplay(){
+  long a=service.save(null,command(fields("-12.34"),null)),b=service.save(null,command(fields("99.99"),null));var before=service.detail(a);
+  var update=new LegacyPaymentLogService.BatchCommand("UPDATE",targets(a,b),Map.of("TradeStatus","CUSTOM_BATCH"),key());var result=service.batch(update);assertEquals(result,service.batch(update));assertEquals(List.of(a,b),result.ids());
+  for(long id:new long[]{a,b})assertEquals("CUSTOM_BATCH",service.detail(id).get("TradeStatus"));var after=service.detail(a);assertEquals(before.get("TotalFee"),after.get("TotalFee"));assertEquals(before.get("CreateDt"),after.get("CreateDt"));
+  var delete=new LegacyPaymentLogService.BatchCommand("DELETE",targets(a,b),Map.of(),key());assertEquals(service.batch(delete),service.batch(delete));assertEquals(0,((Number)service.list(prefix,0,20).get("total")).intValue());
+ }
+ @Test void staleTargetAndReusedKeyCannotPartiallyChangeBatch(){
+  long a=service.save(null,command(fields("1"),null)),b=service.save(null,command(fields("2"),null));var targets=targets(a,b);var changed=fields("3");service.save(b,command(changed,targets.get(1).expectedToken()));
+  assertEquals(409,assertThrows(BusinessException.class,()->service.batch(new LegacyPaymentLogService.BatchCommand("UPDATE",targets,Map.of("TotalFee","9"),key()))).getCode());assertEquals("1.00",service.detail(a).get("TotalFee"));assertEquals("3.00",service.detail(b).get("TotalFee"));
+  String k=key();service.batch(new LegacyPaymentLogService.BatchCommand("UPDATE",targets(a,b),Map.of("TradeBody",""),k));assertEquals(409,assertThrows(BusinessException.class,()->service.batch(new LegacyPaymentLogService.BatchCommand("DELETE",targets(a,b),Map.of(),k))).getCode());
+ }
+ @Test void batchRejectsUnknownFieldsDuplicateTargetsAndDisabledCapability(){
+  long a=service.save(null,command(fields("1"),null));var targets=targets(a);assertEquals(400,assertThrows(BusinessException.class,()->service.batch(new LegacyPaymentLogService.BatchCommand("UPDATE",targets,Map.of("PayLogId","99"),key()))).getCode());assertEquals(400,assertThrows(BusinessException.class,()->service.batch(new LegacyPaymentLogService.BatchCommand("DELETE",List.of(targets.get(0),targets.get(0)),Map.of(),key()))).getCode());
+  store.jdbc().update("UPDATE lin_operational_config SET config_value='{\"enabled\":true,\"writeEnabled\":true,\"deleteEnabled\":true}' WHERE config_key='legacy-payment-logs'");assertEquals(409,assertThrows(BusinessException.class,()->service.batch(new LegacyPaymentLogService.BatchCommand("DELETE",targets,Map.of(),key()))).getCode());assertEquals(true,service.capabilities().get("paymentLogWrites"));
  }
 }

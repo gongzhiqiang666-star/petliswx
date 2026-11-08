@@ -6,6 +6,8 @@ spec=importlib.util.spec_from_file_location('staff',Path(__file__).with_name('se
 staff.config.BASE='http://127.0.0.1:18082/api';sql=staff.config.sql
 prefix='it_paylog_live_'+secrets.token_hex(5)
 import_mode='--import' in sys.argv
+batch_mode='--batch' in sys.argv
+assert not (import_mode and batch_mode)
 def literal(value):return 'CONVERT(0x'+value.encode().hex()+' USING utf8mb4) COLLATE utf8mb4_unicode_ci'
 try:
  with socket.create_connection(('127.0.0.1',18082),timeout=.2):raise AssertionError('Dedicated test port already in use')
@@ -28,7 +30,7 @@ try:
   cp=fixture_dir/'classpath.txt'
   built=subprocess.run(['./petlis-backend/mvnw','-o','-q','-f','petlis-backend/pom.xml','dependency:build-classpath','-Dmdep.outputFile='+str(cp)],cwd=ROOT,env=env,capture_output=True,text=True,timeout=45);assert built.returncode==0,'Fixture classpath generation failed'
   made=subprocess.run([str(Path(env['JAVA_HOME'])/'bin/java'),'--class-path',cp.read_text().strip(),'scripts/local/PaymentLogImportFixtures.java',str(fixture_dir),prefix],cwd=ROOT,capture_output=True,text=True,timeout=30);assert made.returncode==0,'Synthetic workbook generation failed: '+made.stderr[-500:]
- sql("INSERT INTO lin_operational_config(config_key,config_value,description,updated_by) VALUES('legacy-payment-logs','{\"enabled\":true,\"writeEnabled\":true,\"deleteEnabled\":true,\"importEnabled\":true}','payment log UI fixture',(SELECT MIN(id) FROM lin_user)) ON DUPLICATE KEY UPDATE config_value=VALUES(config_value),status='ACTIVE'")
+ sql("INSERT INTO lin_operational_config(config_key,config_value,description,updated_by) VALUES('legacy-payment-logs','{\"enabled\":true,\"writeEnabled\":true,\"deleteEnabled\":true,\"importEnabled\":true,\"batchEnabled\":true}','payment log UI fixture',(SELECT MIN(id) FROM lin_user)) ON DUPLICATE KEY UPDATE config_value=VALUES(config_value),status='ACTIVE'")
  command='set -a; source "$HOME/.local/share/petlis/mysql/backend.env"; set +a; [[ "$DB_URL" == "jdbc:mysql://127.0.0.1:13306/laboklin?"* ]] || exit 17; export JAVA_HOME="$HOME/.local/share/petlis/tools/Home" MAVEN_HOME="$HOME/.local/share/petlis/tools/libexec" APP_SCHEDULING_ENABLED=false DB_MIGRATIONS_ENABLED=false PDF_STORAGE_PATH="$HOME/.local/share/petlis/reports"; exec ./petlis-backend/mvnw -o -q -f petlis-backend/pom.xml spring-boot:run -Dspring-boot.run.profiles=dev -Dspring-boot.run.arguments=--server.port=18082'
  fd=os.open(private/(prefix+'.log'),os.O_WRONLY|os.O_CREAT|os.O_EXCL|os.O_NOFOLLOW,0o600)
  with os.fdopen(fd,'w') as log:process=subprocess.Popen(['/bin/zsh','-c',command],cwd=ROOT,stdout=log,stderr=subprocess.STDOUT,start_new_session=True)
@@ -44,11 +46,11 @@ try:
  for key in ['username','password']:
   match=re.search(r"'"+key+r"'\s*=>\s*'((?:\\.|[^'])*)'",text);assert match;credentials[key]=match.group(1).replace("\\'","'").replace('\\\\','\\')
  session=staff.call('/auth/password/login',{'account':credentials['username'],'password':credentials['password']});assert 'ADMIN' in session['roles'];actor=int(session['userId'])
- run=subprocess.run(['node','scripts/editor-parity/payment-log-import-live.js' if import_mode else 'scripts/editor-parity/payment-logs-live.js'],cwd=ROOT,input=json.dumps({'token':session['token'],'prefix':prefix,'screenshot':str(private/(prefix+'.png')),'fixtureDir':str(fixture_dir) if fixture_dir else None}),capture_output=True,text=True,timeout=90)
+ run=subprocess.run(['node','scripts/editor-parity/payment-log-batch-live.js' if batch_mode else 'scripts/editor-parity/payment-log-import-live.js' if import_mode else 'scripts/editor-parity/payment-logs-live.js'],cwd=ROOT,input=json.dumps({'token':session['token'],'prefix':prefix,'screenshot':str(private/(prefix+'.png')),'fixtureDir':str(fixture_dir) if fixture_dir else None}),capture_output=True,text=True,timeout=90)
  assert run.returncode==0,'Browser failed: '+run.stderr[-1200:]
  proof=json.loads(run.stdout)
  assert sql('SELECT COUNT(*) FROM lin_lb_paylog WHERE TradeNoUser='+literal(prefix))==('4' if import_mode else '0')
- assert sql("SELECT COUNT(*) FROM lin_audit_record WHERE actor_user_id="+str(session['userId'])+" AND resource_type='LEGACY_PAYMENT_LOG' AND JSON_EXTRACT(after_json,'$.canonicalRequest.command.fields.TradeNoUser')="+literal(prefix))==('6' if import_mode else '2')
+ assert sql("SELECT COUNT(*) FROM lin_audit_record WHERE actor_user_id="+str(session['userId'])+" AND resource_type='LEGACY_PAYMENT_LOG' AND JSON_EXTRACT(after_json,'$.canonicalRequest.command.fields.TradeNoUser')="+literal(prefix))==('6' if import_mode else '4' if batch_mode else '2')
  assert before=={t:snapshot(t) for t in tables},'Unrelated business records changed'
  proof.update(unrelatedBusinessRecordsUnchanged=True)
 finally:
@@ -58,13 +60,13 @@ finally:
   except subprocess.TimeoutExpired:os.killpg(process.pid,signal.SIGKILL);process.wait(timeout=5)
  # Select only records/audits owning this unpredictable test marker, including failures before UI deletion.
  ids=sql("SELECT resource_id FROM lin_audit_record WHERE resource_type='LEGACY_PAYMENT_LOG' AND JSON_EXTRACT(after_json,'$.canonicalRequest.command.fields.TradeNoUser')="+literal(prefix)).splitlines()
- if actor is not None and import_mode:
+ if actor is not None and (import_mode or batch_mode):
   owned=set(ids)
-  groups=sql("SELECT id,HEX(after_json) FROM lin_audit_record WHERE resource_type='LEGACY_PAYMENT_LOG_IMPORT' AND actor_user_id="+str(actor)).splitlines()
+  groups=sql("SELECT id,HEX(after_json) FROM lin_audit_record WHERE resource_type IN ('LEGACY_PAYMENT_LOG_IMPORT','LEGACY_PAYMENT_LOG_BATCH') AND actor_user_id="+str(actor)).splitlines()
   for line in groups:
    audit,encoded=line.split('\t');assert audit.isdecimal() and int(audit)>0
    result=json.loads(bytes.fromhex(encoded).decode());batch_ids={str(i) for i in result.get('result',{}).get('ids',[])}
-   if batch_ids and batch_ids<=owned:sql("DELETE FROM lin_audit_record WHERE resource_type='LEGACY_PAYMENT_LOG_IMPORT' AND id="+audit+" AND actor_user_id="+str(actor))
+   if batch_ids and batch_ids<=owned:sql("DELETE FROM lin_audit_record WHERE resource_type IN ('LEGACY_PAYMENT_LOG_IMPORT','LEGACY_PAYMENT_LOG_BATCH') AND id="+audit+" AND actor_user_id="+str(actor))
  for value in ids:
   assert value.isdecimal() and int(value)>0
   sql("DELETE FROM lin_audit_record WHERE resource_type='LEGACY_PAYMENT_LOG' AND resource_id="+literal(value))

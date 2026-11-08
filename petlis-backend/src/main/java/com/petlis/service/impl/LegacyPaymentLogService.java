@@ -25,10 +25,10 @@ public class LegacyPaymentLogService {
  public record DeleteCommand(String requestKey,String expectedToken){}
  boolean[] policy(boolean lock){
   access.requireAdmin();var rows=store.jdbc().queryForList("SELECT config_value FROM lin_operational_config WHERE config_key='legacy-payment-logs' AND scope_type='GLOBAL' AND scope_id=0 AND status='ACTIVE'"+(lock?" FOR UPDATE":""));
-  if(rows.size()!=1)return new boolean[]{false,false,false,false};
-  try{var json=new ObjectMapper().readTree(rows.get(0).get("config_value").toString());boolean read=json.path("enabled").isBoolean()&&json.path("enabled").asBoolean(),write=read&&json.path("writeEnabled").isBoolean()&&json.path("writeEnabled").asBoolean();return new boolean[]{read,write,write&&json.path("deleteEnabled").isBoolean()&&json.path("deleteEnabled").asBoolean(),write&&json.path("importEnabled").isBoolean()&&json.path("importEnabled").asBoolean()};}catch(Exception e){throw new BusinessException(409,"交易流水参数无效");}
+  if(rows.size()!=1)return new boolean[]{false,false,false,false,false};
+  try{var json=new ObjectMapper().readTree(rows.get(0).get("config_value").toString());boolean read=json.path("enabled").isBoolean()&&json.path("enabled").asBoolean(),write=read&&json.path("writeEnabled").isBoolean()&&json.path("writeEnabled").asBoolean();return new boolean[]{read,write,write&&json.path("deleteEnabled").isBoolean()&&json.path("deleteEnabled").asBoolean(),write&&json.path("importEnabled").isBoolean()&&json.path("importEnabled").asBoolean(),write&&json.path("batchEnabled").isBoolean()&&json.path("batchEnabled").asBoolean()};}catch(Exception e){throw new BusinessException(409,"交易流水参数无效");}
  }
- @Transactional(readOnly=true) public Map<String,Boolean> capabilities(){var p=policy(false);return Map.of("paymentLogs",p[0],"paymentLogWrites",p[1],"paymentLogDeletes",p[2],"paymentLogImports",p[3]);}
+ @Transactional(readOnly=true) public Map<String,Boolean> capabilities(){var p=policy(false);return Map.of("paymentLogs",p[0],"paymentLogWrites",p[1],"paymentLogDeletes",p[2],"paymentLogImports",p[3],"paymentLogBatches",p[4]);}
  private void read(){if(!policy(false)[0])throw new BusinessException(409,"交易流水维护尚未开启");}
  private void id(long id){if(id<1||id>4294967295L)throw new BusinessException(400,"交易流水编号无效");}
  Map<String,Object> raw(long id,boolean lock){id(id);return new LinkedHashMap<>(store.one("SELECT "+COLUMNS+" FROM lin_lb_paylog WHERE PayLogId=?"+(lock?" FOR UPDATE":""),id));}
@@ -66,5 +66,29 @@ public class LegacyPaymentLogService {
   if(!policy(true)[2])throw new BusinessException(409,"交易流水删除尚未开启");id(id);if(c==null)throw new BusinessException(400,"删除请求缺失");request(c.requestKey());version(c.expectedToken());int actor=access.current().userId();store.one("SELECT id FROM lin_user WHERE id=? FOR UPDATE",actor);
   Map<String,Object> canonical=Map.of("operation","DELETE","id",id,"command",c);var prior=replay(actor,c.requestKey(),store.encode(canonical));if(prior!=null)return prior;
   var before=raw(id,true);if(!token(before).equals(c.expectedToken()))throw new BusinessException(409,"交易流水已变更，请重新打开核对");store.jdbc().update("DELETE FROM lin_lb_paylog WHERE PayLogId=?",id);audit(actor,"LEGACY_PAYMENT_LOG_DELETED",id,c.requestKey(),before,canonical);return id;
+ }
+
+ public record BatchTarget(long id,String expectedToken){}
+ public record BatchCommand(String operation,List<BatchTarget> targets,Map<String,String> fields,String requestKey){}
+ public record BatchResult(String operation,List<Long> ids){}
+ @Transactional public BatchResult batch(BatchCommand c){
+  var p=policy(true);if(!p[4])throw new BusinessException(409,"交易流水批量维护尚未开启");
+  if(c==null||!List.of("UPDATE","DELETE").contains(c.operation()==null?"":c.operation())||c.targets()==null||c.targets().isEmpty()||c.targets().size()>100)throw new BusinessException(400,"请选择1至100条流水及有效操作");
+  boolean deleting=c.operation().equals("DELETE");if(deleting&&!p[2])throw new BusinessException(409,"交易流水删除尚未开启");request(c.requestKey());
+  Map<String,String> patch=c.fields()==null?Map.of():c.fields();
+  if(deleting&&!patch.isEmpty()||!deleting&&(patch.isEmpty()||!FIELDS.containsAll(patch.keySet())))throw new BusinessException(400,"批量修改字段无效");
+  var targets=new TreeMap<Long,BatchTarget>();for(var t:c.targets()){if(t==null)throw new BusinessException(400,"流水快照缺失");id(t.id());version(t.expectedToken());if(targets.put(t.id(),t)!=null)throw new BusinessException(400,"不能重复选择同一条流水");}
+  int actor=access.current().userId();store.one("SELECT id FROM lin_user WHERE id=? FOR UPDATE",actor);
+  Map<String,Object> canonical=Map.of("command",c);var prior=store.jdbc().queryForList("SELECT after_json FROM lin_audit_record WHERE actor_user_id=? AND resource_type='LEGACY_PAYMENT_LOG_BATCH' AND request_id=? ORDER BY id DESC LIMIT 1",actor,c.requestKey());
+  if(!prior.isEmpty()){try{var mapper=new ObjectMapper();var data=mapper.readTree(prior.get(0).get("after_json").toString());if(!mapper.readTree(store.encode(canonical)).equals(data.path("canonicalRequest")))throw new BusinessException(409,"请求号已用于其他批量操作");return mapper.treeToValue(data.path("result"),BatchResult.class);}catch(com.fasterxml.jackson.core.JsonProcessingException e){throw new BusinessException(409,"批量结果无法核对");}}
+  var updates=new HashMap<Long,Map<String,String>>();for(var t:targets.values()){
+   var before=raw(t.id(),true);if(!token(before).equals(t.expectedToken()))throw new BusinessException(409,"选中流水已变更，请重新勾选核对；本批次未写入");
+   if(!deleting){var current=display(before);var fields=new TreeMap<String,String>();for(String f:FIELDS)fields.put(f,Objects.toString(current.get(f),""));fields.putAll(patch);updates.put(t.id(),normalized(fields));}
+  }
+  var ids=new ArrayList<Long>();for(var t:c.targets()){
+   String key=token(Map.of("purpose","payment-log-batch-row-v1","actor",actor,"request",c.requestKey(),"operation",c.operation(),"id",t.id()));
+   if(deleting)delete(t.id(),new DeleteCommand(key,t.expectedToken()));else save(t.id(),new Command(updates.get(t.id()),key,t.expectedToken()));ids.add(t.id());
+  }
+  var result=new BatchResult(c.operation(),List.copyOf(ids));store.insert("INSERT INTO lin_audit_record(actor_user_id,action,resource_type,resource_id,request_id,after_json) VALUES(?,'LEGACY_PAYMENT_LOG_BATCHED','LEGACY_PAYMENT_LOG_BATCH','batch',?,?)",actor,c.requestKey(),store.encode(Map.of("canonicalRequest",canonical,"result",result)));return result;
  }
 }
