@@ -51,7 +51,7 @@ public class LegacyBankPaymentApplicationService {
   try{
    var saved=new ObjectMapper().readValue(row.get("response_body").toString(),new TypeReference<Map<String,Object>>(){});
    // Only expose the business receipt; never raw provider responses or signing material.
-   var result=new LinkedHashMap<String,Object>();for(String key:List.of("orderId","amount","amountFen","count"))result.put(key,saved.get(key));
+   var result=new LinkedHashMap<String,Object>();for(String key:List.of("orderId","amount","amountFen","count","cashierUrl"))result.put(key,saved.get(key));
    result.put("requestKey",row.get("idempotency_key"));result.put("status",row.get("status"));result.put("createdAt",row.get("created_at"));return result;
   }catch(Exception e){throw new BusinessException(409,"支付请求记录需人工核对，禁止重新创建");}
  }

@@ -3,9 +3,10 @@ import com.petlis.common.exception.BusinessException;
 import com.petlis.common.security.*;
 import org.junit.jupiter.api.*;import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;import org.springframework.beans.factory.annotation.Autowired;import org.springframework.boot.test.context.SpringBootTest;import org.springframework.transaction.annotation.Transactional;
 import java.util.*;import java.math.BigDecimal;import static org.junit.jupiter.api.Assertions.*;import static org.mockito.Mockito.*;
-@SpringBootTest @Transactional @EnabledIfEnvironmentVariable(named="PETLIS_LOCAL_DB_TEST",matches="true")
+@SpringBootTest @org.springframework.context.annotation.Import(LegacyBankJdbcTestConfiguration.class) @Transactional("legacyBankTestTransactions") @EnabledIfEnvironmentVariable(named="PETLIS_LOCAL_DB_TEST",matches="true")
 class LegacyBankPaymentQuoteLocalDatabaseTest {
  @Autowired com.fasterxml.jackson.databind.ObjectMapper json;
+ @Autowired org.springframework.transaction.PlatformTransactionManager transactions;
  @Autowired FeatureStore store;AccessService access;LegacyBankPaymentQuoteService service;LegacyOrderDetailService details;int actor,test;long hospital,order;String prefix;
  @BeforeEach void setup(){assertTrue(System.getenv("DB_URL").startsWith("jdbc:mysql://127.0.0.1:13306/laboklin?"));prefix="it_bank_quote_"+UUID.randomUUID().toString().substring(0,8);actor=(int)store.insert("INSERT INTO lin_user(username,nickname,status) VALUES(?,'网银核价测试','normal')",prefix);access=mock(AccessService.class);when(access.current()).thenReturn(new CurrentActor(actor,Set.of(PlatformRole.ADMIN),Set.of(),Set.of(),new DataScope(true,Set.of(),Set.of(),null)));service=new LegacyBankPaymentQuoteService(store,access);details=new LegacyOrderDetailService(store,access,new LegacyReportLinks("https://petlis.invalid/","public-bank-quote-test"));hospital=store.insert("INSERT INTO lin_lb_infohospital(HospitalName,HospitalName_en,PayType,amount) VALUES(?,?,1,0)",prefix,prefix);order=LegacyDetailFixtures.order(store,prefix,actor);store.jdbc().update("UPDATE lin_lb_listdiagnosisproject SET InfoHospitalId=?,ReceiveSampleDt='1900-01-01 00:00:00' WHERE ListDiagnosisProjectId=?",hospital,order);test=LegacyDetailFixtures.test(store,prefix);gate(true);store.jdbc().update("INSERT INTO lin_operational_config(config_key,config_value,description,updated_by) VALUES('legacy-order-details','{\"enabled\":true,\"writeEnabled\":true}','transaction-only quote fixture',?) ON DUPLICATE KEY UPDATE config_value=VALUES(config_value),status='ACTIVE'",actor);}
  void gate(boolean enabled){store.jdbc().update("INSERT INTO lin_operational_config(config_key,config_value,description,updated_by) VALUES('legacy-bank-payments',?,'transaction-only quote test',?) ON DUPLICATE KEY UPDATE config_value=VALUES(config_value),status='ACTIVE'",store.encode(Map.of("enabled",enabled)),actor);}
@@ -54,8 +55,11 @@ class LegacyBankPaymentQuoteLocalDatabaseTest {
    @Override public long insert(String sql,Object... args){if(sql.startsWith("INSERT INTO lin_audit_record"))throw new BusinessException(409,"synthetic audit failure");return super.insert(sql,args);}
   };
   var payment=new LegacyBankPaymentPreparationService(faulty,access,service);
-  var transaction=new org.springframework.transaction.support.TransactionTemplate(new org.springframework.jdbc.datasource.DataSourceTransactionManager(store.jdbc().getDataSource()));transaction.setPropagationBehavior(org.springframework.transaction.TransactionDefinition.PROPAGATION_NESTED);
-  var ex=assertThrows(BusinessException.class,()->transaction.execute(status->payment.prepare(new LegacyBankPaymentPreparationService.Command("ORDER",hospital,null,prefix,"12.50",prefix),"TESTMERCHANT")));
+  var transaction=new org.springframework.transaction.support.TransactionTemplate(transactions);transaction.setPropagationBehavior(org.springframework.transaction.TransactionDefinition.PROPAGATION_NESTED);
+  var manager=(org.springframework.transaction.support.AbstractPlatformTransactionManager)transactions;boolean nestedBefore=manager.isNestedTransactionAllowed();manager.setNestedTransactionAllowed(true);BusinessException ex;try{
+  ex=assertThrows(BusinessException.class,()->transaction.execute(status->payment.prepare(new LegacyBankPaymentPreparationService.Command("ORDER",hospital,null,prefix,"12.50",prefix),"TESTMERCHANT")));
+  }finally{manager.setNestedTransactionAllowed(nestedBefore);}
+  assertNotNull(store.one("SELECT ListDiagnosisProjectId FROM lin_lb_listdiagnosisproject WHERE ListDiagnosisProjectId=?",order));
   assertEquals("synthetic audit failure",ex.getMessage());
   assertEquals(0,store.jdbc().queryForObject("SELECT COUNT(*) FROM lin_lb_payordermain WHERE Remark=?",Integer.class,"订单:"+prefix));
   assertEquals(0,store.jdbc().queryForObject("SELECT COUNT(*) FROM lin_lb_payorderdetail WHERE UserNo=?",Integer.class,prefix));

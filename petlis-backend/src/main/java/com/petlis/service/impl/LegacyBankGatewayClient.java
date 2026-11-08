@@ -15,7 +15,7 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicReference;
 
 /** Transport only. No automatic application retries; caller must persist intent before exchange. */
-final class LegacyBankGatewayClient {
+public class LegacyBankGatewayClient {
  enum Mode {DISABLED,TEST_LOCAL,HTTPS}
  static final class UnknownResult extends RuntimeException {UnknownResult(){super("网银请求结果未确认，请查询原交易核对，禁止自动重发");}}
  private final Mode mode;private final URI endpoint;private final String appId,merchant,notifyUrl;private final PrivateKey privateKey;private final PublicKey publicKey;private final Duration timeout;private final HttpClient http;
@@ -29,7 +29,9 @@ final class LegacyBankGatewayClient {
   if(mode==Mode.HTTPS&&!"https".equals(endpoint.getScheme()))throw new BusinessException(400,"网银实际通道必须为HTTPS");
   http=HttpClient.newBuilder().version(HttpClient.Version.HTTP_1_1).followRedirects(HttpClient.Redirect.NEVER).connectTimeout(timeout.compareTo(Duration.ofSeconds(5))<0?timeout:Duration.ofSeconds(5)).proxy(new ProxySelector(){@Override public List<Proxy> select(URI uri){return List.of(Proxy.NO_PROXY);}@Override public void connectFailed(URI uri,SocketAddress address,java.io.IOException error){}}).build();
  }
- JsonNode exchange(LegacyBankProtocol.Method method,Map<String,Object> parameters){
+ public boolean available(){return mode!=Mode.DISABLED;}
+ public String merchant(){return merchant;}
+ public JsonNode exchange(LegacyBankProtocol.Method method,Map<String,Object> parameters){
   if(mode==Mode.DISABLED)throw new BusinessException(409,"原网银通道尚未开启");if(TransactionSynchronizationManager.isActualTransactionActive())throw new BusinessException(409,"网银请求必须在数据库事务提交后执行");
   var packet=LegacyBankProtocol.request(appId,merchant,notifyUrl,method,parameters,LocalDateTime.now(ZoneId.of("Asia/Shanghai")),privateKey);
   var request=HttpRequest.newBuilder(endpoint).timeout(timeout).header("Content-Type","text/json;charset=utf-8").POST(HttpRequest.BodyPublishers.ofString(packet.form(),StandardCharsets.UTF_8)).build();var receiving=new AtomicReference<LimitedBody>();

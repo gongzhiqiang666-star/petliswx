@@ -27,6 +27,7 @@ public class LegacyBankPaymentPreparationService {
     private static final SecureRandom RANDOM = new SecureRandom();
     public record Command(String mode, Long hospital, String month, String orderNo,
                           String displayedAmount, String requestKey) {}
+    @com.fasterxml.jackson.annotation.JsonIgnoreProperties(ignoreUnknown=true)
     public record Prepared(String orderId, String amount, String amountFen, int count, String status) {}
 
     @Transactional(rollbackFor=Exception.class)
@@ -53,7 +54,7 @@ public class LegacyBankPaymentPreparationService {
         if(!previous.isEmpty()) {
             var saved=previous.get(0);
             if(!hash.equals(saved.get("request_hash")))throw new BusinessException(409,"幂等键已用于不同的支付请求");
-            try{return new ObjectMapper().readValue(saved.get("response_body").toString(),Prepared.class);}
+            try{var result=new ObjectMapper().readValue(saved.get("response_body").toString(),Prepared.class);return new Prepared(result.orderId(),result.amount(),result.amountFen(),result.count(),saved.get("status").toString());}
             catch(Exception e){throw new BusinessException(409,"原支付请求记录需人工核对，禁止重新创建");}
         }
         var quote=quotes.quote(command.mode(),command.hospital(),command.month(),command.orderNo());
@@ -91,7 +92,7 @@ public class LegacyBankPaymentPreparationService {
                 orderId,item.get("DiagnosisDetailId"),item.get("TestPrice"),item.get("TestPrice"),item.get("UserNO"),now,now);
         var result=new Prepared(orderId,amount,current.get("amountFen").toString(),items.size(),"READY");
         store.insert("INSERT INTO lin_order_idempotency(user_id,hospital_id,operation,idempotency_key,request_hash,response_code,response_body,status,expires_at) VALUES(?,?,?,?,?,200,?,'READY',?)",
-                actor,command.hospital(),OPERATION,command.requestKey(),hash,store.encode(result),now.plusDays(1));
+                actor,command.hospital(),OPERATION,command.requestKey(),hash,store.encode(Map.of("orderId",result.orderId(),"amount",result.amount(),"amountFen",result.amountFen(),"count",result.count(),"status",result.status(),"merchant",merchant)),now.plusDays(1));
         store.insert("INSERT INTO lin_audit_record(actor_user_id,action,resource_type,resource_id,request_id,after_json) VALUES(?,'LEGACY_BANK_PREPARED','LEGACY_BANK_PAYMENT',?,?,?)",
                 actor,orderId,command.requestKey(),store.encode(Map.of("request",command,"result",result)));
         return result;

@@ -27,10 +27,10 @@
 - 独立系统OpenSSL签名→Java验证、Java签名→OpenSSL验证双向通过，临时RSA2048密钥；未使用真实证书或网络。此证据验证加密算法互通，不冒充原PHP SDK完整运行差分。
 - 自建127.0.0.1 HTTP网关逐个收到四种原方法，独立验请求RSA签名，返回另一套RSA密钥签名的响应供Java验证；每次只收到一次。HTTP302不跟随，坏签名不返回业务体；响应头已到但正文不结束时仍能总超时；超过1MB的未结束正文及时取消。默认关闭、错误本机地址及数据库事务内调用均未建立请求。
 
-未运行原PHP SDK或真实供应商沙箱；没有新支付单、扣款、退款、对账回写、客户通知、DDL或定时作业。没有新增PC业务验收，PC仍是上一阶段已验证的只读核价。M24尚未完成。
+该次协议测试未运行原PHP SDK或真实供应商沙箱，也未建业务支付单。后续已接[支付单准备](M24-BANK-PREPARATION-CONTRACT.md)及[本机发送/原单查询回写](M24-BANK-EXECUTION-CONTRACT.md)，仍无真实收款、退款、客户通知、DDL或定时任务启用；M24未完成。
 
 ## 接续支付单持久化的已查事实
 
-本机只读核对lin_order_idempotency：14列、唯一键(user_id,operation,idempotency_key)，无外键；order_id允许NULL，response_body是JSON，状态是VARCHAR。现有Java用途所有读取/更新明确限定operation=ORDER_CREATE。后续可优先评估以独立LEGACY_BANK_*命名空间复用既有Java幂等能力，避免为同类请求重复建表；尚未写入任何这种记录，不假装已完成持久化。
+本机只读核对lin_order_idempotency：14列、唯一键(user_id,operation,idempotency_key)，无外键；order_id允许NULL，response_body是JSON，状态是VARCHAR。现有Java用途所有读取/更新明确限定operation=ORDER_CREATE。现已以独立LEGACY_BANK_PREPARE命名空间复用既有Java幂等表，实现支付准备、发送及查询结果状态；没有新增表结构。生产收款及整模块复核另列缺口。
 
 需要继续实现及验证：银行卡订单编号/主从分配/请求快照、先提交再发送及未知结果恢复、PHP原AliTradeId门槛/直接SQL成功回写、金额与归属核对、历史订单查询和退款、真实跨写入者并发及页面接续。新旧同时写入的安全性不能仅靠新Java加锁宣布解决，原PHP读后无条件更新的并发风险仍需实际联调和切换控制。
