@@ -15,9 +15,9 @@ public class LegacyHospitalDraftItemsService {
  private final LegacyHospitalHistoryService history;
  private final LegacyHospitalDraftService drafts;
  public record Command(Integer hospitalId,Integer testId,String expectedToken,String requestKey) {}
- private record Snapshot(Map<String,Object> parent,List<Map<String,Object>> details){}
- private Snapshot snapshot(long order,int hospital,boolean lock){drafts.require(hospital,false);var parent=drafts.raw(order,hospital,lock);var details=store.jdbc().queryForList("SELECT * FROM lin_lb_diagnosisdetail WHERE ListDiagnosisProjectId=? ORDER BY DiagnosisDetailId"+(lock?" FOR UPDATE":""),order);return new Snapshot(parent,details);}
- private String token(Snapshot snapshot){return history.cancellationToken(Map.of("parent",snapshot.parent(),"details",snapshot.details()));}
+ record Snapshot(Map<String,Object> parent,List<Map<String,Object>> details){}
+ Snapshot snapshot(long order,int hospital,boolean lock){drafts.require(hospital,false);var parent=drafts.raw(order,hospital,lock);var details=store.jdbc().queryForList("SELECT * FROM lin_lb_diagnosisdetail WHERE ListDiagnosisProjectId=? ORDER BY DiagnosisDetailId"+(lock?" FOR UPDATE":""),order);return new Snapshot(parent,details);}
+ String token(Snapshot snapshot){return history.cancellationToken(Map.of("parent",snapshot.parent(),"details",snapshot.details()));}
  @Transactional(readOnly=true) public Map<String,Object> selected(long order,int hospital){
   var state=snapshot(order,hospital,false);
   var rows=store.jdbc().queryForList("SELECT DiagnosisDetailId AS detailId,InfoTestTypeId AS testId,TestName AS testName,TestNO AS testNo,CAST(TestPrice AS CHAR) AS price FROM vwdiagnosisdetail WHERE ListDiagnosisProjectId=? ORDER BY DiagnosisDetailId",order);
@@ -44,7 +44,7 @@ public class LegacyHospitalDraftItemsService {
   int actor=access.current().userId();store.one("SELECT id FROM lin_user WHERE id=? FOR UPDATE",actor);
   String canonical=store.encode(Map.of("orderId",order,"command",command,"adding",adding));
   var prior=store.jdbc().queryForList("SELECT after_json FROM lin_audit_record WHERE actor_user_id=? AND resource_type='LEGACY_HOSPITAL_DRAFT_ITEMS' AND request_id=? ORDER BY id DESC LIMIT 1",actor,command.requestKey());
-  if(!prior.isEmpty())try{var saved=new ObjectMapper().readTree(prior.get(0).get("after_json").toString());if(!canonical.equals(saved.path("canonicalRequest").asText()))throw new BusinessException(409,"项目请求号已用于其他内容");return saved.path("detailId").asLong();}catch(com.fasterxml.jackson.core.JsonProcessingException error){throw new BusinessException(409,"项目请求无法核对");}
+  if(!prior.isEmpty())try{var saved=new ObjectMapper().readTree(prior.get(0).get("after_json").toString());if(!LegacyCanonicalRequest.same(canonical,saved.path("canonicalRequest").asText()))throw new BusinessException(409,"项目请求号已用于其他内容");return saved.path("detailId").asLong();}catch(com.fasterxml.jackson.core.JsonProcessingException error){throw new BusinessException(409,"项目请求无法核对");}
   var state=snapshot(order,command.hospitalId(),true);if(!token(state).equals(command.expectedToken()))throw new BusinessException(409,"草稿或检测项目已变化，请刷新后核对");
   var found=store.jdbc().queryForList("SELECT DiagnosisDetailId FROM lin_lb_diagnosisdetail WHERE ListDiagnosisProjectId=? AND InfoTestTypeId=? LIMIT 1 FOR UPDATE",order,command.testId());long id;
   if(adding){

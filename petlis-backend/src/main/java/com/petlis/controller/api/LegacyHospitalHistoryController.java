@@ -5,6 +5,7 @@ import com.petlis.service.impl.LegacyHospitalHistoryService;
 import com.petlis.service.impl.LegacyHospitalCancellationService;
 import com.petlis.service.impl.LegacyHospitalDraftService;
 import com.petlis.service.impl.LegacyHospitalDraftItemsService;
+import com.petlis.service.impl.LegacyHospitalDraftSubmissionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 import java.util.Map;
@@ -17,6 +18,9 @@ public class LegacyHospitalHistoryController {
     private final LegacyHospitalCancellationService cancellations;
     private final LegacyHospitalDraftService drafts;
     private final LegacyHospitalDraftItemsService items;
+    private final LegacyHospitalDraftSubmissionService submissions;
+    @GetMapping("/drafts/{id}/preview") public Result<Map<String,Object>> preview(@PathVariable long id,@RequestParam int hospitalId) { return Result.success(submissions.preview(id,hospitalId)); }
+    @PostMapping("/drafts/{id}/submit") public Result<Map<String,Object>> submit(@PathVariable long id,@RequestBody LegacyHospitalDraftSubmissionService.Command command) { return Result.success(submissions.submit(id,command)); }
     @GetMapping("/drafts/{id}/items") public Result<Map<String,Object>> selected(@PathVariable long id,@RequestParam int hospitalId) { return Result.success(items.selected(id,hospitalId)); }
     @GetMapping("/drafts/{id}/test-catalog") public Result<Map<String,Object>> catalog(@PathVariable long id,@RequestParam int hospitalId,@RequestParam(required=false) String q,@RequestParam(required=false) Integer category,@RequestParam(defaultValue="0") int page,@RequestParam(defaultValue="20") int size) { return Result.success(items.catalog(id,hospitalId,q,category,page,size)); }
     @PostMapping("/drafts/{id}/items/add") public Result<Long> addItem(@PathVariable long id,@RequestBody LegacyHospitalDraftItemsService.Command command) { return Result.success(items.add(id,command)); }

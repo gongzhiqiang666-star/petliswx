@@ -3,7 +3,7 @@ const legacyBase='/orders/hospital-history'
 const choiceFields={variety:'AnimalTypeId',sex:'DictSexId',sampleType:'InfoSampleTypeId'}
 function noteText(html){return String(html||'').replace(/<(script|style)\b[^>]*>[\s\S]*?<\/\1>/gi,'').replace(/<img\b[^>]*>/gi,'[图片]').replace(/<\/?(?:p|div|br|li|tr)\b[^>]*>/gi,'\n').replace(/<[^>]*>/g,'').replace(/&nbsp;/g,' ').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"').replace(/&#39;/g,"'").replace(/&amp;/g,'&').trim()}
 Page({
- data:{legacyItemsExpanded:false,legacySelectedItems:[],legacyItemCatalog:[],legacyItemWritable:false,legacyItemBusy:false,legacyItemLoading:false,legacyItemError:'',legacyItemQuery:'',legacyItemCategoryIndex:0,legacyItemCategories:[{label:'全部'},{label:'细胞学与组织病理'},{label:'过敏原'},{label:'微生物'},{label:'综合（其他项目）'}],legacyCatalogPage:0,legacyCatalogMore:false,items:[],busy:false,error:'',legacyTextFields:[{key:'MasterName',label:'畜主姓名',max:250},{key:'AnimalName',label:'动物姓名',max:250},{key:'Age',label:'动物年龄',max:50},{key:'DoctorName',label:'送检医师',max:100},{key:'SampleArea',label:'采样部位',max:50}],legacyChoiceKinds:[{kind:'variety',label:'动物品种'},{kind:'sex',label:'动物性别'},{kind:'sampleType',label:'采样类型'}],legacyEnabled:false,legacyItems:[],legacyPage:0,legacyMore:false,legacyBusy:false,legacyError:'',legacyOrderId:null,legacyFields:{},legacyWritable:false,legacyRemarkText:'',legacySaving:false,legacyChoices:{variety:[],sex:[],sampleType:[]},legacyChoiceIndex:{variety:0,sex:0,sampleType:0},legacyChoiceQuery:{variety:'',sex:'',sampleType:''},legacyChoicePage:{variety:0,sex:0,sampleType:0},legacyChoiceMore:{variety:false,sex:false,sampleType:false}},
+ data:{legacyPreview:null,legacyPreviewBusy:false,legacyPreviewError:'',legacyPreviewRemarkText:'',legacySubmitting:false,legacySubmitted:null,legacyPreviewFields:[{key:'MasterName',label:'畜主姓名'},{key:'AnimalName',label:'动物姓名'},{key:'Age',label:'动物年龄'},{key:'DoctorName',label:'送检医师'},{key:'CollectDt',label:'采样日期'},{key:'SampleArea',label:'采样部位'}],legacyItemsExpanded:false,legacySelectedItems:[],legacyItemCatalog:[],legacyItemWritable:false,legacyItemBusy:false,legacyItemLoading:false,legacyItemError:'',legacyItemQuery:'',legacyItemCategoryIndex:0,legacyItemCategories:[{label:'全部'},{label:'细胞学与组织病理'},{label:'过敏原'},{label:'微生物'},{label:'综合（其他项目）'}],legacyCatalogPage:0,legacyCatalogMore:false,items:[],busy:false,error:'',legacyTextFields:[{key:'MasterName',label:'畜主姓名',max:250},{key:'AnimalName',label:'动物姓名',max:250},{key:'Age',label:'动物年龄',max:50},{key:'DoctorName',label:'送检医师',max:100},{key:'SampleArea',label:'采样部位',max:50}],legacyChoiceKinds:[{kind:'variety',label:'动物品种'},{kind:'sex',label:'动物性别'},{kind:'sampleType',label:'采样类型'}],legacyEnabled:false,legacyItems:[],legacyPage:0,legacyMore:false,legacyBusy:false,legacyError:'',legacyOrderId:null,legacyFields:{},legacyWritable:false,legacyRemarkText:'',legacySaving:false,legacyChoices:{variety:[],sex:[],sampleType:[]},legacyChoiceIndex:{variety:0,sex:0,sampleType:0},legacyChoiceQuery:{variety:'',sex:'',sampleType:''},legacyChoicePage:{variety:0,sex:0,sampleType:0},legacyChoiceMore:{variety:false,sex:false,sampleType:false}},
  onShow(){this._legacyUnloaded=false;this.load();this.loadLegacy()},
  onUnload(){this._legacyUnloaded=true;this._legacyVersion=(this._legacyVersion||0)+1;this._legacyListVersion=(this._legacyListVersion||0)+1},
  async load(){this.setData({busy:true,error:''});try{this.setData({items:await request.get('/drafts')})}catch(e){this.setData({error:e.message})}finally{this.setData({busy:false})}},
@@ -21,8 +21,8 @@ Page({
  },
  moreLegacy(){return this.loadLegacy(true)},
  async openLegacy(event){
-  if(this.data.legacyItemBusy)return false;
-  const id=Number(event.currentTarget.dataset.id),version=(this._legacyVersion||0)+1;this._legacyVersion=version;this.setData({legacyBusy:true,legacyError:'',legacyOrderId:null,legacyWritable:false});
+  if(this.data.legacyItemBusy||this.data.legacySubmitting)return false;
+  const id=Number(event.currentTarget.dataset.id),version=(this._legacyVersion||0)+1;this._legacyVersion=version;this.setData({legacyBusy:true,legacyError:'',legacyOrderId:null,legacyWritable:false,legacyPreview:null,legacyPreviewBusy:false,legacySubmitted:null});
   try{const detail=await request.get(legacyBase+'/drafts/'+id,{hospitalId:getApp().getHospitalId()});if(version!==this._legacyVersion)return;
    this._legacyOriginal={...detail.fields};this._legacyToken=detail.editToken;this._legacyPending=null;
    const choices={},indexes={};for(const[kind,field]of Object.entries(choiceFields)){choices[kind]=[{id:String(detail.fields[field]||0),name:detail.labels[field]||'原选择'}];indexes[kind]=0}
@@ -30,7 +30,7 @@ Page({
    if(detail.writable)await Promise.all(Object.keys(choiceFields).map(kind=>this.loadLegacyChoices(kind)));return true;
   }catch(error){if(version===this._legacyVersion)this.setData({legacyError:error.message});return false}finally{if(version===this._legacyVersion)this.setData({legacyBusy:false})}
  },
- closeLegacy(){if(this.data.legacySaving||this.data.legacyItemBusy)return;this._legacyVersion=(this._legacyVersion||0)+1;this.setData({legacyOrderId:null,legacyBusy:false,legacyError:''})},
+ closeLegacy(){if(this.data.legacySaving||this.data.legacyItemBusy||this.data.legacySubmitting)return;this._legacyVersion=(this._legacyVersion||0)+1;this.setData({legacyOrderId:null,legacyBusy:false,legacyError:'',legacyPreview:null,legacyPreviewBusy:false})},
  legacyInput(event){const key=event.currentTarget.dataset.key;if(['MasterName','AnimalName','Age','DoctorName','SampleArea','CollectDt'].includes(key))this.setData({['legacyFields.'+key]:event.detail.value})},
  legacyChoiceQuery(event){const kind=event.currentTarget.dataset.kind;if(choiceFields[kind])this.setData({['legacyChoiceQuery.'+kind]:event.detail.value})},
  searchLegacyChoices(event){return this.loadLegacyChoices(event.currentTarget.dataset.kind)},
@@ -87,5 +87,31 @@ Page({
   }catch(error){if(version===this._legacyVersion&&!this._legacyUnloaded)this.setData({legacyItemError:error.message})}
   finally{if(version===this._legacyVersion&&!this._legacyUnloaded)this.setData({legacyItemBusy:false})}
  }
+,
+ async previewLegacy(){
+  if(!this.data.legacyOrderId||this.data.legacySaving||this.data.legacyItemBusy||this.data.legacySubmitting)return;
+  const changed=['MasterName','AnimalName','Age','DoctorName','SampleArea','CollectDt','AnimalTypeId','DictSexId','InfoSampleTypeId'].some(key=>String(this.data.legacyFields[key]??'')!==String(this._legacyOriginal?.[key]??''));
+  if(changed){this.setData({legacyPreviewError:'请先保存资料，再预览提交。'});return}
+  const id=this.data.legacyOrderId,version=this._legacyVersion;this._previewSequence=(this._previewSequence||0)+1;const sequence=this._previewSequence;
+  this.setData({legacyPreviewBusy:true,legacyPreviewError:''});
+  try{const result=await request.get(legacyBase+'/drafts/'+id+'/preview',{hospitalId:getApp().getHospitalId()});if(version!==this._legacyVersion||sequence!==this._previewSequence)return;this.setData({legacyPreview:result,legacyPreviewRemarkText:noteText(result.fields.Remark)})}
+  catch(error){if(version===this._legacyVersion&&sequence===this._previewSequence)this.setData({legacyPreviewError:error.message})}
+  finally{if(version===this._legacyVersion&&sequence===this._previewSequence)this.setData({legacyPreviewBusy:false})}
+ },
+ backLegacyPreview(){if(!this.data.legacySubmitting)this.setData({legacyPreview:null,legacyPreviewError:''})},
+ async submitLegacy(){
+  const preview=this.data.legacyPreview;if(!preview||preview.writable!==true||this.data.legacySubmitting||this.data.legacySaving||this.data.legacyItemBusy)return;
+  const version=this._legacyVersion;this.setData({legacySubmitting:true,legacyPreviewError:''});
+  try{
+   const choice=await wx.showModal({title:'确认提交送检？',content:'将按本次预览提交审核。提交后可在医院送检历史中查看状态。',confirmText:'确认提交'});if(!choice.confirm||version!==this._legacyVersion||this._legacyUnloaded)return;
+   const body={hospitalId:preview.hospitalId,expectedToken:preview.editToken},signature=JSON.stringify({id:preview.orderId,...body});this._submitRequests=this._submitRequests||{};this._submitRequests[signature]=this._submitRequests[signature]||'legacy_submit_'+Date.now()+'_'+Math.random().toString(36).slice(2,14);
+   const result=await request.post(legacyBase+'/drafts/'+preview.orderId+'/submit',{...body,requestKey:this._submitRequests[signature]});if(version!==this._legacyVersion||this._legacyUnloaded)return;
+   if(Number(result?.orderId)!==Number(preview.orderId)||Number(result?.sampleStatus)!==0)throw Error('提交结果待核对，请刷新记录或重试。');
+   this._legacyVersion=(this._legacyVersion||0)+1;this._legacyOriginal=null;this._legacyToken=null;this._legacyItemsToken=null;
+   this.setData({legacySubmitted:result,legacyOrderId:null,legacyPreview:null,legacyItemsExpanded:false,legacyFields:{},legacySubmitting:false});await this.loadLegacy();
+  }catch(error){if(version===this._legacyVersion&&!this._legacyUnloaded)this.setData({legacyPreviewError:error.message})}
+  finally{if(!this._legacyUnloaded)this.setData({legacySubmitting:false})}
+ },
+ viewSubmittedLegacy(){wx.navigateTo({url:'/pages/hospital-history/hospital-history'})}
 
 })

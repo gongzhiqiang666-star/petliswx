@@ -57,7 +57,7 @@ public class LegacyHospitalDraftService {
   var values=validate(command.fields());int actor=access.current().userId();store.one("SELECT id FROM lin_user WHERE id=? FOR UPDATE",actor);
   String canonical=store.encode(Map.of("orderId",id,"command",command));
   var prior=store.jdbc().queryForList("SELECT after_json FROM lin_audit_record WHERE actor_user_id=? AND resource_type='LEGACY_HOSPITAL_DRAFT' AND request_id=? ORDER BY id DESC LIMIT 1",actor,command.requestKey());
-  if(!prior.isEmpty())try{var saved=new ObjectMapper().readTree(prior.get(0).get("after_json").toString());if(!canonical.equals(saved.path("canonicalRequest").asText()))throw new BusinessException(409,"草稿请求号已用于其他内容");return id;}catch(com.fasterxml.jackson.core.JsonProcessingException error){throw new BusinessException(409,"草稿请求无法核对");}
+  if(!prior.isEmpty())try{var saved=new ObjectMapper().readTree(prior.get(0).get("after_json").toString());if(!LegacyCanonicalRequest.same(canonical,saved.path("canonicalRequest").asText()))throw new BusinessException(409,"草稿请求号已用于其他内容");return id;}catch(com.fasterxml.jackson.core.JsonProcessingException error){throw new BusinessException(409,"草稿请求无法核对");}
   var before=raw(id,command.hospitalId(),true);if(!history.cancellationToken(before).equals(command.expectedToken()))throw new BusinessException(409,"草稿已被更新，请重新打开核对");
   var sets=new ArrayList<String>();var args=new ArrayList<Object>();values.forEach((key,value)->{sets.add("`"+key+"`=?");args.add(value);});args.add(id);args.add(command.hospitalId());
   if(store.jdbc().update("UPDATE lin_lb_listdiagnosisproject SET "+String.join(",",sets)+" WHERE ListDiagnosisProjectId=? AND InfoHospitalId=? AND SampleStatus=-2",args.toArray())!=1)throw new BusinessException(409,"草稿状态已变化，请重新打开");

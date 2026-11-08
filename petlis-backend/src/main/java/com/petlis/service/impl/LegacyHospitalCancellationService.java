@@ -34,7 +34,7 @@ public class LegacyHospitalCancellationService {
         if (!prior.isEmpty()) {
             try {
                 var saved=new ObjectMapper().readTree(prior.get(0).get("after_json").toString());
-                if (!canonical.equals(saved.path("canonicalRequest").asText())) throw new BusinessException(409,"取消请求号已用于不同内容");
+                if (!LegacyCanonicalRequest.same(canonical,saved.path("canonicalRequest").asText())) throw new BusinessException(409,"取消请求号已用于不同内容");
                 return Map.of("orderId",orderId,"sampleStatus",4);
             } catch (com.fasterxml.jackson.core.JsonProcessingException error) { throw new BusinessException(409,"取消请求记录无法核对"); }
         }
