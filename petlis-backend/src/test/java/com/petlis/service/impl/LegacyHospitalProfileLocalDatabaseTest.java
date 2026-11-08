@@ -16,6 +16,16 @@ class LegacyHospitalProfileLocalDatabaseTest {
  void gate(boolean read,boolean write){store.jdbc().update("INSERT INTO lin_operational_config(config_key,config_value,description,updated_by) VALUES('legacy-hospital-profiles',?,'transaction-only profile test',?) ON DUPLICATE KEY UPDATE config_value=VALUES(config_value),status='ACTIVE'",store.encode(Map.of("enabled",read,"writeEnabled",write)),actor);}
  String key(){return "profile_"+UUID.randomUUID().toString().replace("-","");}
  LegacyHospitalProfileService.Command command(String token,String key){return new LegacyHospitalProfileService.Command(" 修改医院 ","Hospital","抬头",0,"地区","详细地址","电话","传真",1,key,token);}
+ @Test void explicitHospitalDisableDoesNotReviewDoctorsOrRewriteHistoricalOrders(){
+  store.jdbc().update("UPDATE lin_user SET hospital_id=? WHERE id=?",hospital,actor);
+  store.jdbc().update("INSERT INTO lin_doctor_profile(user_id,review_status,credential_version) VALUES(?,'pending',7)",actor);
+  long order=LegacyDetailFixtures.order(store,prefix+"_old",actor);store.jdbc().update("UPDATE lin_lb_listdiagnosisproject SET InfoHospitalId=?,SampleStatus=2,TestFee=12.34,IsPayMoney=0 WHERE ListDiagnosisProjectId=?",hospital,order);
+  var historical=store.one("SELECT SampleStatus,TestFee,IsPayMoney FROM lin_lb_listdiagnosisproject WHERE ListDiagnosisProjectId=?",order);
+  var c=command(service.detail(hospital).get("editToken").toString(),key());
+  service.update(hospital,new LegacyHospitalProfileService.Command(c.name(),c.englishName(),c.invoice(),c.cityId(),c.place(),c.address(),c.tel(),c.fax(),c.payType(),c.requestKey(),c.expectedToken(),0));
+  assertEquals(0,((Number)service.detail(hospital).get("IsActive")).intValue());assertEquals(historical,store.one("SELECT SampleStatus,TestFee,IsPayMoney FROM lin_lb_listdiagnosisproject WHERE ListDiagnosisProjectId=?",order));
+  var doctor=store.one("SELECT review_status,credential_version FROM lin_doctor_profile WHERE user_id=?",actor);assertEquals("pending",doctor.get("review_status"));assertEquals(7,((Number)doctor.get("credential_version")).intValue());
+ }
  @Test void credentialMaintenanceKeepsBlankClearsExplicitlyAndNeverReturnsSecrets(){
   var before=service.credentials(hospital);assertEquals("historical-login",before.get("loginName"));assertEquals(true,before.get("passwordConfigured"));assertFalse(before.containsKey("password"));
   var keep=new LegacyHospitalProfileService.CredentialsCommand("renamed",null,false,key(),before.get("editToken").toString());
