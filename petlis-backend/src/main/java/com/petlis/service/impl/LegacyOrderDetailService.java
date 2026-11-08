@@ -95,7 +95,7 @@ public class LegacyOrderDetailService {
  @Transactional(readOnly=true) public Map<String,Object> mailTemplate(long id){read();return store.one("SELECT id,model_type,model_content,createtime,updatetime FROM lin_lb_dictmaildiagnosisreport WHERE id=?",id);}
  @Transactional(isolation=Isolation.READ_COMMITTED)
  public long create(long orderId,CreateCommand c){
-  // Serializes new-service insertions to preserve the original global COUNT+1 number without DDL.
+  // Administrative gate serializes this entry; parent locks also coordinate shared-order hospital inserts.
   if(!policy(true).writable())throw error(409,"原送检明细维护尚未开启");
   if(c==null||c.testTypeId()<1)throw error(400,"请选择检测项目");key(c.requestKey());
   text(c.detailRemark(),100,"备注");text(c.mailTitle(),250,"邮件标题");if(c.modelId()!=null&&c.modelId()<0)throw error(400,"模板编号无效");flag(c.isSendMail());flag(c.isCheckPass());money(c.originalPrice());money(c.testPrice());
@@ -108,15 +108,7 @@ public class LegacyOrderDetailService {
    try{var json=new ObjectMapper().readTree(String.valueOf(prior.get(0).get("after_json")));if(!canonical.equals(json.path("canonicalRequest").asText())||!json.path("detailId").canConvertToLong())throw error(409,"请求号已用于其他明细操作");return json.path("detailId").asLong();}catch(com.fasterxml.jackson.core.JsonProcessingException e){throw error(409,"原明细请求无法校验");}
   }
   order(orderId,true);
-  var prices=store.jdbc().queryForList("SELECT price FROM lin_lb_infotesttype_price WHERE InfoTestTypeid=? LIMIT 1",c.testTypeId());
-  BigDecimal fallback=prices.isEmpty()?null:new BigDecimal(prices.get(0).get("price").toString());
-  BigDecimal original=c.originalPrice()==null?fallback:c.originalPrice(),actual=c.testPrice()==null?fallback:c.testPrice();
-  if(original==null||actual==null)throw error(400,"项目尚无价格记录，请填写原价和实价");
-  var now=LocalDateTime.now(ZoneId.of("Asia/Shanghai")).withNano(0);int sent=c.isSendMail()==null?0:c.isSendMail(),checked=c.isCheckPass()==null?0:c.isCheckPass();
-  long count=store.jdbc().queryForObject("SELECT COUNT(*) FROM lin_lb_diagnosisdetail",Long.class);
-  Object discount=c.originalDiscount()==null?null:LegacyPricingRules.originalDiscount(c.originalDiscount());
-  long id=store.insert("INSERT INTO lin_lb_diagnosisdetail(ListDiagnosisProjectId,GenterNO,InfoTestTypeId,InfoTestTypeModelId,MailTitle,CreateDt,IsChangeModelTemple,IsChangeMailModelTemple,IsSendMail,IsCheckPass,PDFHttpUrl,TestPrice,OrginalPrice,OrginalDiscount,SendMailDt,DetailRemark,PayStatus2,DiagnosisStatus,IsActive) VALUES(?,?,?,?,?,?,1,1,?,?,'',?,?,?,?,?,?,?,1)",orderId,orderId+"-"+(count+1),c.testTypeId(),c.modelId()==null?0:c.modelId(),c.mailTitle()==null?"":c.mailTitle(),now,sent,checked,actual,original,discount,sent==1?now:LocalDateTime.of(1900,1,1,0,0),remark,c.payStatus()==null?0:c.payStatus(),c.diagnosisStatus()==null?0:c.diagnosisStatus());
-  store.jdbc().update("INSERT INTO lin_lb_diagnosisdetail_info(diagnosisdetail_id,MailReport,ReportResult) VALUES(?,?,?) ON DUPLICATE KEY UPDATE MailReport=VALUES(MailReport),ReportResult=VALUES(ReportResult)",id,c.mailReport()==null?"":c.mailReport(),c.reportResult()==null?"":c.reportResult());
+  long id=LegacyDetailModelWriter.insert(store,orderId,c);
   store.insert("INSERT INTO lin_audit_record(actor_user_id,action,resource_type,resource_id,request_id,after_json) VALUES(?,'LEGACY_ORDER_DETAIL_CREATED','LEGACY_ORDER_DETAIL',?,?,?)",actor,String.valueOf(id),c.requestKey(),store.encode(Map.of("detailId",id,"orderId",orderId,"canonicalRequest",canonical)));
   return id;
  }

@@ -19,11 +19,11 @@ public class LegacyHospitalDraftService {
  public record Command(Integer hospitalId,Map<String,String> fields,String expectedToken,String requestKey) {}
  private static final Set<String> FIELDS=Set.of("MasterName","AnimalName","AnimalTypeId","Age","DictSexId","CollectDt","InfoSampleTypeId","SampleArea","DoctorName","Remark");
  private static final Map<String,List<String>> DICTIONARIES=Map.of("variety",List.of("lin_lb_infovariety","IID","Variety_CN"),"sex",List.of("lin_lb_dictsex","DictSexId","SexName"),"sampleType",List.of("lin_lb_infosampletype","InfoSampleTypeId","SampleName"));
- private void require(Integer hospital,boolean write){
+ void require(Integer hospital,boolean write){
   if(hospital==null||hospital<=0||!access.current().canAccessHospital(hospital))throw new BusinessException(403,"无权访问该医院草稿");
   if(!history.policy(write).get(write?"legacyHospitalDraftWrites":"legacyHospitalDrafts"))throw new BusinessException(409,write?"原医院草稿维护尚未开启":"原医院草稿查询尚未开启");
  }
- private Map<String,Object> raw(long id,int hospital,boolean lock){
+ Map<String,Object> raw(long id,int hospital,boolean lock){
   if(id<1||id>Integer.MAX_VALUE)throw new BusinessException(400,"草稿编号无效");
   var guard=history.cancellationSnapshot(id,hospital,lock);
   if(((Number)guard.get("sampleStatus")).intValue()!=-2||LegacyHospitalHistoryService.hasNewWorkflow(guard))throw new BusinessException(409,"该单不是可编辑的原医院草稿");

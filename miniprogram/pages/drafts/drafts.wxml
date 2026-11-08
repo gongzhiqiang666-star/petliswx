@@ -20,7 +20,7 @@
     <view wx:if="{{legacyError}}" class="legacy-error">{{legacyError}}</view>
     <view wx:for="{{legacyItems}}" wx:key="orderId" class="card petlis-list-card">
       <view>{{item.animalName || '未命名草稿'}}</view><view class="meta">畜主：{{item.ownerName || '未记录'}} · 医师：{{item.doctorName || '未记录'}}</view><view class="meta">创建：{{item.createdAt}}</view>
-      <button class="petlis-btn petlis-btn-outline legacy-open" bindtap="openLegacy" data-id="{{item.orderId}}" disabled="{{legacySaving}}">继续填写资料</button>
+      <button class="petlis-btn petlis-btn-outline legacy-open" bindtap="openLegacy" data-id="{{item.orderId}}" disabled="{{legacySaving || legacyItemBusy}}">继续填写资料</button>
     </view>
     <view wx:if="{{!legacyBusy && !legacyError && !legacyItems.length}}" class="hint">暂无本院历史草稿</view>
     <button wx:if="{{legacyMore}}" class="petlis-btn petlis-btn-outline" bindtap="moreLegacy" disabled="{{legacyBusy}}">加载更多历史草稿</button>
@@ -33,7 +33,21 @@
         <view wx:if="{{legacyWritable}}" class="legacy-choice-search"><input class="petlis-input" value="{{legacyChoiceQuery[choice.kind]}}" data-kind="{{choice.kind}}" bindinput="legacyChoiceQuery" placeholder="搜索{{choice.label}}" /><button class="petlis-btn petlis-btn-outline" data-kind="{{choice.kind}}" bindtap="searchLegacyChoices">搜索</button><button wx:if="{{legacyChoiceMore[choice.kind]}}" class="petlis-btn petlis-btn-outline" data-kind="{{choice.kind}}" bindtap="moreLegacyChoices">更多</button></view>
       </view>
       <view wx:if="{{legacyRemarkText}}" class="legacy-note"><view class="legacy-label">原备注 · 文字预览</view><text>{{legacyRemarkText}}</text><view class="hint">原备注的图片与格式保持不变，本页暂不编辑备注。</view></view>
-      <view class="row"><button class="petlis-btn petlis-btn-outline" bindtap="closeLegacy" disabled="{{legacySaving}}">收起</button><button wx:if="{{legacyWritable}}" class="petlis-btn petlis-btn-primary" bindtap="saveLegacy" loading="{{legacySaving}}" disabled="{{legacySaving || legacyBusy}}">保存资料</button></view>
+
+      <button class="petlis-btn petlis-btn-outline legacy-projects-toggle" bindtap="openLegacyItems" disabled="{{legacySaving || legacyItemBusy}}">查看与选择检测项目</button>
+      <view wx:if="{{legacyItemsExpanded}}" class="legacy-projects">
+        <view class="draft-section-title">已选检测项目</view>
+        <view wx:if="{{legacyItemError}}" class="legacy-error">{{legacyItemError}}<button class="petlis-btn petlis-btn-outline" bindtap="openLegacyItems" disabled="{{legacyItemBusy}}">刷新项目</button></view>
+        <view wx:for="{{legacySelectedItems}}" wx:key="detailId" class="legacy-project-row"><view><view>{{item.testName || '历史检测项目（未匹配）'}}</view><view class="meta">{{item.testNo || ''}} · 检测金额 ¥{{item.price}}</view></view><button wx:if="{{legacyItemWritable && item.testId}}" class="petlis-btn petlis-btn-outline" data-id="{{item.testId}}" bindtap="removeLegacyItem" disabled="{{legacyItemBusy || legacySaving}}">移除</button></view>
+        <view wx:if="{{!legacySelectedItems.length && !legacyItemError}}" class="hint">尚未选择检测项目</view>
+        <view class="draft-section-title">添加检测项目</view>
+        <picker range="{{legacyItemCategories}}" range-key="label" value="{{legacyItemCategoryIndex}}" bindchange="legacyItemCategory"><view class="petlis-input legacy-input">分类：{{legacyItemCategories[legacyItemCategoryIndex].label}}</view></picker>
+        <view class="legacy-choice-search"><input class="petlis-input" value="{{legacyItemQuery}}" bindinput="legacyItemInput" placeholder="搜索检测项目名称" /><button class="petlis-btn petlis-btn-outline" bindtap="searchLegacyCatalog" disabled="{{legacyItemLoading}}">搜索</button></view>
+        <view wx:for="{{legacyItemCatalog}}" wx:key="testId" class="legacy-project-row"><view><view>{{item.testName}}</view><view class="meta">{{item.testNo}}</view></view><text wx:if="{{item.selected}}" class="meta">已选</text><button wx:elif="{{legacyItemWritable}}" class="petlis-btn petlis-btn-outline" data-id="{{item.testId}}" bindtap="addLegacyItem" disabled="{{legacyItemBusy || legacySaving}}">添加</button></view>
+        <button wx:if="{{legacyCatalogMore}}" class="petlis-btn petlis-btn-outline" bindtap="moreLegacyCatalog" disabled="{{legacyItemLoading}}">更多检测项目</button>
+        <view class="hint">项目按原价目规则加入当前草稿，此处不提交审核或扣款。</view>
+      </view>
+      <view class="row"><button class="petlis-btn petlis-btn-outline" bindtap="closeLegacy" disabled="{{legacySaving || legacyItemBusy}}">收起</button><button wx:if="{{legacyWritable}}" class="petlis-btn petlis-btn-primary" bindtap="saveLegacy" loading="{{legacySaving}}" disabled="{{legacySaving || legacyBusy || legacyItemBusy}}">保存资料</button></view>
     </view>
     <button wx:if="{{legacyError}}" class="petlis-btn petlis-btn-outline" bindtap="loadLegacy" disabled="{{legacyBusy}}">刷新历史草稿</button>
   </view>
