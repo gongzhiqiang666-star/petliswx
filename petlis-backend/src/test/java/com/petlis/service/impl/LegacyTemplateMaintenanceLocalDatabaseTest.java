@@ -26,6 +26,20 @@ class LegacyTemplateMaintenanceLocalDatabaseTest {
   long hospital=store.insert("INSERT INTO lin_lb_infohospital(HospitalName,HospitalName_en,PayType,amount) VALUES(?,?,0,0)",prefix,prefix);var draft=reader.draft(hospital,"2024-02",report,mail);assertEquals("<p>"+prefix+" 0.00</p>",draft.get("reportHtml"));assertEquals("<p>邮件 0.00</p>",draft.get("mailHtml"));
   service.delete("financeReport",report,new LegacyTemplateMaintenanceService.DeleteCommand(key(),service.detail("financeReport",report).get("editToken").toString()));assertEquals(404,assertThrows(BusinessException.class,()->service.detail("financeReport",report)).getCode());
  }
+ @Test void sampleNoticeKeepsDefaultStatusAndCreationTimeWhileMaintainingHtml(){
+  String html="<p>样本收到 中文 {动物名称}</p><table><tr><td>English α</td></tr></table>";
+  var create=command(prefix,html,0,null);long id=service.save("sampleNotice",null,create);assertEquals(id,service.save("sampleNotice",null,create));
+  var row=service.detail("sampleNotice",id);assertEquals(html,row.get("html"));assertEquals(0,((Number)row.get("active")).intValue());
+  var raw=store.one("SELECT * FROM lin_lb_dictmailreportnotice WHERE id=?",id);assertEquals(5,raw.size());assertTrue(((Number)raw.get("createtime")).longValue()>0);
+  store.jdbc().update("UPDATE lin_lb_dictmailreportnotice SET createtime=123 WHERE id=?",id);row=service.detail("sampleNotice",id);
+  service.save("sampleNotice",id,new LegacyTemplateMaintenanceService.Command(prefix+"改",html+"<p>修订</p>",0,key(),row.get("editToken").toString(),1));
+  row=service.detail("sampleNotice",id);assertEquals(1,((Number)row.get("active")).intValue());assertEquals(123,((Number)store.one("SELECT createtime FROM lin_lb_dictmailreportnotice WHERE id=?",id).get("createtime")).intValue());
+  service.save("sampleNotice",id,command(prefix,html,0,row.get("editToken").toString()));assertEquals(1,((Number)service.detail("sampleNotice",id).get("active")).intValue());
+  assertEquals(1,((Number)service.list("sampleNotice",null,prefix,0,20).get("total")).intValue());
+  assertEquals(400,assertThrows(BusinessException.class,()->service.save("sampleNotice",null,command(prefix,"",0,null))).getCode());
+  assertEquals(400,assertThrows(BusinessException.class,()->service.save("sampleNotice",null,new LegacyTemplateMaintenanceService.Command(prefix,html,0,key(),null,2))).getCode());
+  service.delete("sampleNotice",id,new LegacyTemplateMaintenanceService.DeleteCommand(key(),service.detail("sampleNotice",id).get("editToken").toString()));assertEquals(404,assertThrows(BusinessException.class,()->service.detail("sampleNotice",id)).getCode());
+ }
  @Test void oldCommandWithoutActiveStillReplaysWhenJsonKeyOrderChanges()throws Exception{
   var c=command(prefix,"<p>original</p>",0,null);long id=service.save("report",null,c);var mapper=new com.fasterxml.jackson.databind.ObjectMapper();var audit=store.one("SELECT id,after_json FROM lin_audit_record WHERE actor_user_id=? AND resource_type='LEGACY_TEMPLATE' AND request_id=?",actor,c.requestKey());var after=(com.fasterxml.jackson.databind.node.ObjectNode)mapper.readTree(audit.get("after_json").toString());var canonical=mapper.readTree(after.path("canonicalRequest").asText());assertFalse(canonical.path("command").has("active"));var reordered=new TreeMap<String,Object>();canonical.fields().forEachRemaining(entry->reordered.put(entry.getKey(),entry.getValue()));after.put("canonicalRequest",mapper.writeValueAsString(reordered));store.jdbc().update("UPDATE lin_audit_record SET after_json=? WHERE id=?",mapper.writeValueAsString(after),audit.get("id"));assertEquals(id,service.save("report",null,c));
  }

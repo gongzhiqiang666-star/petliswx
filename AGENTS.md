@@ -1,5 +1,9 @@
 # Petlis 项目约定
 
+## 邮件投递表批准记录
+
+用户明确批准仅在本机127.0.0.1:13306/laboklin新增lin_mail_message、lin_mail_attempt，精确SQL为docs/database/pending/007-mail-outbox.sql，已执行并核对原90张表、7个视图未变，禁止重放。此授权不涉及旧结构修改、远程/生产、真实外发或定时任务启用。
+
 ## 源码依据与验证链（用户明确确认）
 
 后续各业务统一按 **PHP 源码规则 → Java 实现 → 结果验证** 核对。PHP 源码只读参考，不修改原源码、本机 PHP 副本或既有覆盖层。

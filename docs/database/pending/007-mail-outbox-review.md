@@ -1,6 +1,8 @@
-# 邮件投递持久化：待审批变更
+# 邮件投递持久化：已批准本机执行
 
-仅申请本机 127.0.0.1:13306/laboklin 新增 `lin_mail_message`、`lin_mail_attempt`，精确 SQL 为同目录 `007-mail-outbox.sql`。未执行。
+仅限本机 127.0.0.1:13306/laboklin 新增 `lin_mail_message`、`lin_mail_attempt`，精确 SQL 为同目录 `007-mail-outbox.sql`。用户已明确批准并已执行，禁止重放。
+
+执行前后使用 integration/schema_guard.py 核对全部90张既有表的列、索引、选项、外键、CHECK和触发器，独立核对7个视图定义，全部一致。新增表恰为批准的两表且为空。私有备份目录为 ~/.local/share/petlis/mysql/backups/mail-outbox-20261108-202734，包含结构备份、前后快照、实际执行SQL及verification.json。实际执行SQL SHA-256为 b03e77dfe227163e88243bdff11ffeafbb7ed9530b25817cf63f96ef9c9d9e97；仓库SQL执行后仅更新首行状态注释，DDL内容未改。真实外发与作业保持关闭。
 
 ## 必要性与依据
 
