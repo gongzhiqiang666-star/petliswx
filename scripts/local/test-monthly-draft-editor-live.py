@@ -61,7 +61,7 @@ try:
   ids.append(int(staff.call(f'/admin/legacy/order-details/orders/{order}',command,token)))
  report=int(sql('INSERT INTO lin_lb_dictfinancereport(model_name,model_content) VALUES('+literal(prefix)+','+literal('<h1>{结算单位}</h1><p>{结算月份} {结束时间} 总费用 {总费用} {总费用大写}</p>{表格内容}')+');SELECT LAST_INSERT_ID()'))
  mail=int(sql('INSERT INTO lin_lb_dictfinancemailreport(model_name,model_content,IsActive) VALUES('+literal(prefix)+','+literal('<p>邮件 {总费用}</p>')+',0);SELECT LAST_INSERT_ID()'))
- run=subprocess.run(['node','scripts/editor-parity/legacy-monthly-report-live.js'],cwd=ROOT,input=json.dumps({'token':token,'prefix':prefix,'hospital':hospital,'report':report,'mail':mail,'editor':True,'pdf':pdf_enabled,'output':str(private/(prefix+'.pdf')),'screenshot':str(private/(prefix+'.png'))}),capture_output=True,text=True,timeout=120)
+ run=subprocess.run(['node','scripts/editor-parity/legacy-monthly-report-live.js'],cwd=ROOT,input=json.dumps({'token':token,'prefix':prefix,'hospital':hospital,'report':report,'mail':mail,'editor':True,'range':os.environ.get('PETLIS_QA_MONTHLY_RANGE')=='true','pdf':pdf_enabled,'output':str(private/(prefix+'.pdf')),'screenshot':str(private/(prefix+'.png'))}),capture_output=True,text=True,timeout=120)
  if run.returncode:raise AssertionError('Monthly browser failed: '+run.stderr[-1400:])
  proof=json.loads(run.stdout)
  if pdf_enabled:
