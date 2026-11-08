@@ -25,16 +25,28 @@ public class LegacyHospitalHistoryService {
         return actor.isAdmin() || actor.hasRole(PlatformRole.DOCTOR)
                 || actor.hasRole(PlatformRole.HOSPITAL_ADMIN);
     }
+    static final String PARENT_FIELDS = "p.ListDiagnosisProjectId AS orderId,p.UserNO AS userNo,DATE_FORMAT(p.CreateDt,'%Y-%m-%d %H:%i:%s') AS submittedAt,p.DoctorName AS doctorName,p.MasterName AS ownerName,p.AnimalName AS animalName,p.SampleStatus AS sampleStatus,p.Remark AS remark,p.IsPayMoney AS paidFlag,(EXISTS(SELECT 1 FROM lin_order_extension e WHERE e.order_id=p.ListDiagnosisProjectId) OR EXISTS(SELECT 1 FROM lin_shipment s WHERE s.order_id=p.ListDiagnosisProjectId) OR EXISTS(SELECT 1 FROM lin_report_workflow w WHERE w.order_id=p.ListDiagnosisProjectId)) AS hasNewWorkflow";
     @Transactional(readOnly = true)
-    public Map<String, Boolean> capabilities() {
-        if (!hospitalRole()) return Map.of("legacyHospitalHistory", false);
-        var rows = store.jdbc().queryForList("SELECT config_value FROM lin_operational_config WHERE config_key='legacy-hospital-history' AND scope_type='GLOBAL' AND scope_id=0 AND status='ACTIVE'");
-        if (rows.size() != 1) return Map.of("legacyHospitalHistory", false);
+    public Map<String, Boolean> capabilities() { return policy(false); }
+    Map<String, Boolean> policy(boolean lock) {
+        if (!hospitalRole()) return Map.of("legacyHospitalHistory", false, "legacyHospitalHistoryCancel", false);
+        var rows = store.jdbc().queryForList("SELECT config_value FROM lin_operational_config WHERE config_key='legacy-hospital-history' AND scope_type='GLOBAL' AND scope_id=0 AND status='ACTIVE'" + (lock ? " FOR UPDATE" : ""));
+        if (rows.size() != 1) return Map.of("legacyHospitalHistory", false, "legacyHospitalHistoryCancel", false);
         try {
-            var value = new ObjectMapper().readTree(rows.get(0).get("config_value").toString()).path("enabled");
-            return Map.of("legacyHospitalHistory", value.isBoolean() && value.asBoolean());
+            var json = new ObjectMapper().readTree(rows.get(0).get("config_value").toString());
+            boolean enabled = flag(json, "enabled");
+            return Map.of("legacyHospitalHistory", enabled, "legacyHospitalHistoryCancel", enabled && flag(json,"writeEnabled") && flag(json,"cancelEnabled"));
         } catch (Exception error) { throw new BusinessException(409, "医院历史查询参数无效"); }
     }
+    private static boolean flag(com.fasterxml.jackson.databind.JsonNode json,String key) { return json.path(key).isBoolean() && json.path(key).asBoolean(); }
+    Map<String,Object> cancellationSnapshot(long id,int hospitalId,boolean lock) {
+        return store.one("SELECT " + PARENT_FIELDS + " FROM lin_lb_listdiagnosisproject p WHERE p.ListDiagnosisProjectId=? AND p.InfoHospitalId=?" + (lock ? " FOR UPDATE" : ""),id,hospitalId);
+    }
+    String cancellationToken(Map<String,Object> row) {
+        try { return HexFormat.of().formatHex(java.security.MessageDigest.getInstance("SHA-256").digest(store.encode(new TreeMap<>(row)).getBytes(java.nio.charset.StandardCharsets.UTF_8))); }
+        catch (java.security.NoSuchAlgorithmException error) { throw new IllegalStateException(error); }
+    }
+    static boolean hasNewWorkflow(Map<String,Object> row) { Object value=row.get("hasNewWorkflow"); return Boolean.TRUE.equals(value) || value instanceof Number n && n.intValue()!=0; }
 
     @Transactional(readOnly = true)
     public Map<String, Object> list(Query query) {
@@ -67,7 +79,7 @@ public class LegacyHospitalHistoryService {
         }
         long total = store.jdbc().queryForObject("SELECT COUNT(*) FROM lin_lb_listdiagnosisproject p" + where, Long.class, args.toArray());
         var paged = new ArrayList<>(args); paged.add(size); paged.add((long)page * size);
-        var rows = store.jdbc().queryForList("SELECT p.ListDiagnosisProjectId AS orderId,p.UserNO AS userNo,DATE_FORMAT(p.CreateDt,'%Y-%m-%d %H:%i:%s') AS submittedAt,p.DoctorName AS doctorName,p.MasterName AS ownerName,p.AnimalName AS animalName,p.SampleStatus AS sampleStatus,p.Remark AS remark FROM lin_lb_listdiagnosisproject p" + where + " ORDER BY p.ListDiagnosisProjectId DESC LIMIT ? OFFSET ?", paged.toArray());
+        var rows = store.jdbc().queryForList("SELECT " + PARENT_FIELDS + " FROM lin_lb_listdiagnosisproject p" + where + " ORDER BY p.ListDiagnosisProjectId DESC LIMIT ? OFFSET ?", paged.toArray());
         // One bounded batch preserves the source INNER JOIN, including exempt/inactive test items.
         var byOrder = new HashMap<Long, List<Map<String, Object>>>();
         if (!rows.isEmpty()) {
@@ -76,8 +88,13 @@ public class LegacyHospitalHistoryService {
             var details = store.jdbc().queryForList("SELECT d.ListDiagnosisProjectId AS orderId,d.DiagnosisDetailId AS detailId,t.TestName AS testName,t.TestNO AS testNo,d.IsSendMail AS mailFlag FROM lin_lb_diagnosisdetail d INNER JOIN lin_lb_infotesttype t ON t.InfoTestTypeId=d.InfoTestTypeId WHERE d.ListDiagnosisProjectId IN (" + placeholders + ") ORDER BY d.DiagnosisDetailId", ids.toArray());
             for (var detail : details) byOrder.computeIfAbsent(((Number)detail.get("orderId")).longValue(), id -> new ArrayList<>()).add(detail);
         }
+        boolean cancelEnabled = capabilities().get("legacyHospitalHistoryCancel");
         for (var row : rows) {
             int status = ((Number)row.get("sampleStatus")).intValue();
+            row.put("cancelToken", cancellationToken(row));
+            row.put("canCancel", cancelEnabled && status == 0 && !hasNewWorkflow(row));
+            row.put("paid", row.get("paidFlag") instanceof Number n && n.intValue() == 1);
+            row.remove("paidFlag"); row.remove("hasNewWorkflow");
             row.put("statusLabel", switch (status) { case 0 -> "待审核"; case 1 -> "审核未通过"; case 2 -> "审核通过"; case 3 -> "已出报告"; case 4 -> "已取消"; case -3 -> "待支付"; default -> "原状态 " + status; });
             row.put("rejectionReason", status == 1 ? Objects.toString(row.get("remark"), "") : ""); row.remove("remark");
             var items = byOrder.getOrDefault(((Number)row.get("orderId")).longValue(), List.of());

@@ -15,6 +15,7 @@
     <view class="history-line">主人：{{order.ownerName || '未记录'}} · 动物：{{order.animalName || '未记录'}}</view>
     <view wx:if="{{order.rejectionReason}}" class="history-rejection">审核意见：{{order.rejectionReason}}</view>
     <view class="history-test" wx:for="{{order.items}}" wx:key="detailId" wx:for-item="detail"><text>{{detail.testName}}</text><text class="history-report">{{detail.reportState}}</text></view>
+    <button wx:if="{{order.canCancel}}" class="petlis-btn petlis-btn-outline history-cancel" data-id="{{order.orderId}}" bindtap="cancelOrder" disabled="{{cancellingId}}" loading="{{cancellingId === order.orderId}}">取消送检</button>
     <view wx:if="{{!order.items.length}}" class="history-hint">原记录未关联检测项目</view>
   </view>
   <view wx:if="{{enabled && !loading && !error && !items.length}}" class="petlis-empty">暂无符合条件的送检记录</view>

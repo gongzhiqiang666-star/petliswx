@@ -2,6 +2,7 @@ package com.petlis.controller.api;
 
 import com.petlis.common.response.Result;
 import com.petlis.service.impl.LegacyHospitalHistoryService;
+import com.petlis.service.impl.LegacyHospitalCancellationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 import java.util.Map;
@@ -11,6 +12,9 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class LegacyHospitalHistoryController {
     private final LegacyHospitalHistoryService service;
+    private final LegacyHospitalCancellationService cancellations;
+    @PostMapping("/{orderId}/cancel")
+    public Result<Map<String,Object>> cancel(@PathVariable long orderId,@RequestBody LegacyHospitalCancellationService.Command command) { return Result.success(cancellations.cancel(orderId,command)); }
     @GetMapping("/capabilities")
     public Result<Map<String, Boolean>> capabilities() { return Result.success(service.capabilities()); }
     @GetMapping
