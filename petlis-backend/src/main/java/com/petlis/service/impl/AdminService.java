@@ -125,7 +125,7 @@ public class AdminService {
 
     public Map<String, Object> hospital(int hospitalId) {
         requireAdmin();
-        return store.one("SELECT InfoHospitalId AS id,HospitalName AS name,LoginName AS code,CityId AS cityId,Tel AS contactPhone,Adress AS address,Place AS place,Invoice AS invoice,PayType AS payType,amount,CASE WHEN IsActive=1 THEN 'ACTIVE' ELSE 'INACTIVE' END AS status FROM lin_lb_infohospital WHERE InfoHospitalId=?", hospitalId);
+        return store.one("SELECT InfoHospitalId AS id,HospitalName AS name,HospitalName_en AS englishName,LoginName AS code,CityId AS cityId,Tel AS contactPhone,Fax AS fax,Adress AS address,Place AS place,Invoice AS invoice,PayType AS payType,amount,CASE WHEN IsActive=1 THEN 'ACTIVE' ELSE 'INACTIVE' END AS status FROM lin_lb_infohospital WHERE InfoHospitalId=?", hospitalId);
     }
 
     @Transactional
