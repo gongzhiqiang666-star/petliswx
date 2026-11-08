@@ -9,5 +9,7 @@ public class LegacyMainOrderController {
  private final LegacyMainOrderService service;
  @GetMapping("/capabilities") public Result<Map<String,Boolean>> capabilities(){return Result.success(service.capabilities());}
  @GetMapping("/{id}") public Result<Map<String,Object>> detail(@PathVariable long id){return Result.success(service.detail(id));}
+ @GetMapping public Result<Map<String,Object>> list(@RequestParam(required=false) Integer status,@RequestParam(defaultValue="0") int page,@RequestParam(defaultValue="20") int size){return Result.success(service.list(status,page,size));}
+ @PostMapping public Result<Long> create(@RequestBody LegacyMainOrderService.CreateCommand command){return Result.success(service.create(command));}
  @PutMapping("/{id}") public Result<Long> update(@PathVariable long id,@RequestBody LegacyMainOrderService.Command command){return Result.success(service.update(id,command));}
 }

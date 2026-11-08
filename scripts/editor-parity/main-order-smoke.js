@@ -10,7 +10,7 @@ try{
  browser=await chromium.launch({executablePath:'/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',headless:true});const context=await browser.newContext({serviceWorkers:'block'}),origin=`http://127.0.0.1:${server.address().port}`;
  await context.addInitScript(()=>{localStorage.setItem('petlis.admin.token','synthetic-token');localStorage.setItem('petlis.admin.user',JSON.stringify({username:'主单页面验收',roles:['ADMIN']}));});
  await context.route('**/*',route=>{const request=route.request(),url=new URL(request.url()),path=url.pathname;if(url.origin!==origin)return route.abort();if(!path.startsWith('/api/'))return route.continue();let data={};
- if(path==='/api/admin/orders')data={items:[{orderId:42,orderNo:row.UserNO,hospitalName:'合成医院',animalName:row.AnimalName,amount:'125.50',status:2}],total:1};
+ if((path==='/api/admin/orders'||path==='/api/admin/legacy/main-orders'))data={items:[{orderId:42,orderNo:row.UserNO,hospitalName:'合成医院',animalName:row.AnimalName,amount:'125.50',status:2}],total:1};
  else if(path==='/api/admin/legacy/main-orders/capabilities')data={mainOrders:true,mainOrderWrites:writable};
  else if(path==='/api/admin/legacy/main-orders/42'&&request.method()==='PUT'){const c=request.postDataJSON();writes.push(c);for(const [key,value] of Object.entries(c.fields))if(!(key==='CollectDt'&&value===''))row[key]=value;data=42;}
  else if(path==='/api/admin/legacy/main-orders/42')data=row;

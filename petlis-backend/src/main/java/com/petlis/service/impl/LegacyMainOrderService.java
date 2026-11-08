@@ -8,17 +8,25 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.*;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
-@Service @RequiredArgsConstructor
+@Service @RequiredArgsConstructor(onConstructor_=@org.springframework.beans.factory.annotation.Autowired)
 public class LegacyMainOrderService {
- private final FeatureStore store;private final AccessService access;
+ private final FeatureStore store;private final AccessService access;private final LegacyOrderDetailService details;
+ public LegacyMainOrderService(FeatureStore store,AccessService access){this(store,access,null);}
+ public record CreateCommand(boolean autoLogistics,String requestKey){}
  public record Command(Map<String,String> fields,String requestKey,String expectedToken){}
  private static final Set<String> ALLOWED=Set.of("Age","AnimalName","AnimalName_en","AnimalType","AnimalTypeId","AnimalType_en","Birthday","ChipNO","CityId","CollectDt","CreateDataTypeIId","DiagnosticResults","DictSexId","DoctorName","InfoAnimalId","InfoHospitalId","InfoSampleTypeId","MarketingName","MasterName","MasterName_en","ReceiveSampleDt","Remark","ReportNO","SampleArea","SampleStatus","SendReportDt","SendSampleDt","UserNO");
  private static final Set<String> INTEGERS=Set.of("AnimalTypeId","CityId","CreateDataTypeIId","DictSexId","InfoAnimalId","InfoHospitalId","InfoSampleTypeId","SampleStatus");
  private static final Set<String> DATES=Set.of("Birthday","CollectDt","ReceiveSampleDt","SendReportDt","SendSampleDt");
- private boolean[] policy(boolean lock){access.requireAdmin();var rows=store.jdbc().queryForList("SELECT config_value FROM lin_operational_config WHERE config_key='legacy-main-orders' AND scope_type='GLOBAL' AND scope_id=0 AND status='ACTIVE'"+(lock?" FOR UPDATE":""));if(rows.size()!=1)return new boolean[]{false,false};try{var j=new ObjectMapper().readTree(rows.get(0).get("config_value").toString());boolean read=j.path("enabled").isBoolean()&&j.path("enabled").asBoolean();return new boolean[]{read,read&&j.path("writeEnabled").isBoolean()&&j.path("writeEnabled").asBoolean()};}catch(Exception e){throw new BusinessException(409,"原主单参数无效");}}
- @Transactional(readOnly=true) public Map<String,Boolean> capabilities(){var p=policy(false);return Map.of("mainOrders",p[0],"mainOrderWrites",p[1]);}
+ private boolean[] policy(boolean lock){access.requireAdmin();var rows=store.jdbc().queryForList("SELECT config_value FROM lin_operational_config WHERE config_key='legacy-main-orders' AND scope_type='GLOBAL' AND scope_id=0 AND status='ACTIVE'"+(lock?" FOR UPDATE":""));if(rows.size()!=1)return new boolean[]{false,false,false};try{var j=new ObjectMapper().readTree(rows.get(0).get("config_value").toString());boolean read=j.path("enabled").isBoolean()&&j.path("enabled").asBoolean();boolean write=read&&j.path("writeEnabled").isBoolean()&&j.path("writeEnabled").asBoolean();return new boolean[]{read,write,write&&j.path("createEnabled").isBoolean()&&j.path("createEnabled").asBoolean()};}catch(Exception e){throw new BusinessException(409,"原主单参数无效");}}
+ @Transactional(readOnly=true) public Map<String,Boolean> capabilities(){var p=policy(false);return Map.of("mainOrders",p[0],"mainOrderWrites",p[1],"mainOrderCreates",p[2]);}
  private Map<String,Object> raw(long id,boolean lock){if(id<1||id>4294967295L)throw new BusinessException(400,"主单编号无效");return new LinkedHashMap<>(store.one("SELECT * FROM lin_lb_listdiagnosisproject WHERE ListDiagnosisProjectId=?"+(lock?" FOR UPDATE":""),id));}
  private String token(Map<String,Object> row){try{return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(store.encode(new TreeMap<>(row)).getBytes(StandardCharsets.UTF_8)));}catch(Exception e){throw new IllegalStateException(e);}}
+ @Transactional(readOnly=true) public Map<String,Object> list(Integer status,int page,int size){
+  if(!policy(false)[0])throw new BusinessException(409,"原主单尚未开启");if(page<0||size<1||size>100)throw new BusinessException(400,"分页无效");
+  String from=" FROM lin_lb_listdiagnosisproject o LEFT JOIN lin_lb_infohospital h ON h.InfoHospitalId=o.InfoHospitalId LEFT JOIN lin_order_extension e ON e.order_id=o.ListDiagnosisProjectId"+(status==null?"":" WHERE o.SampleStatus=?");
+  String columns="SELECT o.ListDiagnosisProjectId AS orderId,o.UserNO AS orderNo,COALESCE(h.HospitalName,'未指定医院') AS hospitalName,o.AnimalName AS animalName,o.TestFee AS amount,o.SampleStatus AS status,o.IsPayMoney AS paid,o.CreateDt AS createdAt,e.settlement_mode AS settlementMode,EXISTS(SELECT 1 FROM lin_audit_record r WHERE r.resource_type='MOCK_REFUND' AND r.action='MOCK_REFUND_COMPLETED' AND CAST(r.resource_id AS UNSIGNED)=o.ListDiagnosisProjectId) AS refunded";
+  return store.page("SELECT COUNT(*)"+from,columns+from+" ORDER BY o.ListDiagnosisProjectId DESC",page,size,status==null?new Object[]{}:new Object[]{status});
+ }
  @Transactional(readOnly=true) public Map<String,Object> detail(long id){if(!policy(false)[0])throw new BusinessException(409,"原送检主单尚未开启");var row=raw(id,false);row.put("editToken",token(row));return row;}
  @Transactional public long update(long id,Command c){
   if(!policy(true)[1])throw new BusinessException(409,"原送检主单维护尚未开启");
@@ -38,4 +46,29 @@ public class LegacyMainOrderService {
   if(!values.isEmpty()){var args=new ArrayList<Object>();var sets=new ArrayList<String>();new TreeMap<>(values).forEach((key,value)->{sets.add("`"+key+"`=?");args.add(value);});args.add(id);store.jdbc().update("UPDATE lin_lb_listdiagnosisproject SET "+String.join(",",sets)+" WHERE ListDiagnosisProjectId=?",args.toArray());}
   store.insert("INSERT INTO lin_audit_record(actor_user_id,action,resource_type,resource_id,request_id,before_json,after_json) VALUES(?,'LEGACY_MAIN_ORDER_UPDATED','LEGACY_MAIN_ORDER',?,?,?,?)",actor,String.valueOf(id),c.requestKey(),store.encode(before),store.encode(Map.of("orderId",id,"canonicalRequest",canonical)));return id;
  }
+ @Transactional public long create(CreateCommand c){
+  if(!policy(true)[1])throw new BusinessException(409,"原主单维护尚未开启");
+  var configs=store.jdbc().queryForList("SELECT config_value FROM lin_operational_config WHERE config_key='legacy-main-orders' AND scope_type='GLOBAL' AND scope_id=0 AND status='ACTIVE'");
+  com.fasterxml.jackson.databind.JsonNode config;try{config=new ObjectMapper().readTree(configs.get(0).get("config_value").toString());}catch(Exception e){throw new BusinessException(409,"主单参数无效");}
+  if(!config.path("createEnabled").isBoolean()||!config.path("createEnabled").asBoolean())throw new BusinessException(409,"原后台新增尚未开启");
+  if(c==null||c.requestKey()==null||!c.requestKey().matches("[A-Za-z0-9_-]{16,64}"))throw new BusinessException(400,"新增请求号无效");
+  if(c.autoLogistics())store.jdbc().queryForList("SELECT config_value FROM lin_operational_config WHERE config_key='legacy-order-details' AND scope_type='GLOBAL' AND scope_id=0 AND status='ACTIVE' FOR UPDATE");
+  int actor=access.current().userId();store.one("SELECT id FROM lin_user WHERE id=? FOR UPDATE",actor);String canonical=store.encode(Map.of("operation","CREATE","command",c));
+  var prior=store.jdbc().queryForList("SELECT after_json FROM lin_audit_record WHERE actor_user_id=? AND resource_type='LEGACY_MAIN_ORDER' AND request_id=? ORDER BY id DESC LIMIT 1",actor,c.requestKey());
+  if(!prior.isEmpty())try{var json=new ObjectMapper().readTree(prior.get(0).get("after_json").toString());if(!canonical.equals(json.path("canonicalRequest").asText()))throw new BusinessException(409,"请求号已用于其他操作");return json.path("orderId").asLong();}catch(com.fasterxml.jackson.core.JsonProcessingException e){throw new BusinessException(409,"新增请求无法核对");}
+  var mapped=config.path("adminMappings").path(String.valueOf(actor));if(!mapped.isIntegralNumber()||!mapped.canConvertToInt()||mapped.asInt()<1)throw new BusinessException(409,"请配置对应的原管理员身份");
+  var admin=store.one("SELECT id,datagroup FROM lin_admin WHERE id=? AND status='normal' FOR SHARE",mapped.asInt());
+  var groups=new ArrayList<Long>();for(String part:Objects.toString(admin.get("datagroup"),"").split(",")){try{long group=Long.parseLong(part);if(group>=0)groups.add(group);}catch(NumberFormatException e){throw new BusinessException(409,"原管理员数据组无效");}}
+  if(groups.isEmpty())throw new BusinessException(409,"原管理员没有可用数据组");long group=groups.contains(2L)?2L:groups.get(0);
+  var row=LegacyMainOrderRules.adminInsert(Map.of("SampleStatus",2,"CreateDataTypeIId",group,"InfoAnimalId",4,"DictSexId",1,"InfoSampleTypeId",1,"InfoHospitalId",1));
+  row.put("SaveMedium",0);row.put("CreateDt",java.time.LocalDateTime.now(java.time.ZoneId.of("Asia/Shanghai")).withNano(0));
+  var names=new ArrayList<String>();var values=new ArrayList<Object>();row.forEach((name,value)->{names.add("`"+name+"`");values.add(value);});
+  long id=store.insert("INSERT INTO lin_lb_listdiagnosisproject("+String.join(",",names)+") VALUES("+String.join(",",Collections.nCopies(values.size(),"?"))+")",values.toArray());
+  if(c.autoLogistics()){
+   if(details==null)throw new BusinessException(409,"自动物流明细服务未配置");
+   details.create(id,new LegacyOrderDetailService.CreateCommand(246,null,null,null,null,null,null,null,null,null,null,null,null,"auto_"+token(Map.of("request",c.requestKey())).substring(0,40)));
+  }
+  store.insert("INSERT INTO lin_audit_record(actor_user_id,action,resource_type,resource_id,request_id,after_json) VALUES(?,'LEGACY_MAIN_ORDER_CREATED','LEGACY_MAIN_ORDER',?,?,?)",actor,String.valueOf(id),c.requestKey(),store.encode(Map.of("orderId",id,"legacyAdminId",mapped.asInt(),"canonicalRequest",canonical)));return id;
+ }
+
 }
