@@ -7,6 +7,7 @@ import { bindRetry } from './components/retry.js';
 import * as dashboard from './pages/dashboard.js';
 import * as reviews from './pages/reviews.js';
 import * as organizations from './pages/organizations.js';
+import * as hospitalDrafts from './pages/hospital-drafts.js';
 import * as hospitalDocuments from './pages/hospital-documents.js';
 import * as orders from './pages/orders.js';
 import * as logistics from './pages/logistics.js';
@@ -28,7 +29,7 @@ import * as legacyTemplateBindings from './pages/legacy-template-bindings.js';
 import * as legacyTemplates from './pages/legacy-templates.js';
 import * as legacyDictionaries from './pages/legacy-dictionaries.js';
 
-const pages = { legacyCustomerViews, legacyBankPayments, legacyPaymentLogs, legacyMailSettings, legacyMonthlyReports, legacyFinance, legacyTemplateBindings, legacyTemplates, legacyTestCatalog, legacyDictionaries, dashboard, reviews, organizations, hospitalDocuments, orders, logistics, laboratory, reports, catalog, finance, operations, messages, system };
+const pages = { hospitalDrafts, legacyCustomerViews, legacyBankPayments, legacyPaymentLogs, legacyMailSettings, legacyMonthlyReports, legacyFinance, legacyTemplateBindings, legacyTemplates, legacyTestCatalog, legacyDictionaries, dashboard, reviews, organizations, hospitalDocuments, orders, logistics, laboratory, reports, catalog, finance, operations, messages, system };
 const root = document.querySelector('#app');
 let api;
 const store = createStore({
@@ -73,6 +74,7 @@ async function renderShell() {
     const results = await Promise.allSettled([api.request('/admin/legacy/capabilities'),api.request('/admin/legacy/test-catalog/capabilities'),api.request('/admin/legacy/templates/capabilities'),api.request('/admin/legacy/template-bindings/capabilities'),api.request('/admin/legacy/finance/capabilities'),api.request('/admin/legacy/monthly-reports/capabilities'),api.request('/admin/legacy/mail-settings/capabilities'),api.request('/admin/legacy/payment-logs/capabilities'),api.request('/admin/legacy/bank-payments/capabilities'),api.request('/admin/legacy/customer-views/capabilities')]);
     for(const result of results)if(result.status==='fulfilled')Object.assign(capabilities,result.value||{});
   }
+  if(user.roles?.some(role=>['ADMIN','HOSPITAL_ADMIN','DOCTOR'].includes(role))){try{Object.assign(capabilities,await api.request('/orders/hospital-history/capabilities'))}catch{}}
   if (version !== shellSequence || token !== store.getState().token) return;
   migrationCapabilities = capabilities || {};
   const allowed = routes.filter((route) => isRouteAllowed(route.id, user, migrationCapabilities));

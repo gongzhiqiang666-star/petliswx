@@ -38,6 +38,17 @@ public class LegacyHospitalHistoryService {
             return Map.of("legacyHospitalHistory", enabled, "legacyHospitalHistoryCancel", enabled && flag(json,"writeEnabled") && flag(json,"cancelEnabled"),"legacyHospitalDrafts",enabled && flag(json,"draftEnabled"),"legacyHospitalDraftWrites",enabled && flag(json,"draftEnabled") && flag(json,"writeEnabled") && flag(json,"draftWriteEnabled"),"legacyHospitalDraftItems",enabled && flag(json,"draftEnabled") && flag(json,"writeEnabled") && flag(json,"draftWriteEnabled") && flag(json,"draftItemsEnabled"),"legacyHospitalDraftCreates",enabled && flag(json,"draftEnabled") && flag(json,"writeEnabled") && flag(json,"draftWriteEnabled") && flag(json,"draftCreateEnabled"),"legacyHospitalDraftSubmit",enabled && flag(json,"draftEnabled") && flag(json,"writeEnabled") && flag(json,"draftWriteEnabled") && flag(json,"draftSubmitEnabled") && Set.of("ID","LEGACY").contains(json.path("previewVarietyMode").asText()));
         } catch (Exception error) { throw new BusinessException(409, "医院历史查询参数无效"); }
     }
+    @Transactional(readOnly=true)
+    public Map<String,Object> hospitals(String query,int page,int size){
+        if(!hospitalRole())throw new BusinessException(403,"需要医院业务权限");
+        if(!policy(false).get("legacyHospitalDrafts"))throw new BusinessException(409,"原医院草稿查询尚未开启");
+        String q=query==null?"":query.trim();
+        if(page<0||size<1||size>100||(long)page*size>Integer.MAX_VALUE||q.length()>100)throw new BusinessException(400,"医院查询参数无效");
+        var actor=access.current();var ids=new TreeSet<>(actor.hospitalIds());ids.removeIf(id->id<=0);var args=new ArrayList<Object>();
+        String scope=actor.dataScope().global()?"1=1":ids.isEmpty()?"1=0":"InfoHospitalId IN ("+String.join(",",Collections.nCopies(ids.size(),"?"))+")";
+        if(!actor.dataScope().global())args.addAll(ids);args.add("%"+q+"%");String where=" WHERE "+scope+" AND HospitalName LIKE ?";
+        return store.page("SELECT COUNT(*) FROM lin_lb_infohospital"+where,"SELECT InfoHospitalId AS id,HospitalName AS name FROM lin_lb_infohospital"+where+" ORDER BY InfoHospitalId",page,size,args.toArray());
+    }
     private static boolean flag(com.fasterxml.jackson.databind.JsonNode json,String key) { return json.path(key).isBoolean() && json.path(key).asBoolean(); }
     Map<String,Object> cancellationSnapshot(long id,int hospitalId,boolean lock) {
         return store.one("SELECT " + PARENT_FIELDS + " FROM lin_lb_listdiagnosisproject p WHERE p.ListDiagnosisProjectId=? AND p.InfoHospitalId=?" + (lock ? " FOR UPDATE" : ""),id,hospitalId);

@@ -19,6 +19,7 @@ public class LegacyHospitalHistoryController {
     private final LegacyHospitalDraftService drafts;
     private final LegacyHospitalDraftItemsService items;
     private final LegacyHospitalDraftSubmissionService submissions;
+    @GetMapping("/hospitals") public Result<Map<String,Object>> hospitals(@RequestParam(required=false) String q,@RequestParam(defaultValue="0") int page,@RequestParam(defaultValue="20") int size) { return Result.success(service.hospitals(q,page,size)); }
     @GetMapping("/drafts/{id}/preview") public Result<Map<String,Object>> preview(@PathVariable long id,@RequestParam int hospitalId) { return Result.success(submissions.preview(id,hospitalId)); }
     @PostMapping("/drafts/{id}/submit") public Result<Map<String,Object>> submit(@PathVariable long id,@RequestBody LegacyHospitalDraftSubmissionService.Command command) { return Result.success(submissions.submit(id,command)); }
     @GetMapping("/drafts/{id}/items") public Result<Map<String,Object>> selected(@PathVariable long id,@RequestParam int hospitalId) { return Result.success(items.selected(id,hospitalId)); }
