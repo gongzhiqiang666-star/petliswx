@@ -50,7 +50,7 @@ function flush() {
     if (inflight || Date.now()<nextTry) return
     const rows=read().slice(0,20)
     let token=wx.getStorageSync(config.storageKeys.TOKEN)
-    try { token=(getApp().globalData || {}).token || token } catch (_) {} 
+    try { token=(getApp().globalData || {}).token || token } catch (_) {}
     if (!rows.length || !token) return
     inflight=true
     task=wx.request({url:config.baseURL+'/client-events',method:'POST',timeout:3000,
