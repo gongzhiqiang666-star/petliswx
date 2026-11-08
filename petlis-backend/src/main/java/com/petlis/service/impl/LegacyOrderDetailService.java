@@ -65,6 +65,7 @@ public class LegacyOrderDetailService {
  @Transactional(readOnly=true) public String renderSampleNoticeBody(long orderId,String body){
   access.requireAdmin();String link=LegacyDictionarySelector.display(body).indexOf("{报告链接}")>0?links.detail(0):"";return renderBodyCore(orderId,0,body,2,link);
  }
+ @Transactional(readOnly=true) public String renderReportMailBody(long orderId,long detailId,String body){access.requireAdmin();return renderBodyCore(orderId,detailId,body,1,links.detail(detailId));}
  private String renderBodyCore(long orderId,long detailId,String body,int type,String serverLink){
   order(orderId,false);if(detailId<0)throw error(400,"明细编号无效");
   if(detailId>0)store.one("SELECT DiagnosisDetailId FROM lin_lb_diagnosisdetail WHERE DiagnosisDetailId=? AND ListDiagnosisProjectId=?",detailId,orderId);

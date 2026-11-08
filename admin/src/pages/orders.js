@@ -35,7 +35,7 @@ export async function render(container, context) {
     const notice=event.target.closest('[data-sample-notice]');if(notice&&!notice.disabled){notice.disabled=true;try{await openSampleNotice(context,Number(notice.dataset.sampleNotice))}catch(error){toast(error.message,'error')}finally{notice.disabled=false;}return;}
     const main=event.target.closest('[data-main-order-edit]');if(main){try{await openLegacyMainOrder(context,Number(main.dataset.mainOrderEdit),load)}catch(error){toast(error.message,'error')}return;}
     const detail = event.target.closest('[data-order-details]');
-    if (detail && !detail.disabled) { detail.disabled = true; try { await openLegacyOrderDetails(context, Number(detail.dataset.orderDetails)); } catch (error) { toast(error.message, 'error'); } finally { detail.disabled = false; } }
+    if (detail && !detail.disabled) { detail.disabled = true; try { await openLegacyOrderDetails(context, Number(detail.dataset.orderDetails),load); } catch (error) { toast(error.message, 'error'); } finally { detail.disabled = false; } }
     const order = event.target.closest('[data-print-order]'); const label = event.target.closest('[data-print-label]');
     if (order) printHtml(api, `/admin/print/orders/${order.dataset.printOrder}`, toast);
     if (label) printHtml(api, `/admin/print/specimens/${label.dataset.printLabel}`, toast);

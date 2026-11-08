@@ -37,7 +37,7 @@ public class LegacyMailTransport {
   if(local&&(localPort<1||localPort>65535))throw new IllegalStateException("本机邮件测试端口未配置");
   if(profile==null||command==null)throw new IllegalArgumentException("邮件配置和内容必填");
   header(profile.username());header(command.subject());
-  if(command.subject().isEmpty()||command.subject().length()>2000||command.html()==null||command.html().getBytes(StandardCharsets.UTF_8).length>2*1024*1024)throw new IllegalArgumentException("邮件标题或正文无效或过长");
+  if(command.subject().length()>2000||command.html()==null||command.html().getBytes(StandardCharsets.UTF_8).length>2*1024*1024)throw new IllegalArgumentException("邮件标题或正文无效或过长");
   if(command.messageId()!=null&&!command.messageId().matches("<[A-Za-z0-9._-]+@petlis\\.invalid>"))throw new IllegalArgumentException("邮件追溯编号无效");
   var from=address(profile.username(),LegacyMailAddressRules.senderName(profile.username()));
   var route=LegacyMailRoutingRules.route(kind,command.to(),command.overrideTo(),profile.bcc());
