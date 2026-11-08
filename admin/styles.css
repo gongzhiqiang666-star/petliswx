@@ -244,3 +244,9 @@ input[type="checkbox"] { width: 16px; min-height: 16px; }
 .legacy-editor-surface .tiptap td, .legacy-editor-surface .tiptap th { position: relative; }
 .legacy-editor-surface .tiptap .selectedCell { outline: 2px solid #278b7a; }
 .legacy-body-preview { width: 100%; min-height: 320px; border: 1px solid var(--border, #d8e0e8); background: white; }
+
+/* Business transaction columns stay readable; actions remain available while scrolling. */
+.payment-log-list table { min-width: 1900px; }
+.payment-log-list th, .payment-log-list td { min-width: 120px; max-width: 240px; overflow-wrap: anywhere; }
+.payment-log-list th:first-child, .payment-log-list td:first-child { min-width: 64px; }
+.payment-log-list th:last-child, .payment-log-list td:last-child { position: sticky; right: 0; background: var(--surface, #fff); min-width: 118px; }

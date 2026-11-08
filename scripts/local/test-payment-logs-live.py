@@ -1,0 +1,61 @@
+"""Actual PC -> Java -> isolated DB payment-log maintenance. No provider calls or money posting."""
+import importlib.util,json,secrets,subprocess,socket,time,os,signal,re,stat,hashlib
+from pathlib import Path
+ROOT=Path(__file__).resolve().parents[2]
+spec=importlib.util.spec_from_file_location('staff',Path(__file__).with_name('setup-php-lab.py'));staff=importlib.util.module_from_spec(spec);spec.loader.exec_module(staff)
+staff.config.BASE='http://127.0.0.1:18082/api';sql=staff.config.sql
+prefix='it_paylog_live_'+secrets.token_hex(5)
+def literal(value):return 'CONVERT(0x'+value.encode().hex()+' USING utf8mb4) COLLATE utf8mb4_unicode_ci'
+try:
+ with socket.create_connection(('127.0.0.1',18082),timeout=.2):raise AssertionError('Dedicated test port already in use')
+except ConnectionRefusedError:pass
+old=sql("SELECT HEX(JSON_OBJECT('config_value',config_value,'status',status,'updated_at',DATE_FORMAT(updated_at,'%Y-%m-%d %H:%i:%s'))) FROM lin_operational_config WHERE config_key='legacy-payment-logs' AND scope_type='GLOBAL' AND scope_id=0")
+old=json.loads(bytes.fromhex(old).decode()) if old else None
+assert not old or json.loads(old['config_value']).get('enabled') is False,'Do not override an enabled business gate'
+def snapshot(table):
+ assert table in ['lin_lb_infohospital','lin_lb_listdiagnosisproject','lin_lb_diagnosisdetail','lin_lb_payordermain']
+ columns=sql("SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='"+table+"' ORDER BY ORDINAL_POSITION").splitlines()
+ assert columns and all(re.fullmatch('[A-Za-z0-9_]+',c) for c in columns)
+ rows=sql('SELECT SHA2(CAST(JSON_OBJECT('+','.join("'"+c+"',`"+c+'`' for c in columns)+') AS CHAR),256) FROM '+table).splitlines()
+ return hashlib.sha256('\n'.join(sorted(rows)).encode()).hexdigest()
+tables=['lin_lb_infohospital','lin_lb_listdiagnosisproject','lin_lb_diagnosisdetail','lin_lb_payordermain'];before={t:snapshot(t) for t in tables}
+process=None;private=Path.home()/'.local/share/petlis/qa';private.mkdir(mode=0o700,parents=True,exist_ok=True)
+try:
+ sql("INSERT INTO lin_operational_config(config_key,config_value,description,updated_by) VALUES('legacy-payment-logs','{\"enabled\":true,\"writeEnabled\":true,\"deleteEnabled\":true}','payment log UI fixture',(SELECT MIN(id) FROM lin_user)) ON DUPLICATE KEY UPDATE config_value=VALUES(config_value),status='ACTIVE'")
+ command='set -a; source "$HOME/.local/share/petlis/mysql/backend.env"; set +a; [[ "$DB_URL" == "jdbc:mysql://127.0.0.1:13306/laboklin?"* ]] || exit 17; export JAVA_HOME="$HOME/.local/share/petlis/tools/Home" MAVEN_HOME="$HOME/.local/share/petlis/tools/libexec" APP_SCHEDULING_ENABLED=false DB_MIGRATIONS_ENABLED=false PDF_STORAGE_PATH="$HOME/.local/share/petlis/reports"; exec ./petlis-backend/mvnw -o -q -f petlis-backend/pom.xml spring-boot:run -Dspring-boot.run.profiles=dev -Dspring-boot.run.arguments=--server.port=18082'
+ fd=os.open(private/(prefix+'.log'),os.O_WRONLY|os.O_CREAT|os.O_EXCL|os.O_NOFOLLOW,0o600)
+ with os.fdopen(fd,'w') as log:process=subprocess.Popen(['/bin/zsh','-c',command],cwd=ROOT,stdout=log,stderr=subprocess.STDOUT,start_new_session=True)
+ for attempt in range(60):
+  assert process.poll() is None,'Dedicated backend exited; see private log'
+  try:
+   with staff.opener.open(staff.config.BASE+'/auth/capabilities',timeout=1) as response:
+    if response.status==200 and json.load(response).get('code')==200:break
+  except Exception:time.sleep(.5)
+ else:raise AssertionError('Dedicated backend readiness timeout')
+ mapping=Path.home()/'.local/share/petlis/php-preview/app/.petlis-private/bridge.php';info=mapping.stat();assert stat.S_ISREG(info.st_mode) and info.st_uid==os.getuid() and not info.st_mode&0o077
+ text=mapping.read_text();credentials={}
+ for key in ['username','password']:
+  match=re.search(r"'"+key+r"'\s*=>\s*'((?:\\.|[^'])*)'",text);assert match;credentials[key]=match.group(1).replace("\\'","'").replace('\\\\','\\')
+ session=staff.call('/auth/password/login',{'account':credentials['username'],'password':credentials['password']});assert 'ADMIN' in session['roles']
+ run=subprocess.run(['node','scripts/editor-parity/payment-logs-live.js'],cwd=ROOT,input=json.dumps({'token':session['token'],'prefix':prefix,'screenshot':str(private/(prefix+'.png'))}),capture_output=True,text=True,timeout=90)
+ assert run.returncode==0,'Browser failed: '+run.stderr[-1200:]
+ proof=json.loads(run.stdout)
+ assert sql('SELECT COUNT(*) FROM lin_lb_paylog WHERE TradeNoUser='+literal(prefix))=='0'
+ assert sql("SELECT COUNT(*) FROM lin_audit_record WHERE actor_user_id="+str(session['userId'])+" AND resource_type='LEGACY_PAYMENT_LOG' AND JSON_EXTRACT(after_json,'$.canonicalRequest.command.fields.TradeNoUser')="+literal(prefix))=='2'
+ assert before=={t:snapshot(t) for t in tables},'Unrelated business records changed'
+ proof.update(unrelatedBusinessRecordsUnchanged=True)
+finally:
+ if process and process.poll() is None:
+  os.killpg(process.pid,signal.SIGTERM)
+  try:process.wait(timeout=8)
+  except subprocess.TimeoutExpired:os.killpg(process.pid,signal.SIGKILL);process.wait(timeout=5)
+ # Select only records/audits owning this unpredictable test marker, including failures before UI deletion.
+ ids=sql("SELECT resource_id FROM lin_audit_record WHERE resource_type='LEGACY_PAYMENT_LOG' AND JSON_EXTRACT(after_json,'$.canonicalRequest.command.fields.TradeNoUser')="+literal(prefix)).splitlines()
+ for value in ids:
+  assert value.isdecimal() and int(value)>0
+  sql("DELETE FROM lin_audit_record WHERE resource_type='LEGACY_PAYMENT_LOG' AND resource_id="+literal(value))
+ sql('DELETE FROM lin_lb_paylog WHERE TradeNoUser='+literal(prefix))
+ if old:sql('UPDATE lin_operational_config SET config_value='+literal(old['config_value'])+',status='+literal(old['status'])+',updated_at='+literal(old['updated_at'])+" WHERE config_key='legacy-payment-logs' AND scope_type='GLOBAL' AND scope_id=0")
+ else:sql("DELETE FROM lin_operational_config WHERE config_key='legacy-payment-logs' AND description='payment log UI fixture'")
+proof.update(gateRestored=True,fixturesRemoved=True,backendStopped=True)
+print(json.dumps(proof))
