@@ -359,3 +359,12 @@ page {
   height: 30rpx;
   flex-shrink: 0;
 }
+
+/* Approved warm-white report layout: clear borders, no dark decorative header. */
+page,.page{background:#F7F8F5}
+.report-header{background:#FFFFFF;border:1rpx solid #E7EEEA;border-radius:20rpx;padding:28rpx;box-shadow:none}
+.report-header::after{display:none}
+.report-header .pet-name{color:#183F3A;font-size:34rpx;font-weight:600}
+.report-header .report-type{color:#666666;font-size:28rpx}
+.report-header .report-status{background:#EBF5F5;color:#0D6E6E;border:1rpx solid #DCE8E4}
+.report-header .report-status.processing{background:#FFF5F0;color:#A75530}

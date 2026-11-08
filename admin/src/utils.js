@@ -95,14 +95,33 @@ export function saveBlob(blob, filename) {
 export const statusText = {
   PENDING: '待审核', ACTIVE: '启用', INACTIVE: '停用', REJECTED: '已驳回',
   DRAFT: '草稿', PENDING_REVIEW: '待审核', PENDING_PAYMENT: '待支付', PENDING_PICKUP: '待取件',
+  PICKED_UP: '已取件', DELIVERED: '已送达', RESULT_ENTERED: '结果已录入', RETESTED: '已转复检',
   IN_TRANSIT: '运输中', RECEIVED: '已签收', TESTING: '检测中', REPORT_REVIEW: '报告审核中',
   COMPLETED: '已完成', CANCELLED: '已取消', RETURNED: '已退样', REFUNDED: '已退款',
   APPROVED: '已通过', PUBLISHED: '已发布', FAILED: '发送失败', SENT: '已发送',
   PENDING_RECONCILIATION: '待对账', DISPUTED: '有异议', CONFIRMED: '已确认', SETTLED: '已结算',
   OVERDUE: '已逾期', ISSUED: '已开票', REDEEMED: '待发货', SHIPPED: '已发货',
-  AVAILABLE: '可使用', USED: '已使用', EXPIRED: '已过期', EXCEPTION: '异常'
+  ENTERED: '已录入', VOIDED: '已作废', AVAILABLE: '可使用', USED: '已使用', EXPIRED: '已过期', EXCEPTION: '异常'
 };
 
 export function statusLabel(status) {
   return statusText[status] || status || '—';
+}
+
+// Calendar dates for local date inputs; never shift local midnight through UTC.
+export function dateInputValue(date) {
+  const pad = value => String(value).padStart(2, '0');
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+}
+export function nextCalendarDate(value) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) throw new Error('日期无效');
+  const [year, month, day] = value.split('-').map(Number);
+  const date = new Date(year, month - 1, day);
+  if (dateInputValue(date) !== value) throw new Error('日期无效');
+  date.setDate(date.getDate() + 1);
+  return dateInputValue(date);
+}
+
+export function roleLabel(role) {
+  return ({DOCTOR:'医生',HOSPITAL_ADMIN:'医院管理员',LAB_STAFF:'实验人员',COURIER:'配送人员',REVIEWER:'审核员',ADMIN:'平台管理员'})[role] || role || '—';
 }

@@ -76,21 +76,29 @@ export function createApi({ baseUrl = '/api', fetchImpl = globalThis.fetch, getT
     return body.data;
   }
 
-  async function download(path) {
+  async function download(path, { method = 'GET', data } = {}) {
     const headers = {};
     const token = getToken();
     if (token) headers.Authorization = `Bearer ${token}`;
     let response;
     try {
-      response = await fetchImpl(`${baseUrl}${path}`, { headers });
+      if (data !== undefined) headers['Content-Type'] = 'application/json';
+      response = await fetchImpl(`${baseUrl}${path}`, { headers, method, ...(data === undefined ? {} : {body: JSON.stringify(data)}) });
     } catch (cause) {
       throw new ApiError('网络连接失败，请检查服务是否可用', { status: 0, cause });
     }
     if (!response.ok) throw await parseError(response);
+    const contentType=(response.headers.get('Content-Type')||'').split(';')[0].trim().toLowerCase();
+    if(contentType==='application/json'||contentType.endsWith('+json')){
+      let body;try{body=await response.json();}catch{}
+      const code=Number(body?.code);
+      if(Number.isInteger(code)&&code>=400&&code<=599){if(code===401)onUnauthorized();throw new ApiError(friendlyMessage(code,body.message),{status:code,code});}
+      throw new ApiError('服务器未返回可下载的文件，请稍后重试',{status:response.status,code:'INVALID_FILE_RESPONSE'});
+    }
     const disposition = response.headers.get('Content-Disposition') || '';
     const utf8 = disposition.match(/filename\*=UTF-8''([^;]+)/i);
     const plain = disposition.match(/filename="?([^";]+)"?/i);
-    const filename = utf8 ? decodeURIComponent(utf8[1]) : plain?.[1] || 'download';
+    let filename=plain?.[1]||'download';if(utf8)try{filename=decodeURIComponent(utf8[1]);}catch{}
     return { blob: await response.blob(), filename };
   }
 

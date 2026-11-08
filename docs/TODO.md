@@ -20,3 +20,10 @@
 - 用户明确决定暂不修改，保持本机和 Mac mini 原触发器不变。
 - 待审修复 SQL：`database/pending/004-order-notification-status.sql`，不得自动执行。
 - 后续业务通知应以应用内状态映射生成正确文案，不能直接展示触发器的错误文案。数据库触发器修复仍需再次批准。
+
+## 迁移请求跨进程恢复：对象键顺序复核
+
+- 本机8次独立JVM验证Map.of会产生不同键顺序；直接比较序列化字符串会误拒相同请求。
+- M11的取消、旧草稿编辑、项目增删和提交已接LegacyCanonicalRequest；JSON对象按内容比较，数字无损，数组顺序仍有意义，兼容既有审计。
+- 后续按模块复核LegacyHospitalProfileService、LegacyHospitalContactService、LegacyHospitalFundsService及其他仍用canonical字符串比较的服务，补恢复验证后再迁移，不把当前M11测试当作全项目验证。当前不批量改这些业务。
+- 此规范仅限应用请求。银行/顺丰验签、原报文指纹和供应商原始返回仍须保留精确字节，不得套用JSON语义比较。

@@ -17,6 +17,7 @@ import java.util.Map;
 public class DashboardController {
     private final DashboardService service;
     @GetMapping("/dashboard") public Result<Map<String, Object>> dashboard(@RequestParam String from, @RequestParam String to) { return Result.success(service.dashboard(from, to)); }
+    @GetMapping("/dashboard/registrations") public Result<Map<String,Object>> registrations(@RequestParam String from,@RequestParam String to) { return Result.success(service.registrationSummary(from,to)); }
     @GetMapping("/export/orders.csv") public ResponseEntity<byte[]> export(@RequestParam String from, @RequestParam String to) {
         return ResponseEntity.ok().contentType(new MediaType("text", "csv", StandardCharsets.UTF_8))
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=orders.csv").body(service.exportOrders(from, to).getBytes(StandardCharsets.UTF_8));

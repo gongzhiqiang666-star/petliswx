@@ -1,0 +1,32 @@
+{
+  "scope": "read-only local templates; isolated real Chrome; network denied except local harness",
+  "editor": "Tiptap 3.33.0 experimental legacy compatibility",
+  "adoptionApproved": false,
+  "browserVersion": "156.0.8078.80",
+  "blockedRequests": 0,
+  "documents": 706,
+  "evaluated": 2,
+  "passed": 0,
+  "rejected": 2,
+  "errors": 0,
+  "textChanged": 0,
+  "errorSummary": [],
+  "missing": {
+    "style.span.font-family": 799,
+    "tag.span.span": 226,
+    "tag.strong.strong": 212,
+    "style.td.border-left": 164,
+    "style.span.letter-spacing": 113,
+    "style.td.border-top": 100,
+    "style.span.background-image": 6,
+    "style.span.background-position": 6,
+    "style.span.background-size": 6,
+    "style.span.background-repeat": 6,
+    "style.span.background-attachment": 6,
+    "style.span.background-origin": 6,
+    "style.span.background-clip": 6,
+    "style.span.font-weight": 4,
+    "style.span.color": 2,
+    "style.span.background": 2
+  }
+}

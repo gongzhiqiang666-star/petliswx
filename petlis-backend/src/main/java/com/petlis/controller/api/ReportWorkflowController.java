@@ -44,6 +44,25 @@ public class ReportWorkflowController {
     @GetMapping("/{id}/download")
     public ResponseEntity<Resource> download(@PathVariable long id) { return reports.download(id); }
 
+    @GetMapping("/templates")
+    public Result<Map<String, Object>> templates(@RequestParam(required = false) Integer laboratoryId,
+            @RequestParam(required = false) Integer infoTestTypeId,
+            @RequestParam(required = false) String q, @RequestParam(required = false) String status,
+            @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "20") int size) {
+        return Result.success(reports.templates(laboratoryId, infoTestTypeId, q, status, page, size));
+    }
+
+    @GetMapping("/templates/options")
+    public Result<Map<String, Object>> templateOptions(@RequestParam(required = false) Integer laboratoryId) {
+        return Result.success(reports.templateOptions(laboratoryId));
+    }
+
+    @PostMapping("/templates/{id}/archive")
+    public Result<Void> archiveTemplate(@PathVariable long id) {
+        reports.archiveTemplate(id);
+        return Result.success("模板已停用，历史报告不受影响");
+    }
+
     @PutMapping("/templates/{infoTestTypeId}")
     public Result<Long> template(@PathVariable int infoTestTypeId, @RequestBody TemplateCommand command) {
         return Result.success(reports.saveTemplate(infoTestTypeId, command.laboratoryId(), command.templateName(), command.templateCode(), command.content()));

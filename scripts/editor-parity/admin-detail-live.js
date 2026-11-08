@@ -1,0 +1,43 @@
+/** Browser acceptance against the dedicated local Java service. Fixture/token arrive through stdin. */
+import fs from 'node:fs';
+import assert from 'node:assert/strict';
+import {fileURLToPath} from 'node:url';
+import {createStaticServer} from '../../admin/server.js';
+import {chromium} from 'playwright-core';
+const fixture=JSON.parse(fs.readFileSync(0,'utf8'));
+assert.match(fixture.token,/^[A-Za-z0-9._-]+$/);assert.ok(fixture.orderId>0&&fixture.testId>0);
+const server=createStaticServer({root:fileURLToPath(new URL('../../admin/',import.meta.url)),apiOrigin:'http://127.0.0.1:18082'});
+await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));let browser;const errors=[];
+try{
+ browser=await chromium.launch({executablePath:'/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',headless:true});
+ const context=await browser.newContext({serviceWorkers:'block',viewport:{width:1440,height:1050}});
+ const origin=`http://127.0.0.1:${server.address().port}`;
+ await context.addInitScript(({token})=>{if(window!==window.top)return;localStorage.setItem('petlis.admin.token',token);localStorage.setItem('petlis.admin.user',JSON.stringify({username:'合成单据验收',roles:['ADMIN']}));},{token:fixture.token});
+ await context.route('**/*',route=>new URL(route.request().url()).origin===origin?route.continue():route.abort());
+ const page=await context.newPage();page.on('pageerror',error=>errors.push(error.message));
+ await page.goto(origin+'/#/orders');await page.locator(`[data-order-details="${fixture.orderId}"]`).click();await page.locator('[data-detail-create]').click();
+ await page.locator('[data-report-editor] .tiptap').waitFor();
+ await page.waitForFunction(()=>document.querySelector('[data-detail-feedback]')?.textContent==='');
+ await page.locator('[name="testSearch"]').fill(fixture.prefix);await page.locator('[data-detail-search]').click();
+ await page.locator(`[name="testTypeId"] option[value="${fixture.testId}"]`).waitFor({state:'attached'});await page.locator('[name="testTypeId"]').selectOption(String(fixture.testId));
+ await page.waitForFunction(()=>document.querySelector('[name="originalPrice"]')?.value==='200.00');
+ await page.locator('[name="originalDiscount"]').fill('9');await page.locator('[data-detail-quote]').click();await page.waitForFunction(()=>document.querySelector('[name="testPrice"]')?.value==='180.00');
+ await page.locator('[name="modelId"]').selectOption(String(fixture.templateId));await page.locator('[data-detail-load-report]').click();
+ await page.waitForFunction(()=>document.querySelector('[data-report-editor] .tiptap')?.textContent.includes('合成验收报告'));
+ const editor=page.locator('[data-report-editor] .tiptap');await editor.locator('p').first().click();await page.keyboard.press('End');await page.keyboard.type('首次保存结果');
+ await page.locator('[name="detailRemark"]').fill(fixture.prefix);
+ await page.getByRole('button',{name:'保存明细',exact:true}).click();await page.locator('[data-detail-view]').waitFor();
+ const detailId=Number(await page.locator('[data-detail-view]').first().getAttribute('data-detail-view'));
+ await page.locator(`[data-detail-view="${detailId}"]`).click();await page.getByRole('dialog',{name:'检测明细正文',exact:true}).waitFor();
+ await page.frameLocator('[data-detail-preview="report"]').getByText('合成验收报告首次保存结果',{exact:false}).waitFor();
+ await page.getByRole('button',{name:'关闭',exact:true}).last().click();
+ await page.locator(`[data-order-details="${fixture.orderId}"]`).click();await page.locator(`[data-detail-edit="${detailId}"]`).click();
+ await page.waitForFunction(()=>document.querySelector('[data-detail-feedback]')?.textContent==='');
+ assert.equal(await page.locator('[name="testPrice"]').inputValue(),'180.00');assert.equal(await page.locator('[name="sendMailDt"]').inputValue(),'');
+ await page.locator('[data-report-editor] .tiptap p').first().click();await page.keyboard.press('End');await page.keyboard.type('修改保存结果');
+ await page.locator('[name="testPrice"]').fill('175.25');await page.getByRole('button',{name:'保存明细',exact:true}).click();
+ await page.locator(`[data-detail-view="${detailId}"]`).waitFor();await page.locator(`[data-detail-view="${detailId}"]`).click();
+ await page.getByRole('dialog',{name:'检测明细正文',exact:true}).waitFor();await page.frameLocator('[data-detail-preview="report"]').getByText('修改保存结果',{exact:false}).waitFor();
+ assert.deepEqual(errors,[]);
+ console.log(JSON.stringify({realJava:true,syntheticOrder:true,orderId:fixture.orderId,detailId,pageErrors:errors.length,createQuoteTemplateEditSaveReopen:true,updateSaveReopen:true,externalRequestsAllowed:false}));
+}finally{await browser?.close();await new Promise(resolve=>server.close(resolve));}

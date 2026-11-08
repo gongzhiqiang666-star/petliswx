@@ -40,11 +40,16 @@ public class OrderWorkflowService {
     public void complete(OrderCreateRequest request, int orderId, int hospitalId) {
         String key = key(request);
         CurrentActor actor = access.current();
-        if (key != null) store.jdbc().update("UPDATE lin_order_idempotency SET order_id=?,response_body=?,status=?,completed_at=NOW(),response_code=200 WHERE user_id=? AND idempotency_key=?",
+        if (key != null) store.jdbc().update("UPDATE lin_order_idempotency SET order_id=?,response_body=?,status=?,completed_at=NOW(),response_code=200 WHERE user_id=? AND operation='ORDER_CREATE' AND idempotency_key=?",
                 orderId, store.encode(Map.of("orderId", orderId)), "COMPLETED", actor.userId(), key);
-        store.jdbc().update("INSERT INTO lin_order_clinical(order_id,pet_id,hospital_id,medical_history,clinical_symptoms,diagnosis,medication,clinical_data,created_by) VALUES(?,?,?,?,?,?,?,?,?) ON DUPLICATE KEY UPDATE medical_history=VALUES(medical_history),clinical_symptoms=VALUES(clinical_symptoms),diagnosis=VALUES(diagnosis),medication=VALUES(medication),clinical_data=VALUES(clinical_data),updated_by=VALUES(created_by)",
-                orderId, request.getPetId(), hospitalId, request.getMedicalHistory(), request.getClinicalSymptoms(), request.getDiagnosis(), request.getMedication(),
-                store.encode(Map.of("source", "order-create")), actor.userId());
+        reviseClinical(request,orderId,hospitalId);
+    }
+
+    public void reviseClinical(OrderCreateRequest request,int orderId,int hospitalId) {
+        if(request.getPetId()!=null) store.one("SELECT id FROM lin_lb_pet WHERE id=? AND info_hospital_id=? AND IsActive=1",request.getPetId(),hospitalId);
+        for(String value:new String[]{request.getMedicalHistory(),request.getClinicalSymptoms(),request.getDiagnosis(),request.getMedication()})
+            if(value!=null && value.length()>2000) throw new BusinessException(400,"临床资料每项最多2000字");
+        store.jdbc().update("INSERT INTO lin_order_clinical(order_id,pet_id,hospital_id,medical_history,clinical_symptoms,diagnosis,medication,clinical_data,created_by) VALUES(?,?,?,?,?,?,?,?,?) ON DUPLICATE KEY UPDATE pet_id=COALESCE(VALUES(pet_id),pet_id),medical_history=COALESCE(VALUES(medical_history),medical_history),clinical_symptoms=COALESCE(VALUES(clinical_symptoms),clinical_symptoms),diagnosis=COALESCE(VALUES(diagnosis),diagnosis),medication=COALESCE(VALUES(medication),medication),updated_by=VALUES(created_by)",orderId,request.getPetId(),hospitalId,request.getMedicalHistory(),request.getClinicalSymptoms(),request.getDiagnosis(),request.getMedication(),store.encode(Map.of("source","order-create")),access.current().userId());
     }
 
     String requestHash(OrderCreateRequest request) {

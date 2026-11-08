@@ -1,0 +1,169 @@
+{
+  "scope": "read-only local templates; isolated real Chrome; network denied except local harness",
+  "editor": "Tiptap 3.33.0 experimental inline hierarchy",
+  "adoptionApproved": false,
+  "browserVersion": "156.0.8078.80",
+  "blockedRequests": 0,
+  "layoutMode": true,
+  "canvasWidth": 800,
+  "externalAssetsPermitted": false,
+  "documents": 706,
+  "evaluated": 1,
+  "passed": 1,
+  "rejected": 0,
+  "errors": 0,
+  "textChanged": 0,
+  "textFormatsEquivalent": 1,
+  "textFormatsChanged": 0,
+  "structurePassedButTextFormatsChanged": 0,
+  "layoutChecked": 1,
+  "layoutEquivalent": 0,
+  "layoutChanged": 1,
+  "layoutPending": 0,
+  "externalImagesDeferred": 1,
+  "dataImagesFailed": 0,
+  "errorSummary": [],
+  "layoutSamples": [
+    {
+      "documentIndex": 3,
+      "beforeNodeCounts": {
+        "hr": 4,
+        "table": 2,
+        "tr": 34,
+        "td": 138,
+        "img": 1
+      },
+      "afterNodeCounts": {
+        "hr": 4,
+        "table": 2,
+        "tr": 36,
+        "td": 140,
+        "img": 1
+      },
+      "equal": false,
+      "assetsSettled": true,
+      "nodeCountChanged": true,
+      "rootChanged": true,
+      "changedNodes": 177,
+      "properties": {
+        "height": 35,
+        "tag": 73,
+        "x": 155,
+        "y": 174,
+        "width": 174,
+        "display": 73,
+        "verticalAlign": 4,
+        "borderTopWidth": 4,
+        "borderRightWidth": 4,
+        "borderBottomWidth": 4,
+        "borderLeftWidth": 4,
+        "borderTopStyle": 4,
+        "borderRightStyle": 4,
+        "borderBottomStyle": 4,
+        "borderLeftStyle": 4,
+        "borderTopColor": 4,
+        "borderRightColor": 4,
+        "borderBottomColor": 4,
+        "borderLeftColor": 4,
+        "marginTop": 4,
+        "marginBottom": 4
+      },
+      "samples": [
+        {
+          "index": 2,
+          "tag": "table",
+          "properties": [
+            "height"
+          ],
+          "delta": {
+            "height": 16
+          }
+        },
+        {
+          "index": 3,
+          "tag": "tr",
+          "properties": [
+            "height"
+          ],
+          "delta": {
+            "height": -38
+          }
+        },
+        {
+          "index": 4,
+          "tag": "td",
+          "properties": [
+            "height"
+          ],
+          "delta": {
+            "height": -38
+          }
+        },
+        {
+          "index": 5,
+          "tag": "td",
+          "properties": [
+            "tag",
+            "x",
+            "y",
+            "width",
+            "display"
+          ],
+          "delta": {
+            "x": -142.0625,
+            "y": 16,
+            "width": 299.875
+          }
+        },
+        {
+          "index": 6,
+          "tag": "td",
+          "properties": [
+            "x",
+            "y",
+            "width"
+          ],
+          "delta": {
+            "x": -166.1875,
+            "y": 16,
+            "width": -5.0625
+          }
+        }
+      ],
+      "externalImagesDeferred": 1,
+      "dataImagesFailed": 0
+    }
+  ],
+  "layoutProperties": {
+    "height": 35,
+    "tag": 73,
+    "x": 155,
+    "y": 174,
+    "width": 174,
+    "display": 73,
+    "verticalAlign": 4,
+    "borderTopWidth": 4,
+    "borderRightWidth": 4,
+    "borderBottomWidth": 4,
+    "borderLeftWidth": 4,
+    "borderTopStyle": 4,
+    "borderRightStyle": 4,
+    "borderBottomStyle": 4,
+    "borderLeftStyle": 4,
+    "borderTopColor": 4,
+    "borderRightColor": 4,
+    "borderBottomColor": 4,
+    "borderLeftColor": 4,
+    "marginTop": 4,
+    "marginBottom": 4
+  },
+  "textChanges": [],
+  "fontSamples": [],
+  "formatTransitions": {},
+  "formatTransitionNonWhitespace": {},
+  "formatChanges": {},
+  "missing": {},
+  "inputStage": "original PHP decodeUnicode edit-view output",
+  "originalDisplaySourceHash": "938bac0c43a307e4939e2d9d6a377d5a909578c7edd2505ddc6bbc1e6e16a19c",
+  "javaDisplayParity": null
+}

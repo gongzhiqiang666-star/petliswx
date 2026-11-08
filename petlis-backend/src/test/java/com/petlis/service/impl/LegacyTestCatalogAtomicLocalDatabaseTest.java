@@ -1,0 +1,26 @@
+package com.petlis.service.impl;
+import com.petlis.common.security.*;
+import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.*;
+import java.math.BigDecimal;
+import java.util.*;
+import java.util.concurrent.*;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
+import static org.mockito.ArgumentMatchers.*;
+@SpringBootTest @EnabledIfEnvironmentVariable(named="PETLIS_LOCAL_DB_TEST",matches="true")
+class LegacyTestCatalogAtomicLocalDatabaseTest {
+ @SpyBean FeatureStore store;@MockBean AccessService access;@Autowired LegacyTestCatalogService service;int actor;String prefix;
+ @BeforeEach void setup(){assertTrue(System.getenv("DB_URL").startsWith("jdbc:mysql://127.0.0.1:13306/laboklin?"));prefix="it_test_atomic_"+UUID.randomUUID().toString().substring(0,8);actor=(int)store.insert("INSERT INTO lin_user(username,nickname,status) VALUES(?,'项目原子性测试','normal')",prefix);when(access.current()).thenReturn(new CurrentActor(actor,Set.of(PlatformRole.ADMIN),Set.of(),Set.of(),new DataScope(true,Set.of(),Set.of(),null)));var jdbc=spy(store.jdbc());doReturn(List.of(Map.of("config_value","{\"enabled\":true,\"writeEnabled\":true,\"deleteEnabled\":true}"))).when(jdbc).queryForList(contains("FROM lin_operational_config"));doReturn(jdbc).when(store).jdbc();}
+ @AfterEach void cleanup(){reset(store);for(var row:store.jdbc().queryForList("SELECT InfoTestTypeId FROM lin_lb_infotesttype WHERE TestName=?",prefix)){store.jdbc().update("DELETE FROM lin_lb_infotesttype_price WHERE InfoTestTypeid=?",row.get("InfoTestTypeId"));store.jdbc().update("DELETE FROM lin_lb_infotesttype WHERE InfoTestTypeId=? AND TestName=?",row.get("InfoTestTypeId"),prefix);}store.jdbc().update("DELETE FROM lin_audit_record WHERE actor_user_id=? AND resource_type='LEGACY_TEST_CATALOG'",actor);store.jdbc().update("DELETE FROM lin_user WHERE id=? AND username=?",actor,prefix);}
+ String key(){return "catalog_"+UUID.randomUUID().toString().replace("-","");}
+ LegacyTestCatalogService.ItemCommand command(String request){return new LegacyTestCatalogService.ItemCommand(prefix,prefix,0,1,request,null);}
+ @Test void auditFailureRollsBackNewItem(){doThrow(new IllegalStateException("synthetic audit failure")).when(store).insert(startsWith("INSERT INTO lin_audit_record"),any(Object[].class));assertThrows(IllegalStateException.class,()->service.create(command(key())));assertEquals(0,store.jdbc().queryForObject("SELECT COUNT(*) FROM lin_lb_infotesttype WHERE TestName=?",Integer.class,prefix));}
+ @Test void priceAuditFailureRollsBackPriceAndKeepsParentItem(){long item=service.create(command(key()));doThrow(new IllegalStateException("synthetic audit failure")).when(store).insert(startsWith("INSERT INTO lin_audit_record"),any(Object[].class));assertThrows(IllegalStateException.class,()->service.addPrice(item,new LegacyTestCatalogService.PriceCommand(BigDecimal.TEN,1,key())));assertEquals(0,store.jdbc().queryForObject("SELECT COUNT(*) FROM lin_lb_infotesttype_price WHERE InfoTestTypeid=?",Integer.class,item));assertEquals("无",service.item(item).get("DealPrice"));}
+ @Test void concurrentCreationRetriesCommitOnlyOneItemAndAudit()throws Exception{var command=command(key());var pool=Executors.newFixedThreadPool(4);var latch=new CountDownLatch(1);var futures=new ArrayList<Future<Long>>();try{for(int n=0;n<4;n++)futures.add(pool.submit(()->{latch.await();return service.create(command);}));latch.countDown();var ids=new HashSet<Long>();for(var future:futures)ids.add(future.get(20,TimeUnit.SECONDS));assertEquals(1,ids.size());}finally{pool.shutdownNow();assertTrue(pool.awaitTermination(5,TimeUnit.SECONDS));}assertEquals(1,store.jdbc().queryForObject("SELECT COUNT(*) FROM lin_audit_record WHERE actor_user_id=? AND resource_type='LEGACY_TEST_CATALOG'",Integer.class,actor));}
+ @Test void failedDeleteAuditRestoresPriceAndParent(){long item=service.create(command(key()));long price=service.addPrice(item,new LegacyTestCatalogService.PriceCommand(new BigDecimal("125.50"),1,key()));var before=service.price(item,price);doThrow(new IllegalStateException("synthetic audit failure")).when(store).insert(startsWith("INSERT INTO lin_audit_record"),any(Object[].class));assertThrows(IllegalStateException.class,()->service.deletePrice(item,price,new LegacyTestCatalogService.PriceDeleteCommand(key(),(String)before.get("editToken"))));assertEquals(before,service.price(item,price));assertEquals(prefix,service.item(item).get("TestName"));}
+ @Test void failedEditAuditRestoresPriceAndParent(){long item=service.create(command(key()));long price=service.addPrice(item,new LegacyTestCatalogService.PriceCommand(new BigDecimal("125.50"),1,key()));var before=service.price(item,price);doThrow(new IllegalStateException("synthetic audit failure")).when(store).insert(startsWith("INSERT INTO lin_audit_record"),any(Object[].class));assertThrows(IllegalStateException.class,()->service.updatePrice(item,price,new LegacyTestCatalogService.PriceEditCommand(BigDecimal.TEN,0,key(),(String)before.get("editToken"))));assertEquals(before,service.price(item,price));}
+}

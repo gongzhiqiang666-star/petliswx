@@ -18,19 +18,21 @@ Page({
   onLoad() { this.load() },
   filter(e) { this.setData({ category: e.currentTarget.dataset.id }); this.load() },
   async load() {
-    this.setData({ busy: true, error: '' })
+    const loadId=(this._loadId || 0)+1;this._loadId=loadId
+    this.setData({ busy: true, error: '', items: [] })
     try {
       const result = await request.get('/coupons', { category: this.data.category })
+      if(loadId!==this._loadId)return
       this.setData({ items: result.map(item => ({
         ...item,
         label: labels[item.status] || item.status,
-        ends: String(item.expiresAt || '').slice(0, 10),
-        starts: String(item.startsAt || '').slice(0, 10)
+        ends: String(item.expiresAt || '').replace('T', ' ').slice(0, 16),
+        starts: String(item.startsAt || '').replace('T', ' ').slice(0, 16)
       })) })
     } catch (error) {
-      this.setData({ error: error.message })
+      if(loadId===this._loadId)this.setData({ error: error.message })
     } finally {
-      this.setData({ busy: false })
+      if(loadId===this._loadId)this.setData({ busy: false })
     }
   },
   showDetail(e) {

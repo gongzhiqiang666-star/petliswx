@@ -40,3 +40,8 @@ test('仅管理员显示消息发送和平台审核管理入口', () => {
   assert.equal(canSendMessage(user(['DOCTOR'])), false);
   assert.equal(canSendMessage(user(['LAB_STAFF'])), false);
 });
+
+test('物流异常处理入口限管理员、实验室及配送角色',()=>{
+  for(const role of ['ADMIN','LAB_STAFF','COURIER'])assert.equal(canLogisticsAction('resolveException',user([role])),true);
+  for(const role of ['DOCTOR','HOSPITAL_ADMIN'])assert.equal(canLogisticsAction('resolveException',user([role])),false);
+});

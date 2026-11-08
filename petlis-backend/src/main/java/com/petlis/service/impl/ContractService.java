@@ -52,7 +52,7 @@ public class ContractService {
         return id;
     }
 
-    @Transactional
+    @Transactional(isolation=org.springframework.transaction.annotation.Isolation.READ_COMMITTED)
     public void update(long id, int version, Command command) {
         access.requireAdmin();
         validate(command);
@@ -140,10 +140,12 @@ public class ContractService {
         return Boolean.TRUE.equals(store.jdbc().queryForObject("SELECT EXISTS(SELECT 1 FROM lin_order_pricing_snapshot s JOIN lin_contract c ON c.id=s.contract_id WHERE s.order_id=? AND s.settlement_type='MONTHLY')", Boolean.class, orderId));
     }
 
-    @Transactional
+    @Transactional(isolation=org.springframework.transaction.annotation.Isolation.READ_COMMITTED)
     public void reserveCredit(int orderId, BigDecimal additionalAmount) {
         Map<String, Object> contract = store.one("SELECT c.id,c.credit_amount FROM lin_order_pricing_snapshot s JOIN lin_contract c ON c.id=s.contract_id WHERE s.order_id=? AND s.settlement_type='MONTHLY' FOR UPDATE", orderId);
         long contractId = ((Number) contract.get("id")).longValue();
+        // All callers start READ_COMMITTED transactions: after waiting for the contract lock,
+        // the aggregate must see the previous owner's committed approvals, not an older RR snapshot.
         BigDecimal used = usedCredit(contractId, orderId);
         if (used.add(additionalAmount).compareTo(decimal(contract.get("credit_amount"))) > 0) throw new BusinessException("医院月结信用额度不足");
     }

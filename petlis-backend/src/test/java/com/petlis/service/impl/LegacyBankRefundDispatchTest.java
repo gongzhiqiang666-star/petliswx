@@ -1,0 +1,7 @@
+package com.petlis.service.impl;
+import org.junit.jupiter.api.Test;import static org.mockito.Mockito.*;import static org.junit.jupiter.api.Assertions.*;
+import java.util.*;import com.petlis.common.exception.BusinessException;
+class LegacyBankRefundDispatchTest {
+ @Test void unknownRefundIsNotAutomaticallyRetried(){var store=mock(LegacyBankRefundService.class);var gateway=mock(LegacyBankGatewayClient.class);when(gateway.available()).thenReturn(true);when(gateway.merchant()).thenReturn("LOCALTEST");when(store.enabled(false)).thenReturn(true);var claim=new LegacyBankRefundService.Claimed("t",Map.of("trxAmt",1));when(store.claim("key","LOCALTEST",false)).thenReturn(claim);when(gateway.exchange(any(),anyMap())).thenThrow(new LegacyBankGatewayClient.UnknownResult());new LegacyBankRefundDispatchService(store,gateway,"LOCALTEST").execute("key",false);verify(gateway,times(1)).exchange(LegacyBankProtocol.Method.REFUND,claim.parameters());verify(store).unknown("key","t");}
+ @Test void disabledRuntimeCannotSendButMayPrepareWithExplicitMerchant(){var store=mock(LegacyBankRefundService.class);when(store.enabled(false)).thenReturn(true);var service=new LegacyBankRefundDispatchService(store,new LegacyBankGatewayClient(),"LOCALTEST");assertTrue(service.capabilities().get("bankRefundCreate"));assertFalse(service.capabilities().get("bankPaymentRefund"));assertThrows(BusinessException.class,()->service.execute("key",false));verify(store,never()).claim(anyString(),anyString(),anyBoolean());}
+}

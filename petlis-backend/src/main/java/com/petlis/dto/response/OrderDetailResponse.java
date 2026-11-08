@@ -16,6 +16,16 @@ import java.util.List;
 @Data
 @Schema(description = "检测申请详情响应")
 public class OrderDetailResponse {
+    private boolean refunded;
+    private BigDecimal refundAmount;
+    private String refundReason;
+    private Date refundedAt;
+    private boolean refundMock;
+    private Integer petId;
+    private String medicalHistory;
+    private String clinicalSymptoms;
+    private String diagnosis;
+    private String medication;
     private Integer laboratoryId;
     private String laboratoryName;
     private Long userCouponId;

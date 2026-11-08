@@ -5,6 +5,7 @@ const { adaptShipment } = require('../../utils/logistics')
 
 Page({
   data: {
+    clinical: null, clinicalError: false, clinicalLoading: false,
     orderData: {
       orderId: '',
       userNO: '',
@@ -38,13 +39,19 @@ Page({
     timeline: [],
     shipment: null,
     shipmentTimeline: [],
+    shipmentHistory: [],
+    historyOpening: false,
+    historyVisible: false,
+    historyError: '',
     logisticsError: '',
+    labelOpening: false,
     loading: true,
     error: false
   },
 
   onLoad(options) {
     const orderId = options.id;
+    this._orderId = orderId;
     if (orderId) {
       this.loadOrderDetail(orderId);
     } else {
@@ -59,7 +66,21 @@ Page({
   /**
    * 加载订单详情
    */
+  async loadClinical() {
+    const id = this._orderId || this.data.orderData.orderId;
+    if (!id || this.data.clinicalLoading) return;
+    this.setData({clinicalLoading:true,clinicalError:false});
+    try {
+      const data = await request.get('/orders/'+encodeURIComponent(id)+'/clinical');
+      this.setData({clinical:data.fields || {},clinicalError:false});
+    } catch (_) { this.setData({clinical:null,clinicalError:true}); }
+    finally { this.setData({clinicalLoading:false}); }
+  },
+
   async loadOrderDetail(orderId) {
+    if (typeof orderId !== 'string' && typeof orderId !== 'number') orderId = this._orderId || this.data.orderData.orderId;
+    if (!orderId) { this.setData({loading:false,error:true}); return; }
+    this._orderId = orderId;
     this.setData({ loading: true, error: false });
 
     try {
@@ -69,7 +90,8 @@ Page({
       // 处理返回的数据
       const orderData = {
         orderId: result.orderId || result.orderId,
-        reviewReason:result.reviewReason || '',canResubmit:!!result.canResubmit,reviewHistory:result.reviewHistory || [],
+        reviewReason:result.reviewReason || '',canResubmit:!!result.canResubmit,reviewHistory:(Array.isArray(result.reviewHistory)?result.reviewHistory:[]).map(row=>({...row,createdAtLabel:this.formatDateTime(row.createdAt) || '\u65f6\u95f4\u672a\u8bb0\u5f55'})),
+        refunded:!!result.refunded,refundMock:!!result.refundMock,refundAmount:result.refundAmount,refundReason:String(result.refundReason || '').replace(/^PHP管理员#\d+：/,''),refundedAt:this.formatDateTime(result.refundedAt),
         userNO: result.userNO || '',
         sampleStatus: result.sampleStatus || 0,
         sampleStatusDesc: result.sampleStatusDesc || this.getStatusLabel(result.sampleStatus),
@@ -107,7 +129,7 @@ Page({
         timeline,
         loading: false
       });
-      await this.loadLogistics(orderId);
+      await Promise.all([this.loadLogistics(orderId), this.loadClinical()]);
     } catch (err) {
       console.error('[OrderDetail] 加载订单详情失败:', err);
       this.setData({
@@ -123,11 +145,44 @@ Page({
     }
   },
 
+  copyTrackingNo() {
+    const number=this.data.shipment && this.data.shipment.trackingNo;
+    if(!number)return;
+    wx.setClipboardData({data:String(number)});
+  },
+
+  async openShipmentHistory() {
+    if(this.data.historyOpening)return;
+    if(this.data.historyVisible){this.setData({historyVisible:false});return;}
+    const generation=this._logisticsSequence || 0;
+    this.setData({historyOpening:true,historyError:''});
+    try{const id=Number(this.data.orderData.orderId || this.data.orderId);if(!Number.isInteger(id)||id<=0)throw Error('送检单编号无效');const rows=await request.get(`/logistics/orders/${id}/history`);if(generation!==(this._logisticsSequence||0))return;this.setData({shipmentHistory:rows.map(adaptShipment),historyVisible:true})}catch(e){if(generation===(this._logisticsSequence||0))this.setData({historyError:e.message || '寄件历史加载失败，请重试'})}finally{if(generation===(this._logisticsSequence||0))this.setData({historyOpening:false})}
+  },
+  copyHistoryTracking(e){const row=this.data.shipmentHistory[Number(e.currentTarget.dataset.index)];if(row && row.trackingNo)wx.setClipboardData({data:String(row.trackingNo)})},
+
+  async openShipmentLabel() {
+    if(this.data.labelOpening) return;
+    this.setData({labelOpening:true});
+    try {
+      const id=Number(this.data.orderData.orderId || this.data.orderId);
+      if(!Number.isInteger(id) || id<=0) throw new Error('送检单编号无效');
+      const label=await request.get(`/logistics/sf/orders/${id}/label`);
+      if(!label || !/^\/platform-files\/\d+\/download$/.test(label.url || '')) throw new Error('面单下载信息无效');
+      const filePath=await request.downloadFile(label.url);
+      await wx.openDocument({filePath,fileType:'pdf',showMenu:true});
+    } catch(error) {
+      wx.showToast({title:/409/.test(error.message || '')?'面单暂不可用，请刷新物流':error.message || '面单暂时无法打开',icon:'none'});
+    } finally {this.setData({labelOpening:false});}
+  },
+
   async loadLogistics(orderId) {
+    const generation=this._logisticsSequence=(this._logisticsSequence||0)+1;this.setData({historyOpening:false,historyVisible:false,shipmentHistory:[],historyError:''});
     try {
       const shipment = adaptShipment(await request.get(`/logistics/orders/${orderId}`))
-      this.setData({ shipment, shipmentTimeline: shipment ? shipment.timeline : [], logisticsError: '' })
+      if(generation!==this._logisticsSequence)return;
+      this.setData({ shipment, shipmentTimeline: shipment ? shipment.timeline : [], logisticsError: '',shipmentHistory:[],historyVisible:false,historyError:'' })
     } catch (error) {
+      if(generation!==this._logisticsSequence)return;
       const missing = /不存在|404/.test(error.message || '')
       this.setData({ shipment: null, shipmentTimeline: [], logisticsError: missing ? '' : '物流信息暂时无法加载' })
     }
@@ -305,9 +360,9 @@ Page({
     const o=this._rawOrder;if(!o || !o.canResubmit)return;
     let speciesName='';try{const species=await api.dictionary.getAnimals();const selected=species.find(x=>x.infoAnimalId===o.infoAnimalId);speciesName=selected?selected.animalName:''}catch(e){}
     const date=value=>value?String(value).slice(0,10):'';
-    const form={petId:'order-'+o.orderId,resubmitOrderId:o.orderId,laboratoryId:o.laboratoryId,laboratoryName:o.laboratoryName,userCouponId:o.userCouponId,
+    const form={petId:o.petId || 'order-'+o.orderId,resubmitOrderId:o.orderId,laboratoryId:o.laboratoryId,laboratoryName:o.laboratoryName,userCouponId:o.userCouponId,
       petInfo:{animalName:o.animalName,animalNameEn:o.animalNameEn,infoAnimalId:o.infoAnimalId,infoAnimalName:speciesName,infoVarietyId:o.animalTypeId,infoVarietyName:o.animalType,infoVarietyNameEn:o.animalTypeEn,dictSexId:o.dictSexId,chipNO:o.chipNO,birthday:date(o.birthday)},
-      sampleInfo:{infoSampleTypeId:o.infoSampleTypeId,sampleArea:o.sampleArea,collectDt:date(o.collectDt),sampleTypeName:''},deliveryInfo:{masterName:o.masterName,masterNameEn:o.masterNameEn,doctorName:o.doctorName},otherInfo:{remark:o.remark || ''},animalInfo:{age:o.age,animalWeight:o.animalWeight || ''},
+      sampleInfo:{infoSampleTypeId:o.infoSampleTypeId,sampleArea:o.sampleArea,collectDt:date(o.collectDt),sampleTypeName:''},deliveryInfo:{masterName:o.masterName,masterNameEn:o.masterNameEn,doctorName:o.doctorName},otherInfo:{remark:o.remark || ''},animalInfo:{age:o.age,animalWeight:o.animalWeight || ''},clinicalInfo:{medicalHistory:o.medicalHistory || '',clinicalSymptoms:o.clinicalSymptoms || '',diagnosis:o.diagnosis || '',medication:o.medication || ''},
       selectedTestItems:(o.items || []).map(x=>({infoTestTypeId:x.infoTestTypeId,testName:x.testTypeName,price:x.testPrice}))};
     wx.setStorageSync('order_form',form);wx.navigateTo({url:'/pages/order-add-pet/order-add-pet?draft=1&petId='+form.petId});
   },

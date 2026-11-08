@@ -1,15 +1,29 @@
 <view class="page" role="main" aria-label="确认送检信息">
+  <view wx:if="{{submittedOrderId}}" class="submission-result">
+    <view class="submission-card petlis-card" role="status" aria-live="polite">
+      <image class="submission-icon" src="/assets/icons/brand-check.png" mode="aspectFit" />
+      <text class="submission-title">送检申请已提交</text>
+      <text class="submission-number">申请号 {{submittedOrderId}}</text>
+      <view class="submission-next">
+        <text class="submission-next-title">下一步：等待审核</text>
+        <text>审核通过后，现结客户可支付，月结客户按协议挂账。审核和报告进度可在消息中心查看。</text>
+      </view>
+      <button class="submission-view-order petlis-btn petlis-btn-primary" bindtap="viewSubmittedOrder">查看本次送检</button>
+      <button class="submission-home petlis-btn petlis-btn-outline" bindtap="returnHome">返回首页</button>
+    </view>
+  </view>
+  <block wx:else>
   <view class="content">
     <view class="flow-header">
       <view class="flow-steps" aria-label="送检进度：第 3 步，共 3 步">
         <view class="flow-step">
           <view class="flow-step-dot">1</view>
-          <text class="flow-step-label">填写资料</text>
+          <text class="flow-step-label">{{formData.flowVersion==='project-first'?'选择项目':'填写资料'}}</text>
         </view>
         <view class="flow-connector"></view>
         <view class="flow-step">
           <view class="flow-step-dot">2</view>
-          <text class="flow-step-label">选择项目</text>
+          <text class="flow-step-label">{{formData.flowVersion==='project-first'?'采样资料':'选择项目'}}</text>
         </view>
         <view class="flow-connector"></view>
         <view class="flow-step active">
@@ -135,12 +149,15 @@
           <text>-¥{{quote.discountAmount}}</text>
         </view>
       </view>
-      <view class="quote-status quote-error" wx:if="{{quoteError}}">{{quoteError}}</view>
+      <view class="quote-status quote-error" wx:if="{{quoteError}}" role="alert">
+        <view>{{quoteError}}</view>
+        <view class="quote-recovery"><button class="petlis-btn petlis-btn-outline" bindtap="retryQuote">重新核价</button><button class="petlis-btn petlis-btn-outline" bindtap="editProjects">修改检测项目</button></view>
+      </view>
       <view class="quote-status" wx:if="{{quoting}}">正在核价，请稍候…</view>
 
       <view class="total-price">
         <text class="total-label">合计</text>
-        <text class="total-amount">¥{{totalPrice}}</text>
+        <text class="total-amount">{{quote && !quoting && !quoteError ? '¥'+totalPrice : '待核价'}}</text>
       </view>
     </view>
 
@@ -155,6 +172,13 @@
       <view class="subscription-fallback" wx:else>审核与报告进度可在消息中心查看。</view>
     </view>
 
+    <view class="card petlis-card" wx:if="{{formData.clinicalInfo.medicalHistory || formData.clinicalInfo.clinicalSymptoms || formData.clinicalInfo.diagnosis || formData.clinicalInfo.medication}}"><view class="card-header"><view class="header-line"></view><text class="card-title">临床资料</text></view>
+      <view class="info-item" wx:if="{{formData.clinicalInfo.medicalHistory}}"><text class="info-label">既往病史</text><text class="info-value">{{formData.clinicalInfo.medicalHistory}}</text></view>
+      <view class="info-item" wx:if="{{formData.clinicalInfo.clinicalSymptoms}}"><text class="info-label">临床症状</text><text class="info-value">{{formData.clinicalInfo.clinicalSymptoms}}</text></view>
+      <view class="info-item" wx:if="{{formData.clinicalInfo.diagnosis}}"><text class="info-label">临床诊断</text><text class="info-value">{{formData.clinicalInfo.diagnosis}}</text></view>
+      <view class="info-item" wx:if="{{formData.clinicalInfo.medication}}"><text class="info-label">用药情况</text><text class="info-value">{{formData.clinicalInfo.medication}}</text></view>
+    </view>
+
     <view class="card petlis-card" wx:if="{{formData.otherInfo.remark}}">
       <view class="card-header">
         <view class="header-line"></view>
@@ -165,13 +189,15 @@
   </view>
 
   <view class="bottom-actions">
-    <view class="submit-note">待审核，审核通过后现结支付/月结挂账</view>
+    <view wx:if="{{quoteError}}" class="submit-note quote-blocking-note" role="alert">{{quoteError}}</view>
+    <view wx:else class="submit-note">待审核，审核通过后现结支付/月结挂账</view>
     <view class="action-buttons">
       <button class="draft-button btn-outline petlis-btn petlis-btn-outline" bindtap="saveDraft" disabled="{{submitting}}">保存草稿</button>
       <button class="btn-outline petlis-btn petlis-btn-outline" bindtap="onBack">返回修改</button>
-      <button class="btn-primary petlis-btn petlis-btn-primary" bindtap="onSubmit" disabled="{{submitting}}">
-        {{submitting ? '提交中...' : '提交送检'}}
+      <button class="btn-primary petlis-btn petlis-btn-primary" bindtap="onSubmit" disabled="{{submitting || quoting || !quote || quoteError}}">
+        {{submitting ? '提交中...' : '提交审核'}}
       </button>
     </view>
   </view>
+  </block>
 </view>

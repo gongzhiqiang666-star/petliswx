@@ -102,6 +102,10 @@ public class ReportController {
         log.info("接收到下载PDF报告请求, 报告ID: {}", id);
         try {
             return reportService.downloadReportPdf(id);
+        } catch (com.petlis.common.exception.BusinessException failure) {
+            return ResponseEntity.status(Integer.valueOf(403).equals(failure.getCode())?403:400).build();
+        } catch (SecurityException denied) {
+            return ResponseEntity.status(403).build();
         } catch (Exception e) {
             log.error("下载PDF报告失败", e);
             return ResponseEntity.badRequest().build();

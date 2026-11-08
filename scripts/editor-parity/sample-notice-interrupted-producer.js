@@ -1,0 +1,11 @@
+import fs from 'node:fs';import assert from 'node:assert/strict';import {fileURLToPath} from 'node:url';import {createStaticServer} from '../../admin/server.js';import {chromium} from 'playwright-core';
+const f=JSON.parse(fs.readFileSync(0,'utf8')),server=createStaticServer({root:fileURLToPath(new URL('../../admin/',import.meta.url)),apiOrigin:'http://127.0.0.1:18082'});await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));let browser;const errors=[];
+try{
+ browser=await chromium.launch({executablePath:'/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',headless:true});const context=await browser.newContext({serviceWorkers:'block'}),origin=`http://127.0.0.1:${server.address().port}`;
+ await context.addInitScript(({token})=>{if(window!==window.top)return;localStorage.setItem('petlis.admin.token',token);localStorage.setItem('petlis.admin.user',JSON.stringify({username:'收样通知验收',roles:['ADMIN']}));},{token:f.token});
+ await context.route('**/*',route=>new URL(route.request().url()).origin===origin?route.continue():route.abort());
+ const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));page.on('dialog',dialog=>dialog.accept());await page.goto(origin+'/#/orders');await page.locator(`[data-sample-notice="${f.order}"]`).click();
+ await page.locator('[name=contactId]').selectOption(String(f.contact));await page.locator('[name=templateId]').selectOption(String(f.template));await page.locator('[data-notice-load]').click();await page.waitForFunction(()=>document.querySelector('[data-notice-feedback]')?.textContent.includes('模板已加载'));
+ assert.match(await page.locator('[data-notice-editor] .tiptap').innerText(),new RegExp(f.prefix));await page.locator('[data-notice-editor] .tiptap').fill('收样正文 中文 α '+f.prefix);await page.getByRole('button',{name:'确认发送通知',exact:true}).click();await page.waitForFunction(()=>Boolean(document.querySelector('#dialog-error')?.textContent));
+ console.log(JSON.stringify({actualPcSubmission:true,connectionInterrupted:true}));
+}finally{await browser?.close();await new Promise(resolve=>server.close(resolve));}

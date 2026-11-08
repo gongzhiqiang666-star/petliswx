@@ -25,6 +25,30 @@ public class AdminService {
     private final ReviewService reviews;
     private final AccessService access;
 
+    public record StaffCreate(String username,String displayName,String password,String roleCode,Integer laboratoryId,String reason) { }
+    @Transactional(isolation=org.springframework.transaction.annotation.Isolation.READ_COMMITTED)
+    public long createStaff(StaffCreate command) {
+        requireAdmin();
+        if(command==null || command.username()==null || !command.username().matches("[A-Za-z_][A-Za-z0-9_]{3,31}") || command.displayName()==null || command.displayName().isBlank() || command.displayName().length()>50 || command.password()==null || command.password().length()<8 || command.password().getBytes(java.nio.charset.StandardCharsets.UTF_8).length>72 || !command.password().matches("(?s).*[A-Za-z].*") || !command.password().matches("(?s).*[0-9].*") || command.reason()==null || command.reason().isBlank() || command.reason().length()>400) throw new BusinessException(400,"请填写有效员工账号、姓名、密码及400字以内建号原因");
+        if(!List.of("LAB_STAFF","COURIER").contains(command.roleCode()==null?"":command.roleCode())) throw new BusinessException(400,"员工入口仅支持实验人员或配送人员");
+        if("LAB_STAFF".equals(command.roleCode())) {
+            if(command.laboratoryId()==null) throw new BusinessException(400,"实验人员必须指定实验室");
+            store.one("SELECT id FROM lin_laboratory WHERE id=? AND active=1 FOR UPDATE",command.laboratoryId());
+        } else if(command.laboratoryId()!=null) throw new BusinessException(400,"配送人员无需绑定实验室");
+        String lock="petlis-account:"+command.username().toLowerCase(java.util.Locale.ROOT);
+        Integer acquired=store.jdbc().queryForObject("SELECT GET_LOCK(?,5)",Integer.class,lock);
+        if(!Integer.valueOf(1).equals(acquired)) throw new BusinessException(409,"账号创建处理中，请稍后重试");
+        org.springframework.transaction.support.TransactionSynchronizationManager.registerSynchronization(new org.springframework.transaction.support.TransactionSynchronization(){@Override public void afterCompletion(int status){store.jdbc().queryForObject("SELECT RELEASE_LOCK(?)",Integer.class,lock);}});
+        if(Boolean.TRUE.equals(store.jdbc().queryForObject("SELECT EXISTS(SELECT 1 FROM lin_user WHERE username=? OR mobile=?)",Boolean.class,command.username(),command.username()))) throw new BusinessException(409,"账号已存在，请选择其他账号");
+        long id=store.insert("INSERT INTO lin_user(group_id,username,nickname,hospital_id,password,salt,money,score,level,gender,successions,maxsuccessions,loginfailure,status,createtime,updatetime,jointime) VALUES(0,?,?,NULL,'','',0,0,0,0,0,0,0,'normal',UNIX_TIMESTAMP(),UNIX_TIMESTAMP(),UNIX_TIMESTAMP())",command.username(),command.displayName().trim());
+        String hash=new org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder(12).encode(command.password());
+        store.jdbc().update("INSERT INTO lin_doctor_profile(user_id,password_hash,title,qualification_files,requested_hospital_id,review_status,review_reason,reviewed_by,reviewed_at) VALUES(?,?,'员工','[]',NULL,'approved',?,?,NOW())",id,hash,"管理员创建员工："+command.reason().trim(),SecurityUtils.getCurrentUserId());
+        userRoles.assign((int)id,command.roleCode(),null,command.laboratoryId(),SecurityUtils.getCurrentUserId());
+        // Audit deliberately excludes password, password hash and authentication tokens.
+        audit("STAFF_CREATED","USER",(int)id,command.reason().trim());
+        return id;
+    }
+
     public Map<String, Object> users(String status, String role, Integer hospitalId, int page, int size) {
         requireAdmin();
         StringBuilder where = new StringBuilder(" FROM lin_user u LEFT JOIN lin_doctor_profile p ON p.user_id=u.id LEFT JOIN lin_lb_infohospital h ON h.InfoHospitalId=u.hospital_id WHERE 1=1");
@@ -101,7 +125,7 @@ public class AdminService {
 
     public Map<String, Object> hospital(int hospitalId) {
         requireAdmin();
-        return store.one("SELECT InfoHospitalId AS id,HospitalName AS name,LoginName AS code,CityId AS cityId,Tel AS contactPhone,Adress AS address,Place AS place,Invoice AS invoice,PayType AS payType,amount,CASE WHEN IsActive=1 THEN 'ACTIVE' ELSE 'INACTIVE' END AS status FROM lin_lb_infohospital WHERE InfoHospitalId=?", hospitalId);
+        return store.one("SELECT InfoHospitalId AS id,HospitalName AS name,HospitalName_en AS englishName,LoginName AS code,CityId AS cityId,Tel AS contactPhone,Fax AS fax,Adress AS address,Place AS place,Invoice AS invoice,PayType AS payType,amount,CASE WHEN IsActive=1 THEN 'ACTIVE' ELSE 'INACTIVE' END AS status FROM lin_lb_infohospital WHERE InfoHospitalId=?", hospitalId);
     }
 
     @Transactional

@@ -1,0 +1,4 @@
+import test from 'node:test';import assert from 'node:assert/strict';
+import {downloadHospitalReport} from '../src/components/hospital-report.js';
+test('历史报告只通过认证同源API下载，医院和明细明确传入',async()=>{let path;const file={filename:'原报告.pdf',blob:new Blob(['%PDF-1.4\noriginal\n%%EOF'],{type:'application/pdf'})};assert.equal(await downloadHospitalReport({download:async p=>(path=p,file)},7,12),file);assert.equal(path,'/orders/hospital-history/reports/12/pdf?hospitalId=7');await assert.rejects(downloadHospitalReport({download:()=>assert.fail()},0,12),/编号/)})
+test('缺失或非PDF不会生成替代文件',async()=>{await assert.rejects(downloadHospitalReport({download:async()=>{throw Error('原报告文件尚未取回本机')}},7,12),/尚未取回/);await assert.rejects(downloadHospitalReport({download:async()=>({blob:new Blob(['<html>not pdf</html>'],{type:'application/pdf'})})},7,12),/PDF/)})

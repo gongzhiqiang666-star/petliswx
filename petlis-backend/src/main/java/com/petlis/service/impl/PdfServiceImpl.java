@@ -203,7 +203,7 @@ public class PdfServiceImpl implements PdfService {
         var apiPdf = relative.matches(".*/api/pdf/view/\\d+") ? relative : relative.matches("/api/pdf/view/\\d+") ? relative : null;
         if (apiPdf != null) {
             int detailId = Integer.parseInt(apiPdf.substring(apiPdf.lastIndexOf('/') + 1));
-            relative = jdbcTemplate.queryForObject("SELECT f.storage_path FROM lin_file f JOIN lin_report_workflow w ON w.pdf_file_id=f.id WHERE w.detail_id=?", String.class, detailId);
+            relative = jdbcTemplate.queryForObject("SELECT f.storage_path FROM lin_file f JOIN lin_report_workflow w ON w.pdf_file_id=f.id WHERE w.detail_id=? AND w.status='PUBLISHED' AND f.biz_type='REPORT' AND BINARY f.biz_id=BINARY CAST(w.id AS CHAR) AND f.deleted_at IS NULL ORDER BY w.published_at DESC,w.id DESC LIMIT 1", String.class, detailId);
             if (relative == null) throw new IllegalArgumentException("报告文件不可用");
         }
         if(relative.startsWith("/Content/FilePdf/"))relative=relative.substring("/Content/FilePdf/".length());

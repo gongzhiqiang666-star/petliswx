@@ -28,6 +28,6 @@ public class AdminOrderService {
             else where.append(" AND o.InfoHospitalId IN (SELECT hospital_id FROM lin_user_role WHERE user_id=? AND role_code='HOSPITAL_ADMIN' AND is_active=1)");
             args.add(actor.userId());
         }
-        return store.page("SELECT COUNT(*)" + where, "SELECT o.ListDiagnosisProjectId AS orderId,o.UserNO AS orderNo,o.InfoHospitalId AS hospitalId,h.HospitalName AS hospitalName,e.laboratory_id AS laboratoryId,o.AnimalName AS animalName,o.TestFee AS amount,o.SampleStatus AS status,o.IsPayMoney AS paid,e.settlement_mode AS settlementMode,o.CreateDt AS createdAt" + where + " ORDER BY o.ListDiagnosisProjectId DESC", page, size, args.toArray());
+        return store.page("SELECT COUNT(*)" + where, "SELECT o.ListDiagnosisProjectId AS orderId,o.UserNO AS orderNo,o.InfoHospitalId AS hospitalId,h.HospitalName AS hospitalName,e.laboratory_id AS laboratoryId,o.AnimalName AS animalName,o.TestFee AS amount,o.SampleStatus AS status,o.IsPayMoney AS paid,EXISTS(SELECT 1 FROM lin_audit_record r WHERE r.resource_type='MOCK_REFUND' AND r.action='MOCK_REFUND_COMPLETED' AND r.resource_id=(CAST(o.ListDiagnosisProjectId AS CHAR) COLLATE utf8mb4_unicode_ci)) AS refunded,e.settlement_mode AS settlementMode,o.CreateDt AS createdAt" + where + " ORDER BY o.ListDiagnosisProjectId DESC", page, size, args.toArray());
     }
 }

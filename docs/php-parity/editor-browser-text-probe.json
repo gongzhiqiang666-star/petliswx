@@ -1,0 +1,113 @@
+{
+  "scope": "read-only local templates; isolated real Chrome; network denied except local harness",
+  "editor": "Tiptap 3.33.0 experimental legacy compatibility",
+  "adoptionApproved": false,
+  "browserVersion": "156.0.8078.80",
+  "blockedRequests": 0,
+  "documents": 706,
+  "evaluated": 1,
+  "passed": 0,
+  "rejected": 1,
+  "errors": 0,
+  "textChanged": 1,
+  "textFormatsEquivalent": 0,
+  "textFormatsChanged": 1,
+  "structurePassedButTextFormatsChanged": 0,
+  "errorSummary": [],
+  "textChanges": [
+    {
+      "documentIndex": 284,
+      "sourceLength": 2733,
+      "outputLength": 2734,
+      "commonPrefixLength": 2702,
+      "commonSuffixLength": 31,
+      "sourceChangeKinds": {},
+      "outputChangeKinds": {
+        "newline": 1
+      },
+      "breakAwareTextEquivalent": true,
+      "documentParserTextEqualsFragment": true,
+      "documentParserTextLength": 2733,
+      "sourcePre": [
+        {
+          "textLength": 0,
+          "whitespaceOnly": true,
+          "children": [
+            "br"
+          ]
+        },
+        {
+          "textLength": 12,
+          "whitespaceOnly": false,
+          "children": []
+        }
+      ],
+      "outputPre": [
+        {
+          "textLength": 1,
+          "whitespaceOnly": true,
+          "children": [
+            "code"
+          ]
+        },
+        {
+          "textLength": 12,
+          "whitespaceOnly": false,
+          "children": [
+            "code"
+          ]
+        }
+      ],
+      "sourceContext": {
+        "path": [
+          "pre"
+        ],
+        "previousSibling": null,
+        "offsetWithinNode": 0,
+        "nodeLength": 12,
+        "siblings": [
+          {
+            "kind": "text",
+            "textLength": 12,
+            "firstTextChildLength": null
+          }
+        ]
+      },
+      "outputContext": {
+        "path": [
+          "code",
+          "pre"
+        ],
+        "previousSibling": null,
+        "offsetWithinNode": 0,
+        "nodeLength": 1,
+        "siblings": [
+          {
+            "kind": "text",
+            "textLength": 1,
+            "firstTextChildLength": null
+          }
+        ]
+      }
+    }
+  ],
+  "formatChanges": {
+    "font-family": 1,
+    "font-size": 1,
+    "font-weight": 1,
+    "font-style": 1,
+    "color": 1,
+    "letter-spacing": 1,
+    "line-height": 1,
+    "text-decoration-line": 1,
+    "vertical-align": 1,
+    "white-space": 1
+  },
+  "missing": {
+    "tag.span.span": 18,
+    "style.span.font-family": 15,
+    "style.span.font-size": 13,
+    "tag.br.br": 1,
+    "tag.strong.strong": 1
+  }
+}

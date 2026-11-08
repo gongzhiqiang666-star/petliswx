@@ -23,12 +23,13 @@ class RefundServiceTest {
     AuditService audits;
     WeChatPayConfig config;
     RefundService service;
+    BusinessNotifications notifications;
 
     @BeforeEach void setUp() {
         store = mock(FeatureStore.class); jdbc = mock(JdbcTemplate.class); access = mock(AccessService.class); audits = mock(AuditService.class); config = mock(WeChatPayConfig.class);
         when(store.jdbc()).thenReturn(jdbc); when(config.getMockEnabled()).thenReturn(true);
         when(access.current()).thenReturn(new CurrentActor(5, Set.of(PlatformRole.ADMIN), Set.of(), Set.of(), new DataScope(true, Set.of(), Set.of(), null)));
-        service = new RefundService(store, access, audits, config);
+        notifications=mock(BusinessNotifications.class);service = new RefundService(store, access, audits, config,notifications);
     }
 
     Map<String, Object> paidOrder() {
@@ -44,6 +45,7 @@ class RefundServiceTest {
         var result = service.refund(8, "标本不合格", "refund-request-8");
 
         assertEquals("REFUNDED", result.get("status"));
+        verify(notifications).emitForOrder(eq(8),isNull(),eq("wallet"),eq("refund:8"),eq("送检退款已记录"),contains("85.00"),anyString());
         verify(jdbc).update(contains("lin_wechat_payment"), eq("PAY-8"));
         verify(jdbc).update(contains("IsPayMoney=0"), eq(8));
         verify(audits).record(eq("MOCK_REFUND_COMPLETED"), eq("MOCK_REFUND"), eq(8), any(), any(), eq("标本不合格"));
@@ -55,6 +57,7 @@ class RefundServiceTest {
         var result = service.refund(8, "重复", "refund-request-8");
         assertEquals("REFUNDED", result.get("status"));
         verify(jdbc, never()).update(contains("lin_wechat_payment"), any(Object[].class));
+        verifyNoInteractions(notifications);
     }
 
     @Test void refundRechecksAuditAfterOrderLock() {

@@ -3,6 +3,7 @@ const api = require('./api/index.js')
 const config = require('./config/config.js')
 const {installUpdates} = require('./utils/updates')
 const diagnostics = require('./utils/diagnostics')
+const analytics = require('./utils/analytics')
 
 App({
   globalData: {
@@ -34,6 +35,9 @@ App({
     // 环境配置：根据版本自动设置DEBUG模式
     DEBUG: true  // 开发版和体验版开启日志，正式版关闭
   },
+
+  onShow(){analytics.flush()},
+  onHide(){analytics.flush()},
 
   onError(error){diagnostics.capture('error',error)},
   onUnhandledRejection(event){diagnostics.capture('rejection',event && event.reason)},
@@ -137,6 +141,7 @@ App({
     this.globalData.token = result.token
     this.globalData.userInfo = result
     this.globalData.hospitalId = result.hospitalId || null
+    analytics.flush()
     this.globalData.cityId = result.hospital ? result.hospital.cityId : null
     if (result.reviewer) wx.reLaunch({url: '/pages/review/review'})
     else wx.switchTab({url: '/pages/home/home'})

@@ -40,9 +40,21 @@
       </view>
     </view>
 
-    <view wx:if="{{orderData.reviewReason}}" style="padding:24rpx;background:#fff4e8;color:#70451f">审核意见：{{orderData.reviewReason}}</view>
-  <view wx:if="{{orderData.reviewHistory.length}}" style="padding:24rpx"><view>审核记录</view><view wx:for="{{orderData.reviewHistory}}" wx:key="id" style="margin-top:16rpx">{{item.message}} · {{item.createdAt}}</view></view>
+    <view wx:if="{{orderData.refunded}}" class="logistics-receipt-note" role="status">已退款{{orderData.refundMock ? '（开发模拟）' : ''}} ¥{{orderData.refundAmount}} · {{orderData.refundedAt}}<view>原因：{{orderData.refundReason}}</view><view>原送检进度保留，后续安排请联系实验室。</view></view>
   <scroll-view class="content {{orderData.canResubmit ? 'has-bottom-action' : ''}}" scroll-y role="main" aria-label="详细信息">
+      <view wx:if="{{orderData.reviewReason}}" class="review-notice" role="region" aria-label="最新审核意见">
+        <text class="review-notice-title">最新审核意见</text>
+        <text class="review-message">{{orderData.reviewReason}}</text>
+      </view>
+      <view wx:if="{{orderData.reviewHistory.length}}" class="review-card petlis-card" role="region" aria-label="审核记录">
+        <view class="card-title"><view class="title-line"></view><text>审核记录</text></view>
+        <view role="list">
+          <view class="review-entry" wx:for="{{orderData.reviewHistory}}" wx:key="id" role="listitem">
+            <text class="review-time">{{item.createdAtLabel}}</text>
+            <text class="review-message">{{item.message}}</text>
+          </view>
+        </view>
+      </view>
       <!-- Pet Brief Info -->
       <view class="pet-brief petlis-card"
             role="region"
@@ -93,9 +105,27 @@
       <view class="timeline-card petlis-card" role="region" aria-label="物流配送">
         <view class="card-title"><view class="title-line"></view><text>物流配送</text></view>
         <view wx:if="{{shipment}}">
-          <view class="logistics-summary"><text>{{shipment.statusLabel}}</text><text wx:if="{{shipment.trackingNo}}">运单 {{shipment.trackingNo}}</text></view>
+          <view wx:if="{{shipment.sandbox}}" class="logistics-receipt-note">沙箱测试运单 · 不会预约真实取件</view>
+          <button wx:if="{{shipment.sandbox && shipment.status!=='CANCELLED'}}" class="tracking-copy" style="margin:16rpx 0" loading="{{labelOpening}}" disabled="{{labelOpening}}" bindtap="openShipmentLabel">查看测试面单 PDF</button>
+          <view class="logistics-summary"><text>第 {{shipment.attemptNo || 1}} 次寄件 · {{shipment.statusLabel}}</text><button wx:if="{{shipment.trackingNo}}" class="tracking-copy" bindtap="copyTrackingNo" aria-label="复制物流运单号">运单 {{shipment.trackingNo}} · 复制</button></view>
+          <button wx:if="{{shipment.attemptNo>1}}" class="tracking-copy" data-action="shipment-history" loading="{{historyOpening}}" disabled="{{historyOpening}}" bindtap="openShipmentHistory">{{historyVisible?'收起寄件历史':'查看历次寄件'}}</button>
+          <view wx:if="{{historyError}}" class="logistics-receipt-note">{{historyError}}</view>
+          <view wx:if="{{historyVisible}}" class="shipment-history">
+            <view wx:for="{{shipmentHistory}}" wx:key="id" class="shipment-history-item">
+              <view class="shipment-history-title">第 {{item.attemptNo || 1}} 次 · {{item.current?'当前运单':'历史运单'}} · {{item.statusLabel}}</view>
+              <button class="tracking-copy" wx:if="{{item.trackingNo}}" data-index="{{index}}" bindtap="copyHistoryTracking">{{item.trackingNo}} · 复制</button>
+              <view class="logistics-receipt-note" wx:for="{{item.timeline}}" wx:for-item="node" wx:key="createdAt">{{node.time}} · {{node.title}}</view>
+            </view>
+          </view>
+          <view wx:if="{{shipment.status==='DELIVERED'}}" class="logistics-receipt-note">快递已妥投，仍需实验室核对样本。此状态不代表核样通过。</view>
+          <view wx:elif="{{shipment.status==='RECEIVED'}}" class="logistics-receipt-note">实验室已签收，检测与报告进度请查看对应记录。</view>
           <view class="logistics-eta" wx:if="{{shipment.expectedArrivedAt}}">预计到达：{{shipment.expectedArrivedAt}}</view>
-          <view class="logistics-exception" wx:if="{{shipment.exceptionNote}}">异常：{{shipment.exceptionType}} · {{shipment.exceptionNote}}</view>
+          <view class="logistics-exception" wx:if="{{shipment.exceptionNote}}">异常：{{shipment.exceptionTypeLabel}} · {{shipment.exceptionNote}}</view>
+          <view wx:if="{{shipment.exceptions.length}}" class="logistics-receipt-note">异常处理记录</view>
+          <view wx:for="{{shipment.exceptions}}" wx:key="id" class="logistics-receipt-note">
+            <view>{{item.typeLabel}} · {{item.stateLabel}} · {{item.reportedTime}}</view><view>{{item.note}}</view>
+            <view wx:if="{{item.resolvedAt}}">处理说明：{{item.resolutionNote}} · {{item.resolvedTime}}</view>
+          </view>
           <view class="timeline-item" wx:for="{{shipmentTimeline}}" wx:key="createdAt">
             <view class="timeline-dot {{item.abnormal ? 'pending' : 'completed'}}"></view>
             <view class="timeline-content"><view class="timeline-header"><text class="timeline-title">{{item.title}}</text><text class="timeline-time">{{item.time}}</text></view></view>
@@ -249,6 +279,18 @@
               <text class="detail-value">{{orderData.marketingName}}</text>
             </view>
           </view>
+        </view>
+      </view>
+
+      <view class="card petlis-card" role="region" aria-label="本次送检临床资料">
+        <view class="card-title"><view class="title-line"></view><text>本次送检临床资料</text></view>
+        <view class="remark-content" wx:if="{{clinicalLoading}}">正在加载临床资料…</view>
+        <view class="remark-content" wx:elif="{{clinicalError}}"><text>临床资料暂不可用</text><button class="petlis-btn petlis-btn-outline" bindtap="loadClinical">重试临床资料</button></view>
+        <view class="detail-grid" wx:else>
+          <view class="detail-row"><text class="detail-label">既往病史</text><text class="detail-value">{{clinical.medicalHistory || "未填写"}}</text></view>
+          <view class="detail-row"><text class="detail-label">临床症状</text><text class="detail-value">{{clinical.clinicalSymptoms || "未填写"}}</text></view>
+          <view class="detail-row"><text class="detail-label">临床诊断</text><text class="detail-value">{{clinical.diagnosis || "未填写"}}</text></view>
+          <view class="detail-row"><text class="detail-label">用药情况</text><text class="detail-value">{{clinical.medication || "未填写"}}</text></view>
         </view>
       </view>
 

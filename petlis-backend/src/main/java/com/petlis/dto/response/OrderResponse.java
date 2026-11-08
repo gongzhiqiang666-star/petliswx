@@ -15,6 +15,7 @@ import java.util.Date;
 @Data
 @Schema(description = "检测申请响应")
 public class OrderResponse {
+    private boolean refunded;
 
     @Schema(description = "申请单ID")
     private Integer orderId;

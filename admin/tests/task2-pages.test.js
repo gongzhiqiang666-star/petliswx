@@ -40,7 +40,10 @@ test('财务发票复用管理审核接口且订单全管理接入真实订单�
 
 test('reviewer 不显示管理员医院启停且角色删除需要确认', async () => {
   const reviews = await source('pages/reviews.js');
-  assert.ok(reviews.includes("key !== 'hospitals' || context.store.hasRole('ADMIN')"));
+  const {reviewTabs}=await import('../src/pages/reviews.js');
+  assert.ok(!reviewTabs(false).some(([key])=>['hospitals','hospitalDocuments'].includes(key)));
+  assert.ok(reviewTabs(true).some(([key])=>key==='hospitalDocuments'));
+  assert.ok(reviewTabs(true).some(([key])=>key==='hospitals'));
   const organizations = await source('pages/organizations.js');
   assert.ok(organizations.includes('data-remove-role'));
   assert.ok(organizations.includes('确认删除角色'));

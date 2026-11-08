@@ -31,8 +31,8 @@ public class ReviewService {
   store.jdbc().update("UPDATE lin_doctor_profile SET review_status=?,review_reason=?,reviewed_by=?,reviewed_at=NOW(),credential_version=credential_version+1 WHERE user_id=?",r.approved()?"approved":"rejected",r.reason()==null?"":r.reason(),SecurityUtils.getCurrentUserId(),userId);
   notifications.emit(userId,"profile","registration:"+userId+":"+(r.approved()?"approved":"rejected"),"注册审核结果",r.approved()?"医生注册已通过审核，可以开始送检。":"医生注册未通过审核："+r.reason(),"pages/mine/mine");
  }
- public Map<String,Object> profileChanges(int page,int size){permission.requireReviewer();return store.page("SELECT COUNT(*) FROM lin_profile_change WHERE status='pending'","SELECT id,user_id AS userId,requested_data AS requestedData,previous_data AS previousData,created_at AS createdAt FROM lin_profile_change WHERE status='pending' ORDER BY id",page,size);}
- @Transactional public void profileChange(long id,Decision r){
+ public Map<String,Object> profileChanges(int page,int size){permission.requireReviewer();return store.page("SELECT COUNT(*) FROM lin_profile_change WHERE status='pending'","SELECT p.id,p.user_id AS userId,p.requested_data AS requestedData,p.previous_data AS previousData,p.created_at AS createdAt,h.HospitalName AS requestedHospitalName FROM lin_profile_change p LEFT JOIN lin_lb_infohospital h ON h.InfoHospitalId=CAST(JSON_UNQUOTE(JSON_EXTRACT(p.requested_data,'$.hospitalId')) AS UNSIGNED) WHERE p.status='pending' ORDER BY p.id",page,size);}
+ @Transactional(isolation=org.springframework.transaction.annotation.Isolation.READ_COMMITTED) public void profileChange(long id,Decision r){
   permission.requireReviewer();validate(r);var item=store.one("SELECT user_id,status,requested_data FROM lin_profile_change WHERE id=? FOR UPDATE",id);
   if(!"pending".equals(item.get("status")))throw new BusinessException("资料变更已处理");
   int userId=((Number)item.get("user_id")).intValue();
@@ -40,6 +40,7 @@ public class ReviewService {
   if(r.approved()){
    AccountService.ProfileChange change;try{change=mapper.readValue(item.get("requested_data").toString(),AccountService.ProfileChange.class);}catch(Exception e){throw new BusinessException("资料格式无效");}
    var h=store.one("SELECT CityId FROM lin_lb_infohospital WHERE InfoHospitalId=? AND IsActive=1",change.hospitalId());if(h.get("CityId")==null || ((Number)h.get("CityId")).intValue()==0)throw new BusinessException("医院城市未维护");
+   synchronizeDoctorHospital(userId,change.hospitalId());
    store.jdbc().update("UPDATE lin_user SET nickname=?,avatar=?,hospital_id=?,updatetime=UNIX_TIMESTAMP() WHERE id=?",change.nickname(),change.avatar(),change.hospitalId(),userId);
    store.jdbc().update("INSERT INTO lin_doctor_profile(user_id,title,qualification_files,requested_hospital_id,review_status,reviewed_by,reviewed_at,credential_version) VALUES(?,?,?,?,'approved',?,NOW(),1) ON DUPLICATE KEY UPDATE title=VALUES(title),qualification_files=VALUES(qualification_files),requested_hospital_id=VALUES(requested_hospital_id),reviewed_by=VALUES(reviewed_by),reviewed_at=NOW(),credential_version=credential_version+1",userId,change.title(),store.encode(change.qualificationFiles()),change.hospitalId(),SecurityUtils.getCurrentUserId());
   }else{
@@ -48,7 +49,29 @@ public class ReviewService {
   store.jdbc().update("UPDATE lin_profile_change SET status=?,review_reason=?,reviewed_by=?,reviewed_at=NOW() WHERE id=?",r.approved()?"approved":"rejected",r.reason()==null?"":r.reason(),SecurityUtils.getCurrentUserId(),id);
   notifications.emit(userId,"profile","profile:"+id,"资料审核结果",r.approved()?"资料修改已通过审核，请重新登录。":"资料修改未通过审核："+r.reason(),"pages/mine/mine");
  }
+ private void synchronizeDoctorHospital(int userId,Integer target){
+  var user=store.one("SELECT hospital_id FROM lin_user WHERE id=? FOR UPDATE",userId);Object previous=user.get("hospital_id");
+  Integer original=previous==null?null:((Number)previous).intValue();if(Objects.equals(original,target))return;
+  var roles=store.jdbc().queryForList("SELECT id,role_code,hospital_id,scope_type,scope_id,laboratory_id FROM lin_user_role WHERE user_id=? AND is_active=1 FOR UPDATE",userId);
+  String mode="LEGACY_DOCTOR";
+  if(!roles.isEmpty()){
+   var role=roles.get(0);
+   if(roles.size()!=1 || !"DOCTOR".equals(role.get("role_code")) || !"HOSPITAL".equals(role.get("scope_type")) || role.get("hospital_id")==null || !Objects.equals(original,((Number)role.get("hospital_id")).intValue()) || original==null || ((Number)role.get("scope_id")).intValue()!=original || role.get("laboratory_id")!=null)
+    throw new BusinessException(409,"该账号含管理或多机构权限，需先由管理员核对角色归属后再变更医院");
+   var historical=store.jdbc().queryForList("SELECT id,hospital_id,laboratory_id,is_active FROM lin_user_role WHERE user_id=? AND role_code='DOCTOR' AND scope_type='HOSPITAL' AND scope_id=? FOR UPDATE",userId,target);
+   if(historical.isEmpty())store.jdbc().update("UPDATE lin_user_role SET hospital_id=?,scope_id=? WHERE id=? AND user_id=? AND is_active=1",target,target,role.get("id"),userId);
+   else{
+    var next=historical.get(0);
+    if(historical.size()!=1 || next.get("hospital_id")==null || ((Number)next.get("hospital_id")).intValue()!=target || next.get("laboratory_id")!=null)throw new BusinessException(409,"目标医院的历史角色归属异常，请先核对");
+    store.jdbc().update("UPDATE lin_user_role SET is_active=0 WHERE id=? AND user_id=?",role.get("id"),userId);
+    store.jdbc().update("UPDATE lin_user_role SET is_active=1 WHERE id=? AND user_id=?",next.get("id"),userId);
+   }
+   mode="DOCTOR_SCOPE_MOVED";
+  }
+  var before=new LinkedHashMap<String,Object>();before.put("hospitalId",original);before.put("roles",roles);
+  store.jdbc().update("INSERT INTO lin_audit_record(actor_user_id,action,resource_type,resource_id,before_json,after_json) VALUES(?,'PROFILE_HOSPITAL_CHANGED','USER',?,?,?)",SecurityUtils.getCurrentUserId(),String.valueOf(userId),store.encode(before),store.encode(Map.of("hospitalId",target,"mode",mode)));
+ }
  public Map<String,Object> pendingOrders(int page,int size){permission.requireReviewer();return store.page("SELECT COUNT(*) FROM lin_lb_listdiagnosisproject WHERE SampleStatus=0","SELECT p.ListDiagnosisProjectId AS orderId,p.UserNO AS orderNo,p.AnimalName AS animalName,p.DoctorName AS doctorName,p.TestFee AS amount,p.CreateDt AS submittedAt,h.HospitalName AS hospitalName FROM lin_lb_listdiagnosisproject p LEFT JOIN lin_lb_infohospital h ON h.InfoHospitalId=p.InfoHospitalId WHERE p.SampleStatus=0 ORDER BY p.CreateDt",page,size);}
- @Transactional public void order(int id,Decision r){permission.requireReviewer();validate(r);var row=store.one("SELECT p.SampleStatus,p.TestFee,p.CreateSampleId,h.PayType,COALESCE(s.settlement_type,e.settlement_mode) AS settlement_type FROM lin_lb_listdiagnosisproject p JOIN lin_lb_infohospital h ON h.InfoHospitalId=p.InfoHospitalId LEFT JOIN lin_order_pricing_snapshot s ON s.order_id=p.ListDiagnosisProjectId LEFT JOIN lin_order_extension e ON e.order_id=p.ListDiagnosisProjectId WHERE p.ListDiagnosisProjectId=? FOR UPDATE",id);if(((Number)row.get("SampleStatus")).intValue()!=0)throw new BusinessException("送检申请已处理");Object settlement=row.get("settlement_type");boolean monthly=settlement==null?((Number)row.get("PayType")).intValue()==1:"monthly".equalsIgnoreCase(settlement.toString());int target=r.approved()?((monthly || new java.math.BigDecimal(row.get("TestFee").toString()).signum()==0)?2:-3):1;orders.updateOrderStatus(id,target);store.jdbc().update("UPDATE lin_order_extension SET review_status=?,review_reason=?,reviewed_by=?,reviewed_at=NOW() WHERE order_id=?",r.approved()?"approved":"rejected",r.reason()==null?"":r.reason(),SecurityUtils.getCurrentUserId(),id);notifications.reviewed(id,row.get("CreateSampleId")==null?null:((Number)row.get("CreateSampleId")).intValue(),target,r.reason(),SecurityUtils.getCurrentUserId());}
+ @Transactional(isolation=org.springframework.transaction.annotation.Isolation.READ_COMMITTED) public void order(int id,Decision r){permission.requireReviewer();validate(r);var row=store.one("SELECT e.order_id AS managed_order_id,p.SampleStatus,p.TestFee,p.CreateSampleId,h.PayType,COALESCE(s.settlement_type,e.settlement_mode) AS settlement_type FROM lin_lb_listdiagnosisproject p JOIN lin_lb_infohospital h ON h.InfoHospitalId=p.InfoHospitalId LEFT JOIN lin_order_pricing_snapshot s ON s.order_id=p.ListDiagnosisProjectId LEFT JOIN lin_order_extension e ON e.order_id=p.ListDiagnosisProjectId WHERE p.ListDiagnosisProjectId=? FOR UPDATE",id);if(((Number)row.get("SampleStatus")).intValue()!=0)throw new BusinessException("送检申请已处理");if(row.get("managed_order_id")==null)throw new BusinessException(409,"旧单尚未接入统一流程，请先指定实验室并核验原单");Object settlement=row.get("settlement_type");boolean monthly=settlement==null?((Number)row.get("PayType")).intValue()==1:"monthly".equalsIgnoreCase(settlement.toString());int target=r.approved()?((monthly || new java.math.BigDecimal(row.get("TestFee").toString()).signum()==0)?2:-3):1;orders.updateOrderStatus(id,target);store.jdbc().update("UPDATE lin_order_extension SET review_status=?,review_reason=?,reviewed_by=?,reviewed_at=NOW() WHERE order_id=?",r.approved()?"approved":"rejected",r.reason()==null?"":r.reason(),SecurityUtils.getCurrentUserId(),id);notifications.reviewed(id,row.get("CreateSampleId")==null?null:((Number)row.get("CreateSampleId")).intValue(),target,r.reason(),SecurityUtils.getCurrentUserId());}
  public Map<String,Object> invoices(int page,int size){permission.requireReviewer();return store.page("SELECT COUNT(*) FROM lin_invoice_application WHERE status='pending'","SELECT id,user_id AS userId,profile_snapshot AS profileSnapshot,amount,created_at AS createdAt FROM lin_invoice_application WHERE status='pending' ORDER BY id",page,size);}
 }

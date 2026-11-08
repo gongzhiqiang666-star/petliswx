@@ -37,6 +37,9 @@ public class LogisticsWorkflowController {
     @GetMapping("/orders/{orderId}")
     public Result<Map<String, Object>> getByOrder(@PathVariable int orderId) { return Result.success(shipments.getByOrder(orderId)); }
 
+    @GetMapping("/orders/{orderId}/history")
+    public Result<java.util.List<Map<String,Object>>> history(@PathVariable int orderId){return Result.success(shipments.history(orderId));}
+
     @PostMapping("/{id}/assign")
     public Result<Void> assign(@PathVariable long id, @RequestBody AssignCommand command) {
         shipments.assign(id, command.courierUserId());
@@ -63,8 +66,12 @@ public class LogisticsWorkflowController {
     @PostMapping("/{id}/exception")
     public Result<Map<String, Object>> exception(@PathVariable long id, @RequestBody ExceptionCommand command) {
         String note = command.note() == null || command.note().isBlank() ? command.reason() : command.note();
-        return Result.success(shipments.transition(id, ShipmentWorkflowService.ShipmentAction.EXCEPTION, command.exceptionType(), note));
+        return Result.success(shipments.transition(id, ShipmentWorkflowService.ShipmentAction.EXCEPTION, command.exceptionType(), note,command.requestKey()));
     }
+
+    @PostMapping("/{id}/exceptions/{eventId}/resolve")
+    public Result<Map<String,Object>> resolve(@PathVariable long id,@PathVariable long eventId,@RequestBody ResolveCommand command) { return Result.success(shipments.resolveException(id,eventId,command.reason())); }
+    public record ResolveCommand(String reason) { }
 
     private Result<Map<String, Object>> transition(long id, ShipmentWorkflowService.ShipmentAction action) {
         return Result.success(shipments.transition(id, action, null, null));
@@ -77,6 +84,6 @@ public class LogisticsWorkflowController {
         }
     }
     public record AssignCommand(int courierUserId) { }
-    public record ExceptionCommand(String exceptionType, String note, String reason) { }
+    public record ExceptionCommand(String exceptionType, String note, String reason,String requestKey) { }
     public record ScanCommand(String barcode) { }
 }

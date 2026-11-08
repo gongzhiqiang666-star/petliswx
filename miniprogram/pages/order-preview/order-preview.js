@@ -1,3 +1,4 @@
+const analytics = require('../../utils/analytics')
 // pages/order-preview/order-preview.js
 const request = require('../../utils/request');
 const api = require('../../api/index.js');
@@ -8,13 +9,14 @@ const ageCalculator = require('../../utils/age-calculator.js');
 
 Page({
   data: {
-    formData: {},
+    formData: {}, submittedOrderId:null,
     subscriptionTemplates:[],subscribe:false,
     totalPrice: 0, coupons: [], couponIndex:0, quote:null, quoteError:'', quoting:false,
     submitting: false
   },
 
   onLoad() {
+    analytics.track('order_step', 'confirm', 'view')
     try {
       // 清除全局缓存和storage缓存，确保只使用最新数据
       app.globalData.cache.orderForm = null;
@@ -101,12 +103,26 @@ Page({
   subscribeChange(e){this.setData({subscribe:e.detail.value.length>0})},
   async saveDraft(){if(this._savingDraft)return;this._savingDraft=true;try{this.setData({formData:await require('../../utils/drafts').save(this.data.formData)});wx.showToast({title:'草稿已保存'})}catch(e){wx.showToast({title:e.message,icon:'none'})}finally{this._savingDraft=false}},
   async loadCoupons(){
-    try{const coupons=await request.get('/coupons',{category:'available'});this.setData({coupons:[{id:null,name:'不使用优惠券'},...coupons]});await this.requote(null)}catch(e){this.setData({quoteError:e.message})}
+    const loadId=(this._couponLoadId || 0)+1;this._couponLoadId=loadId;
+    try{
+      const available=await request.get('/coupons',{category:'available'});if(loadId!==this._couponLoadId)return;
+      const selected=this.data.formData.userCouponId || null;
+      const coupons=[{id:null,name:'不使用优惠券'},...available];
+      let index=selected===null?0:coupons.findIndex(item=>String(item.id)===String(selected));
+      if(index<0){this._quoteRequestId=(this._quoteRequestId || 0)+1;coupons.splice(1,0,{id:selected,name:'上次选择的优惠券已不可用',unavailable:true});index=1;this.setData({coupons,couponIndex:index,quote:null,quoting:false,quoteError:'上次选择的优惠券已不可用，请重新选择'});return;}
+      this.setData({coupons,couponIndex:index});await this.requote(coupons[index].id);
+    }catch(e){if(loadId===this._couponLoadId)this.setData({quote:null,quoteError:e.message})}
   },
-  async couponChange(e){const index=Number(e.detail.value);this.setData({couponIndex:index});await this.requote(this.data.coupons[index].id)},
+  async couponChange(e){
+    const index=Number(e.detail.value),coupon=this.data.coupons[index];if(!Number.isInteger(index) || !coupon)return;
+    this.setData({couponIndex:index});
+    if(coupon.unavailable){this._quoteRequestId=(this._quoteRequestId || 0)+1;const form={...this.data.formData,userCouponId:coupon.id};this.setData({formData:form,quote:null,quoting:false,quoteError:'该优惠券已不可用，请重新选择'});try{wx.setStorageSync('order_form',form)}catch(_){}return;}
+    await this.requote(coupon.id);
+  },
   async requote(userCouponId){
     const requestId=(this._quoteRequestId || 0)+1;this._quoteRequestId=requestId;
-    this.setData({quoting:true,quote:null,quoteError:''});const form=this.data.formData;
+    const form={...this.data.formData,userCouponId};this.setData({quoting:true,quote:null,quoteError:'',formData:form});
+    try{wx.setStorageSync('order_form',form)}catch(_){}
     try{
       const quote=await request.post('/coupons/quote',{laboratoryId:form.laboratoryId,testTypeIds:form.selectedTestItems.map(x=>x.infoTestTypeId),userCouponId});
       if(requestId!==this._quoteRequestId)return;
@@ -167,14 +183,33 @@ Page({
     return `${year}-${month}-${day}`;
   },
 
+  retryQuote() { return this.requote(this.data.formData.userCouponId || null) },
+  editProjects() {
+    // Return to the existing project page; sampling state remains in order_form.
+    const pages=getCurrentPages();
+    const index=pages.map(p=>p.route).lastIndexOf('pages/order-test-items/order-test-items');
+    if(index>=0 && index<pages.length-1)wx.navigateBack({delta:pages.length-1-index});
+    else wx.redirectTo({url:'/pages/order-test-items/order-test-items'});
+  },
+
   onBack() {
     wx.navigateBack();
   },
 
+  completeSubmission(orderId) {
+    this.setData({submittedOrderId:Number(orderId),submitting:false});
+    // Submission is durable; failed local cleanup must not invite another submission.
+    try { wx.removeStorageSync('order_form'); } catch (_) {}
+    try { if (app.clearCachedOrderForm) app.clearCachedOrderForm(); } catch (_) {}
+  },
+  viewSubmittedOrder() {
+    if(this.data.submittedOrderId)wx.reLaunch({url:'/pages/order-detail/order-detail?id='+this.data.submittedOrderId});
+  },
+  returnHome() {wx.switchTab({url:'/pages/home/home'});},
   async onSubmit() {
     const { formData, submitting } = this.data;
 
-    if (submitting) {
+    if (submitting || this.data.submittedOrderId) {
       return;
     }
 
@@ -247,6 +282,11 @@ Page({
         draftId:formData._draftId,
         draftVersion:formData._draftVersion,
         laboratoryId:formData.laboratoryId,
+        petId:/^[1-9][0-9]*$/.test(String(formData.petId))?Number(formData.petId):undefined,
+        medicalHistory:(formData.clinicalInfo || {}).medicalHistory,
+        clinicalSymptoms:(formData.clinicalInfo || {}).clinicalSymptoms,
+        diagnosis:(formData.clinicalInfo || {}).diagnosis,
+        medication:(formData.clinicalInfo || {}).medication,
         userCouponId:formData.userCouponId,
         ...formData.petInfo,
         ...formData.sampleInfo,
@@ -278,30 +318,15 @@ Page({
       logger.log('OrderPreview', '开始创建订单');
       if(this.data.subscribe && this.data.subscriptionTemplates.length){try{await wx.requestSubscribeMessage({tmplIds:[...new Set(this.data.subscriptionTemplates.map(x=>x.templateId))]})}catch(e){/* A declined subscription never blocks submitting an order. */}}
       const orderResult = formData.resubmitOrderId ? (await request.post('/orders/'+formData.resubmitOrderId+'/resubmit',orderData),{orderId:formData.resubmitOrderId,needPayment:false}) : await api.orders.create(orderData);
+      analytics.track('order_submit', 'confirm', 'success')
       const orderResponse = orderResult.data || orderResult;
       const orderId = orderResponse.orderId;  // 提取订单ID
       logger.log('OrderPreview', '订单创建成功', { orderId, needPayment: orderResponse.needPayment });
 
-      const reportNO = orderData.reportNO || '生成中...';
+      this.completeSubmission(orderId);
 
-      // 提交后等待审核；支付入口仅在服务端确认审核通过后显示。
-      // 步骤5: 显示成功提示
-      wx.showModal({
-        title: '送检申请已提交',
-        content: `订单号：${orderId}\n审核通过后，现结客户可支付，月结客户按协议挂账。`,
-        showCancel: false,
-        confirmText: '查看订单',
-        success: () => {
-          // 清理本地存储
-          wx.removeStorageSync('order_form');
-
-          // 跳转到订单列表（订单页为非 Tab 页面，替换当前预览页）
-          wx.redirectTo({
-            url: '/pages/orders/orders'
-          });
-        }
-      });
     } catch (error) {
+      analytics.track('order_submit', 'confirm', 'failure')
       logger.error('OrderPreview', '提交订单失败', error);
       this.setData({ submitting: false });
 

@@ -1,0 +1,195 @@
+{
+  "scope": "read-only local templates; isolated real Chrome; network denied except local harness",
+  "editor": "Tiptap 3.33.0 experimental legacy compatibility",
+  "adoptionApproved": false,
+  "browserVersion": "156.0.8078.80",
+  "blockedRequests": 0,
+  "documents": 706,
+  "evaluated": 706,
+  "passed": 187,
+  "rejected": 519,
+  "errors": 0,
+  "textChanged": 1,
+  "textFormatsEquivalent": 667,
+  "textFormatsChanged": 39,
+  "structurePassedButTextFormatsChanged": 1,
+  "errorSummary": [],
+  "textChanges": [
+    {
+      "documentIndex": 284,
+      "sourceLength": 2733,
+      "outputLength": 2734,
+      "commonPrefixLength": 2702,
+      "commonSuffixLength": 31,
+      "sourceChangeKinds": {},
+      "outputChangeKinds": {
+        "newline": 1
+      },
+      "breakAwareTextEquivalent": true,
+      "documentParserTextEqualsFragment": true,
+      "documentParserTextLength": 2733,
+      "sourcePre": [
+        {
+          "textLength": 0,
+          "whitespaceOnly": true,
+          "children": [
+            "br"
+          ]
+        },
+        {
+          "textLength": 12,
+          "whitespaceOnly": false,
+          "children": []
+        }
+      ],
+      "outputPre": [
+        {
+          "textLength": 1,
+          "whitespaceOnly": true,
+          "children": [
+            "code"
+          ]
+        },
+        {
+          "textLength": 12,
+          "whitespaceOnly": false,
+          "children": [
+            "code"
+          ]
+        }
+      ],
+      "sourceContext": {
+        "path": [
+          "pre"
+        ],
+        "previousSibling": null,
+        "offsetWithinNode": 0,
+        "nodeLength": 12,
+        "siblings": [
+          {
+            "kind": "text",
+            "textLength": 12,
+            "firstTextChildLength": null
+          }
+        ]
+      },
+      "outputContext": {
+        "path": [
+          "code",
+          "pre"
+        ],
+        "previousSibling": null,
+        "offsetWithinNode": 0,
+        "nodeLength": 1,
+        "siblings": [
+          {
+            "kind": "text",
+            "textLength": 1,
+            "firstTextChildLength": null
+          }
+        ]
+      }
+    }
+  ],
+  "formatTransitions": {
+    "color → rgb(11, 11, 11) → rgb(0, 0, 0)": 23,
+    "font-size → 16px → 13px": 6,
+    "font-size → 14px → 13px": 2,
+    "line-height → 24px → normal": 65,
+    "font-weight → 700 → 900": 166,
+    "font-weight → 400 → 700": 1,
+    "color → rgb(0, 0, 238) → rgb(13, 13, 13)": 272
+  },
+  "formatChanges": {
+    "font-family": 9,
+    "font-size": 2,
+    "color": 19,
+    "line-height": 5,
+    "font-weight": 10,
+    "font-style": 1,
+    "letter-spacing": 1,
+    "text-decoration-line": 1,
+    "vertical-align": 1,
+    "white-space": 3
+  },
+  "missing": {
+    "style.span.font-family": 19521,
+    "tag.span.span": 6305,
+    "tag.strong.strong": 2808,
+    "style.span.font-size": 1092,
+    "style.span.color": 1031,
+    "style.td.border-left": 684,
+    "style.td.border-top": 588,
+    "style.td.border-right-color": 288,
+    "style.td.border-bottom-color": 288,
+    "style.td.border-right-style": 288,
+    "style.td.border-bottom-style": 288,
+    "style.span.letter-spacing": 268,
+    "style.span.line-height": 246,
+    "style.p.margin-top": 196,
+    "style.p.margin-right": 196,
+    "style.p.margin-bottom": 196,
+    "style.p.margin-left": 196,
+    "style.span.background-color": 139,
+    "style.span.display": 133,
+    "style.strong.font-family": 133,
+    "style.span.white-space": 121,
+    "attribute.span.class": 108,
+    "style.span.text-wrap": 100,
+    "style.td.border-left-style": 96,
+    "style.td.border-left-color": 96,
+    "style.span.font-weight": 94,
+    "attribute.span.microsoft": 94,
+    "attribute.span.yahei\";": 94,
+    "style.span.text-decoration-line": 83,
+    "attribute.span.font-size:": 82,
+    "attribute.span.16px;\"": 82,
+    "style.p.font-family": 80,
+    "style.span.widows": 71,
+    "style.p.mso-pagination": 56,
+    "style.span.font-variant-numeric": 56,
+    "style.span.font-variant-east-asian": 56,
+    "style.div.page-break-after": 35,
+    "style.span.text-align": 33,
+    "style.p.mso-margin-top-alt": 31,
+    "style.span.text-wrap-mode": 27,
+    "style.p.mso-margin-bottom-alt": 27,
+    "style.span.text-decoration": 27,
+    "style.strong.color": 25,
+    "style.span.mso-bidi-font-family": 24,
+    "style.span.mso-font-kerning": 24,
+    "style.span.background": 18,
+    "style.p.text-justify": 16,
+    "style.br.widows": 15,
+    "attribute.span.color:": 12,
+    "attribute.span.rgb(13,": 12,
+    "attribute.span.13,": 12,
+    "attribute.span.13);\"": 12,
+    "style.strong.white-space": 10,
+    "style.img.font-family": 9,
+    "style.strong.text-wrap": 9,
+    "style.span.white-space-collapse": 9,
+    "style.span.background-image": 6,
+    "style.span.background-position": 6,
+    "style.span.background-size": 6,
+    "style.span.background-repeat": 6,
+    "style.span.background-attachment": 6,
+    "style.span.background-origin": 6,
+    "style.span.background-clip": 6,
+    "tag.a.a": 5,
+    "attribute.a.href": 5,
+    "tag.col.col": 5,
+    "attribute.col.width": 5,
+    "style.div.mso-pagination": 4,
+    "style.span.text-wrap-style": 4,
+    "tag.em.em": 3,
+    "attribute.a.class": 3,
+    "style.a.outline": 3,
+    "style.a.line-height": 3,
+    "style.strong.background-color": 2,
+    "tag.b.b": 1,
+    "tag.colgroup.colgroup": 1,
+    "tag.br.br": 1,
+    "style.strong.text-wrap-mode": 1
+  }
+}

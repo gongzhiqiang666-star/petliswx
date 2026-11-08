@@ -1,3 +1,4 @@
+const analytics = require('../../utils/analytics')
 // pages/order-test-items/order-test-items.js
 const request = require('../../utils/request');
 const api = require('../../api/index.js');
@@ -25,7 +26,14 @@ Page({
     searchTimer: null      // 搜索防抖定时器
   },
 
-  onLoad() {
+  onLoad(options = {}) {
+    analytics.track('order_step', 'tests', 'view')
+    if(options.petId){
+      // A new submission starts here; never merge another pet's stale draft.
+      wx.setStorageSync('order_form',{petId:options.petId,flowVersion:'project-first'});
+    }
+    this.setData({projectFirst:(wx.getStorageSync('order_form') || {}).flowVersion==='project-first'});
+
     // 注意：这里不清除缓存，因为用户可能从 preview 页面返回
     // 缓存会在 order-add-pet 和 order-preview 页面清除
     this.loadLaboratories();
@@ -417,7 +425,7 @@ Page({
     wx.setStorageSync('order_form', formData);
 
     wx.navigateTo({
-      url: '/pages/order-preview/order-preview'
+      url: formData.flowVersion==='project-first'?'/pages/order-add-pet/order-add-pet?petId='+encodeURIComponent(formData.petId):'/pages/order-preview/order-preview'
     });
   }
 });

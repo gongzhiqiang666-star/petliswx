@@ -108,3 +108,16 @@ test('download 使用鉴权并返回 Blob 与文件名', async () => {
   assert.equal(result.blob, blob);
   assert.equal(result.filename, 'report.pdf');
 });
+test('download 拒绝HTTP200业务错误并对过期登录执行回调',async()=>{
+ let expired=0;const api=createApi({onUnauthorized:()=>expired++,fetchImpl:async()=>new Response(JSON.stringify({code:401,message:'会话失效',data:null}),{headers:{'Content-Type':'application/json'}})});
+ await assert.rejects(api.download('/invoices/1/download'),e=>e.code===401);assert.equal(expired,1);
+ const denied=createApi({fetchImpl:async()=>new Response(JSON.stringify({code:403,message:'无权下载',data:null}),{headers:{'Content-Type':'application/json'}})});await assert.rejects(denied.download('/files/1/download'),e=>e.code===403&&e.status===403);
+});
+test('download 拒绝JSON成功信封并容忍错误文件名编码',async()=>{
+ const api=createApi({fetchImpl:async()=>new Response('{"code":200,"message":"操作成功","data":null}',{headers:{'Content-Type':'application/json'}})});await assert.rejects(api.download('/files/1/download'),/文件/);
+ const valid=createApi({fetchImpl:async()=>new Response('%PDF-1.4',{headers:{'Content-Type':'application/pdf','Content-Disposition':"attachment; filename=fallback.pdf; filename*=UTF-8''%ZZ"}})});assert.equal((await valid.download('/files/1/download')).filename,'fallback.pdf');
+});
+test('download 可通过认证POST当前正文并接收PDF文件',async()=>{
+ let request;const api=createApi({getToken:()=> 'test-token',fetchImpl:async(url,options)=>{request={url,options};return new Response('%PDF-test',{headers:{'Content-Type':'application/pdf','Content-Disposition':'attachment; filename=preview.pdf'}});}});
+ const file=await api.download('/admin/legacy/html-pdf/preview',{method:'POST',data:{html:'<p>中文报告</p>'}});assert.equal(request.options.method,'POST');assert.equal(request.options.headers.Authorization,'Bearer test-token');assert.equal(request.options.headers['Content-Type'],'application/json');assert.equal(JSON.parse(request.options.body).html,'<p>中文报告</p>');assert.equal(file.filename,'preview.pdf');
+});

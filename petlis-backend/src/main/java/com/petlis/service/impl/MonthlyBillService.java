@@ -102,7 +102,7 @@ public class MonthlyBillService {
     }
 
     public Map<String, Object> get(long id) {
-        var rows = store.jdbc().queryForList("SELECT b.*,GREATEST(DATEDIFF(CURDATE(),b.due_date),0) AS overdueDays,b.due_amount-b.paid_amount AS outstandingAmount FROM lin_monthly_bill b WHERE b.id=?", id);
+        var rows = store.jdbc().queryForList("SELECT b.*,GREATEST(DATEDIFF(IF(b.status='SETTLED',DATE(b.settled_at),CURDATE()),b.due_date),0) AS overdueDays,b.due_amount-b.paid_amount AS outstandingAmount FROM lin_monthly_bill b WHERE b.id=?", id);
         if (rows.isEmpty()) throw new BusinessException(404, "账单不存在");
         Map<String, Object> bill = rows.get(0);
         authorizeRead(bill);
@@ -129,7 +129,7 @@ public class MonthlyBillService {
         if (month != null && !month.isBlank()) { where.append(" AND b.period_start=?"); args.add(YearMonth.parse(month).atDay(1)); }
         if (status != null && !status.isBlank()) { where.append(" AND b.status=?"); args.add(status); }
         if (arrears) where.append(" AND b.status<>'SETTLED' AND b.due_amount>b.paid_amount");
-        return store.page("SELECT COUNT(*)" + where, "SELECT b.*,GREATEST(DATEDIFF(CURDATE(),b.due_date),0) AS overdueDays,b.due_amount-b.paid_amount AS outstandingAmount" + where + " ORDER BY b.id DESC", page, size, args.toArray());
+        return store.page("SELECT COUNT(*)" + where, "SELECT b.*,GREATEST(DATEDIFF(IF(b.status='SETTLED',DATE(b.settled_at),CURDATE()),b.due_date),0) AS overdueDays,b.due_amount-b.paid_amount AS outstandingAmount" + where + " ORDER BY b.id DESC", page, size, args.toArray());
     }
 
     @Transactional
@@ -137,7 +137,7 @@ public class MonthlyBillService {
         Map<String, Object> bill = lock(id);
         authorizeReconcile(bill);
         String status = bill.get("status").toString();
-        if (!Set.of("PENDING_RECONCILIATION", "DISPUTED").contains(status)) throw new BusinessException(409, "仅待对账或异议账单可执行对账操作");
+        if (!Set.of("PENDING_RECONCILIATION", "DISPUTED", "OVERDUE").contains(status) || "OVERDUE".equals(status) && bill.get("reconciled_at")!=null) throw new BusinessException(409, "仅尚未完成双边对账的账单可执行对账操作");
         CurrentActor actor = access.current();
         if ("DISPUTE".equals(action)) {
             if (reason == null || reason.isBlank()) throw new BusinessException("请填写账单异议原因");
@@ -145,7 +145,7 @@ public class MonthlyBillService {
         } else if ("CONFIRM".equals(action)) {
             if (actor.hasRole(PlatformRole.HOSPITAL_ADMIN) && !actor.isAdmin()) store.jdbc().update("UPDATE lin_monthly_bill SET hospital_reconciled_by=?,hospital_reconciled_at=NOW() WHERE id=?", actor.userId(), id);
             else store.jdbc().update("UPDATE lin_monthly_bill SET laboratory_reconciled_by=?,laboratory_reconciled_at=NOW() WHERE id=?", actor.userId(), id);
-            store.jdbc().update("UPDATE lin_monthly_bill SET status=IF(hospital_reconciled_at IS NOT NULL AND laboratory_reconciled_at IS NOT NULL,'RECONCILED','PENDING_RECONCILIATION'),reconciled_at=IF(hospital_reconciled_at IS NOT NULL AND laboratory_reconciled_at IS NOT NULL,NOW(),NULL) WHERE id=?", id);
+            store.jdbc().update("UPDATE lin_monthly_bill SET status=IF(due_date<CURDATE(),'OVERDUE',IF(hospital_reconciled_at IS NOT NULL AND laboratory_reconciled_at IS NOT NULL,'RECONCILED','PENDING_RECONCILIATION')),reconciled_at=IF(hospital_reconciled_at IS NOT NULL AND laboratory_reconciled_at IS NOT NULL,NOW(),NULL) WHERE id=?", id);
         } else throw new BusinessException("对账动作仅支持 CONFIRM 或 DISPUTE");
         store.jdbc().queryForObject("SELECT status FROM lin_monthly_bill WHERE id=?", String.class, id);
         audits.record("MONTHLY_BILL_" + action, "MONTHLY_BILL", id, bill, Map.of("action", action), reason);
@@ -182,6 +182,7 @@ public class MonthlyBillService {
         store.jdbc().update("UPDATE lin_monthly_bill SET status='OVERDUE',last_overdue_reminded_at=NOW() WHERE id=?", id);
         notifications.emitForOrder(orderId, null,
                 "order", "bill:" + id + ":overdue", "医院月结账单待结清", "账单 #" + id + " 尚未结清，请尽快对账结算。", "pages/mine/mine");
+        audits.record("MONTHLY_BILL_OVERDUE_REMINDER","MONTHLY_BILL",id,bill,Map.of("status","OVERDUE","businessKey","bill:"+id+":overdue"),"手动逾期提醒，每账单一次");
     }
 
     private Map<String, Object> lock(long id) {

@@ -236,10 +236,10 @@ public class PaymentServiceImpl implements PaymentService {
         payment.setNotifyTime(new Date());
         order.setIsPayMoney(1);
         order.setSampleStatus(OrderStatusEnum.WAITING_REPORT.getCode());
-        notifications.order(order.getListDiagnosisProjectId(),order.getCreateSampleId(),OrderStatusEnum.WAITING_REPORT.getCode());
         weChatPaymentRepository.save(payment);
-        projectRepository.save(order);
+        projectRepository.saveAndFlush(order);
         couponService.consume(payment.getOrderId());
+        notifications.order(order.getListDiagnosisProjectId(),order.getCreateSampleId(),OrderStatusEnum.WAITING_REPORT.getCode());
         return true;
     }
 

@@ -1,7 +1,13 @@
 <view class="page">
   <view wx:if="{{error}}" class="error petlis-empty"><image class="empty-icon" src="/assets/icons/brand-empty.png" mode="aspectFit" /><view class="petlis-empty-text">{{error}}</view><button class="petlis-btn petlis-btn-outline" bindtap="load">重试</button></view>
   <view wx:if="{{account}}">
-    <view class="card petlis-list-card"><view>我的余额（元）</view><view class="balance">{{account.balance}}</view><view class="hint">个人余额与医院月结账户分开记录。</view></view>
+    <view class="card petlis-list-card"><view>个人钱包（元）</view><view class="balance">{{account.balance}}</view><view class="hint">个人钱包与医院资金池分别记账，医院月结账单另行核算。</view></view>
+    <view wx:for="{{hospitalWallets}}" wx:key="hospitalId" class="card petlis-list-card">
+      <view>医院资金池（元）</view><view class="meta">{{item.hospitalName}}</view>
+      <view class="balance">{{item.balance===null?'待核实':item.balance}}</view>
+      <button class="petlis-btn petlis-btn-outline" data-id="{{item.hospitalId}}" bindtap="openHospitalFund">查看医院资金流水</button>
+    </view>
+    <view wx:if="{{hospitalFundsError}}" class="card petlis-list-card"><view class="hint">医院资金暂时无法加载：{{hospitalFundsError}}</view><button class="petlis-btn petlis-btn-outline" bindtap="load">重试</button></view>
     <view class="card petlis-list-card"><view>可用积分</view><view class="balance">{{account.points}}</view></view>
     <view class="card petlis-list-card">
       <view wx:for="{{links}}" wx:key="page" class="nav" data-page="{{item.page}}" bindtap="open">

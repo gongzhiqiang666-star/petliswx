@@ -71,7 +71,7 @@ class DashboardPrintServiceTest {
 
     @Test void reportPrintUsesTheExistingLowercaseDetailInfoKey() {
         PrintService service = new PrintService(store, access, audits);
-        when(store.one(contains("lin_lb_diagnosisdetail_info"), eq(81))).thenReturn(Map.of("detailId", 81, "orderId", 8, "hospitalId", 7, "laboratoryId", 2, "settlementMode", "cash", "paid", 1, "sampleStatus", 3, "result", "中文结果"));
+        when(store.one(contains("lin_lb_diagnosisdetail_info"), eq(81))).thenReturn(Map.ofEntries(Map.entry("detailId",81),Map.entry("orderId",8),Map.entry("hospitalId",7),Map.entry("laboratoryId",2),Map.entry("settlementMode","cash"),Map.entry("paid",1),Map.entry("sampleStatus",3),Map.entry("result","中文结果"),Map.entry("active",1),Map.entry("voided",0),Map.entry("managed",0)));
         service.report(81);
         verify(store).one(contains("i.diagnosisdetail_id"), eq(81));
     }

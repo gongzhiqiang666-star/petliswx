@@ -1,0 +1,636 @@
+{
+  "scope": "read-only local templates; isolated real Chrome; network denied except local harness",
+  "editor": "Tiptap 3.33.0 experimental inline hierarchy",
+  "adoptionApproved": false,
+  "browserVersion": "156.0.8078.80",
+  "blockedRequests": 0,
+  "layoutMode": true,
+  "canvasWidth": 800,
+  "externalAssetsPermitted": false,
+  "documents": 706,
+  "evaluated": 706,
+  "passed": 696,
+  "rejected": 10,
+  "errors": 0,
+  "textChanged": 8,
+  "contentTextChanged": 0,
+  "tableWhitespaceOnlyChanges": 8,
+  "textFormatsEquivalent": 706,
+  "textFormatsChanged": 0,
+  "structurePassedButTextFormatsChanged": 0,
+  "layoutChecked": 706,
+  "layoutEquivalent": 706,
+  "layoutChanged": 0,
+  "layoutPending": 0,
+  "externalImagesDeferred": 688,
+  "dataImagesFailed": 0,
+  "errorSummary": [],
+  "layoutSamples": [],
+  "layoutProperties": {},
+  "textChanges": [
+    {
+      "documentIndex": 3,
+      "sourceLength": 1597,
+      "outputLength": 1595,
+      "commonPrefixLength": 390,
+      "commonSuffixLength": 439,
+      "sourceChangeKinds": {
+        "space": 57,
+        "non-breaking-space": 69,
+        "punctuation": 94,
+        "number": 6,
+        "letter": 537,
+        "other": 5
+      },
+      "outputChangeKinds": {
+        "non-breaking-space": 69,
+        "punctuation": 94,
+        "number": 6,
+        "space": 55,
+        "letter": 537,
+        "other": 5
+      },
+      "tableStructuralWhitespaceEquivalent": true,
+      "breakAwareTextEquivalent": false,
+      "documentParserTextEqualsFragment": true,
+      "documentParserTextLength": 1597,
+      "sourcePre": [],
+      "outputPre": [],
+      "sourceContext": {
+        "path": [
+          "table"
+        ],
+        "previousSibling": null,
+        "offsetWithinNode": 0,
+        "nodeLength": 1,
+        "siblings": [
+          {
+            "kind": "text",
+            "textLength": 1,
+            "firstTextChildLength": null
+          },
+          {
+            "kind": "tbody",
+            "textLength": 487,
+            "firstTextChildLength": null
+          }
+        ]
+      },
+      "outputContext": {
+        "path": [
+          "span",
+          "p",
+          "td",
+          "tr",
+          "tbody",
+          "table"
+        ],
+        "previousSibling": null,
+        "offsetWithinNode": 0,
+        "nodeLength": 1,
+        "siblings": [
+          {
+            "kind": "text",
+            "textLength": 1,
+            "firstTextChildLength": null
+          }
+        ]
+      }
+    },
+    {
+      "documentIndex": 54,
+      "sourceLength": 2552,
+      "outputLength": 2550,
+      "commonPrefixLength": 581,
+      "commonSuffixLength": 772,
+      "sourceChangeKinds": {
+        "space": 246,
+        "non-breaking-space": 214,
+        "punctuation": 107,
+        "number": 11,
+        "letter": 616,
+        "other": 5
+      },
+      "outputChangeKinds": {
+        "non-breaking-space": 214,
+        "punctuation": 107,
+        "number": 11,
+        "space": 244,
+        "letter": 616,
+        "other": 5
+      },
+      "tableStructuralWhitespaceEquivalent": true,
+      "breakAwareTextEquivalent": false,
+      "documentParserTextEqualsFragment": true,
+      "documentParserTextLength": 2552,
+      "sourcePre": [],
+      "outputPre": [],
+      "sourceContext": {
+        "path": [
+          "table"
+        ],
+        "previousSibling": null,
+        "offsetWithinNode": 0,
+        "nodeLength": 1,
+        "siblings": [
+          {
+            "kind": "text",
+            "textLength": 1,
+            "firstTextChildLength": null
+          },
+          {
+            "kind": "tbody",
+            "textLength": 929,
+            "firstTextChildLength": null
+          }
+        ]
+      },
+      "outputContext": {
+        "path": [
+          "span",
+          "p",
+          "td",
+          "tr",
+          "tbody",
+          "table"
+        ],
+        "previousSibling": null,
+        "offsetWithinNode": 0,
+        "nodeLength": 1,
+        "siblings": [
+          {
+            "kind": "text",
+            "textLength": 1,
+            "firstTextChildLength": null
+          }
+        ]
+      }
+    },
+    {
+      "documentIndex": 111,
+      "sourceLength": 2881,
+      "outputLength": 2879,
+      "commonPrefixLength": 580,
+      "commonSuffixLength": 937,
+      "sourceChangeKinds": {
+        "space": 310,
+        "non-breaking-space": 278,
+        "punctuation": 111,
+        "number": 13,
+        "letter": 647,
+        "other": 5
+      },
+      "outputChangeKinds": {
+        "non-breaking-space": 278,
+        "punctuation": 111,
+        "number": 13,
+        "space": 308,
+        "letter": 647,
+        "other": 5
+      },
+      "tableStructuralWhitespaceEquivalent": true,
+      "breakAwareTextEquivalent": false,
+      "documentParserTextEqualsFragment": true,
+      "documentParserTextLength": 2881,
+      "sourcePre": [],
+      "outputPre": [],
+      "sourceContext": {
+        "path": [
+          "table"
+        ],
+        "previousSibling": null,
+        "offsetWithinNode": 0,
+        "nodeLength": 1,
+        "siblings": [
+          {
+            "kind": "text",
+            "textLength": 1,
+            "firstTextChildLength": null
+          },
+          {
+            "kind": "tbody",
+            "textLength": 1094,
+            "firstTextChildLength": null
+          }
+        ]
+      },
+      "outputContext": {
+        "path": [
+          "span",
+          "p",
+          "td",
+          "tr",
+          "tbody",
+          "table"
+        ],
+        "previousSibling": null,
+        "offsetWithinNode": 0,
+        "nodeLength": 1,
+        "siblings": [
+          {
+            "kind": "text",
+            "textLength": 1,
+            "firstTextChildLength": null
+          }
+        ]
+      }
+    },
+    {
+      "documentIndex": 146,
+      "sourceLength": 1483,
+      "outputLength": 1481,
+      "commonPrefixLength": 1259,
+      "commonSuffixLength": 177,
+      "sourceChangeKinds": {
+        "space": 2,
+        "letter": 22,
+        "punctuation": 10,
+        "number": 9,
+        "other": 3,
+        "non-breaking-space": 1
+      },
+      "outputChangeKinds": {
+        "letter": 22,
+        "punctuation": 10,
+        "number": 9,
+        "other": 3,
+        "non-breaking-space": 1
+      },
+      "tableStructuralWhitespaceEquivalent": true,
+      "breakAwareTextEquivalent": false,
+      "documentParserTextEqualsFragment": true,
+      "documentParserTextLength": 1483,
+      "sourcePre": [],
+      "outputPre": [],
+      "sourceContext": {
+        "path": [
+          "table"
+        ],
+        "previousSibling": null,
+        "offsetWithinNode": 0,
+        "nodeLength": 1,
+        "siblings": [
+          {
+            "kind": "text",
+            "textLength": 1,
+            "firstTextChildLength": null
+          },
+          {
+            "kind": "tbody",
+            "textLength": 35,
+            "firstTextChildLength": null
+          }
+        ]
+      },
+      "outputContext": {
+        "path": [
+          "span",
+          "p",
+          "td",
+          "tr",
+          "tbody",
+          "table"
+        ],
+        "previousSibling": null,
+        "offsetWithinNode": 0,
+        "nodeLength": 2,
+        "siblings": [
+          {
+            "kind": "text",
+            "textLength": 2,
+            "firstTextChildLength": null
+          }
+        ]
+      }
+    },
+    {
+      "documentIndex": 288,
+      "sourceLength": 2867,
+      "outputLength": 2837,
+      "commonPrefixLength": 420,
+      "commonSuffixLength": 283,
+      "sourceChangeKinds": {
+        "space": 210,
+        "letter": 1358,
+        "non-breaking-space": 90,
+        "punctuation": 219,
+        "number": 265,
+        "other": 22
+      },
+      "outputChangeKinds": {
+        "letter": 1358,
+        "non-breaking-space": 90,
+        "punctuation": 219,
+        "space": 180,
+        "number": 265,
+        "other": 22
+      },
+      "tableStructuralWhitespaceEquivalent": true,
+      "breakAwareTextEquivalent": false,
+      "documentParserTextEqualsFragment": true,
+      "documentParserTextLength": 2867,
+      "sourcePre": [],
+      "outputPre": [],
+      "sourceContext": {
+        "path": [
+          "table"
+        ],
+        "previousSibling": null,
+        "offsetWithinNode": 0,
+        "nodeLength": 1,
+        "siblings": [
+          {
+            "kind": "text",
+            "textLength": 1,
+            "firstTextChildLength": null
+          },
+          {
+            "kind": "colgroup",
+            "textLength": 4,
+            "firstTextChildLength": null
+          },
+          {
+            "kind": "tbody",
+            "textLength": 507,
+            "firstTextChildLength": null
+          }
+        ]
+      },
+      "outputContext": {
+        "path": [
+          "strong",
+          "span",
+          "p",
+          "td",
+          "tr",
+          "tbody",
+          "table"
+        ],
+        "previousSibling": null,
+        "offsetWithinNode": 0,
+        "nodeLength": 32,
+        "siblings": [
+          {
+            "kind": "text",
+            "textLength": 32,
+            "firstTextChildLength": null
+          }
+        ]
+      }
+    },
+    {
+      "documentIndex": 292,
+      "sourceLength": 7865,
+      "outputLength": 7801,
+      "commonPrefixLength": 420,
+      "commonSuffixLength": 434,
+      "sourceChangeKinds": {
+        "space": 752,
+        "letter": 4755,
+        "number": 590,
+        "non-breaking-space": 284,
+        "punctuation": 583,
+        "other": 46,
+        "tab": 1
+      },
+      "outputChangeKinds": {
+        "letter": 4755,
+        "number": 590,
+        "space": 688,
+        "non-breaking-space": 284,
+        "punctuation": 583,
+        "other": 46,
+        "tab": 1
+      },
+      "tableStructuralWhitespaceEquivalent": true,
+      "breakAwareTextEquivalent": false,
+      "documentParserTextEqualsFragment": true,
+      "documentParserTextLength": 7865,
+      "sourcePre": [],
+      "outputPre": [],
+      "sourceContext": {
+        "path": [
+          "table"
+        ],
+        "previousSibling": null,
+        "offsetWithinNode": 0,
+        "nodeLength": 1,
+        "siblings": [
+          {
+            "kind": "text",
+            "textLength": 1,
+            "firstTextChildLength": null
+          },
+          {
+            "kind": "colgroup",
+            "textLength": 5,
+            "firstTextChildLength": null
+          },
+          {
+            "kind": "tbody",
+            "textLength": 306,
+            "firstTextChildLength": null
+          }
+        ]
+      },
+      "outputContext": {
+        "path": [
+          "span",
+          "p",
+          "td",
+          "tr",
+          "tbody",
+          "table"
+        ],
+        "previousSibling": null,
+        "offsetWithinNode": 0,
+        "nodeLength": 9,
+        "siblings": [
+          {
+            "kind": "text",
+            "textLength": 9,
+            "firstTextChildLength": null
+          }
+        ]
+      }
+    },
+    {
+      "documentIndex": 301,
+      "sourceLength": 3811,
+      "outputLength": 3799,
+      "commonPrefixLength": 419,
+      "commonSuffixLength": 1111,
+      "sourceChangeKinds": {
+        "space": 239,
+        "letter": 1536,
+        "non-breaking-space": 212,
+        "punctuation": 183,
+        "number": 106,
+        "other": 5
+      },
+      "outputChangeKinds": {
+        "letter": 1536,
+        "space": 227,
+        "non-breaking-space": 212,
+        "punctuation": 183,
+        "number": 106,
+        "other": 5
+      },
+      "tableStructuralWhitespaceEquivalent": true,
+      "breakAwareTextEquivalent": false,
+      "documentParserTextEqualsFragment": true,
+      "documentParserTextLength": 3811,
+      "sourcePre": [],
+      "outputPre": [],
+      "sourceContext": {
+        "path": [
+          "table"
+        ],
+        "previousSibling": null,
+        "offsetWithinNode": 0,
+        "nodeLength": 1,
+        "siblings": [
+          {
+            "kind": "text",
+            "textLength": 1,
+            "firstTextChildLength": null
+          },
+          {
+            "kind": "colgroup",
+            "textLength": 5,
+            "firstTextChildLength": null
+          },
+          {
+            "kind": "tbody",
+            "textLength": 140,
+            "firstTextChildLength": null
+          }
+        ]
+      },
+      "outputContext": {
+        "path": [
+          "strong",
+          "span",
+          "p",
+          "td",
+          "tr",
+          "tbody",
+          "table"
+        ],
+        "previousSibling": null,
+        "offsetWithinNode": 0,
+        "nodeLength": 9,
+        "siblings": [
+          {
+            "kind": "text",
+            "textLength": 9,
+            "firstTextChildLength": null
+          }
+        ]
+      }
+    },
+    {
+      "documentIndex": 306,
+      "sourceLength": 1341,
+      "outputLength": 1333,
+      "commonPrefixLength": 428,
+      "commonSuffixLength": 310,
+      "sourceChangeKinds": {
+        "space": 70,
+        "letter": 336,
+        "punctuation": 84,
+        "non-breaking-space": 69,
+        "number": 42,
+        "other": 2
+      },
+      "outputChangeKinds": {
+        "letter": 336,
+        "space": 62,
+        "punctuation": 84,
+        "non-breaking-space": 69,
+        "number": 42,
+        "other": 2
+      },
+      "tableStructuralWhitespaceEquivalent": true,
+      "breakAwareTextEquivalent": false,
+      "documentParserTextEqualsFragment": true,
+      "documentParserTextLength": 1341,
+      "sourcePre": [],
+      "outputPre": [],
+      "sourceContext": {
+        "path": [
+          "table",
+          "div"
+        ],
+        "previousSibling": null,
+        "offsetWithinNode": 0,
+        "nodeLength": 1,
+        "siblings": [
+          {
+            "kind": "text",
+            "textLength": 1,
+            "firstTextChildLength": null
+          },
+          {
+            "kind": "colgroup",
+            "textLength": 3,
+            "firstTextChildLength": null
+          },
+          {
+            "kind": "tbody",
+            "textLength": 201,
+            "firstTextChildLength": null
+          }
+        ]
+      },
+      "outputContext": {
+        "path": [
+          "strong",
+          "span",
+          "p",
+          "td",
+          "tr",
+          "tbody",
+          "table",
+          "div"
+        ],
+        "previousSibling": null,
+        "offsetWithinNode": 0,
+        "nodeLength": 9,
+        "siblings": [
+          {
+            "kind": "text",
+            "textLength": 9,
+            "firstTextChildLength": null
+          }
+        ]
+      }
+    }
+  ],
+  "fontSamples": [],
+  "formatTransitions": {},
+  "formatTransitionNonWhitespace": {},
+  "formatChanges": {},
+  "missing": {
+    "attribute.span.microsoft": 12,
+    "attribute.span.yahei": 12,
+    "attribute.span.ui": 12,
+    "attribute.span.font-size:": 12,
+    "attribute.span.color:": 12,
+    "attribute.span.rgb": 12,
+    "attribute.span.0": 12,
+    "attribute.span.background-color:": 12,
+    "attribute.span.rgba": 12,
+    "attribute.span.font-weight:": 12,
+    "attribute.span.font-style:": 12,
+    "attribute.span.normal": 12,
+    "attribute.span.text-decoration:": 12,
+    "attribute.span.none": 12,
+    "attribute.span.12px": 8,
+    "attribute.span.bold": 8,
+    "attribute.span.14px": 4
+  },
+  "inputStage": "original PHP decodeUnicode edit-view output",
+  "originalDisplaySourceHash": "938bac0c43a307e4939e2d9d6a377d5a909578c7edd2505ddc6bbc1e6e16a19c",
+  "javaDisplayParity": null
+}

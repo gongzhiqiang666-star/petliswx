@@ -40,7 +40,8 @@
     "pages/security/security",
     "pages/bills/bills",
     "pages/bill-detail/bill-detail",
-    "pages/bill-arrears/bill-arrears"
+    "pages/bill-arrears/bill-arrears",
+    "pages/hospital-history/hospital-history"
   ],
   "window": {
     "backgroundTextStyle": "light",
@@ -62,7 +63,7 @@
       },
       {
         "pagePath": "pages/order-select-pet/order-select-pet",
-        "text": "检测",
+        "text": "送检",
         "iconPath": "assets/icons/tab/test.png",
         "selectedIconPath": "assets/icons/tab/test-active.png"
       },

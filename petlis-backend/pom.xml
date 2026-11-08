@@ -26,6 +26,8 @@
         <mapstruct.version>1.6.3</mapstruct.version>
         <hutool.version>5.8.29</hutool.version>
         <springdoc.version>2.7.0</springdoc.version>
+        <!-- Align POI 6 logging API and Boot logging bridges. -->
+        <log4j2.version>2.26.1</log4j2.version>
     </properties>
 
     <dependencies>
@@ -53,6 +55,11 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-cache</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-mail</artifactId>
         </dependency>
 
         <!-- Database -->
@@ -144,6 +151,18 @@
             <artifactId>pdfbox</artifactId>
             <version>3.0.3</version>
             <exclusions><exclusion><groupId>commons-logging</groupId><artifactId>commons-logging</artifactId></exclusion></exclusions>
+        </dependency>
+
+        <!-- Legacy transaction register imports: binary XLS, OOXML and quoted CSV. -->
+        <dependency>
+            <groupId>org.apache.poi</groupId>
+            <artifactId>poi-ooxml</artifactId>
+            <version>6.0.0</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-csv</artifactId>
+            <version>1.14.1</version>
         </dependency>
 
         <!-- Test Dependencies -->

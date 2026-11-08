@@ -1,3 +1,4 @@
+const analytics = require('../../utils/analytics')
 // pages/order-add-pet/order-add-pet.js
 const api = require('../../api/index.js');
 const ageCalculator = require('../../utils/age-calculator.js');
@@ -6,6 +7,7 @@ const app = getApp();
 Page({
   data: {
     petId: null,
+    clinicalInfo:{medicalHistory:'',clinicalSymptoms:'',diagnosis:'',medication:''},
     draftSaving:false,
     petInfo: null,
     displayAge: '',
@@ -58,7 +60,14 @@ Page({
   },
 
   onLoad(options) {
+    analytics.track('order_step','sample','view')
+    const savedForm=wx.getStorageSync('order_form') || {};
+    if(String(savedForm.petId)===String(options.petId) && savedForm.clinicalInfo)this.setData({clinicalInfo:savedForm.clinicalInfo});
     const petId = options.petId;
+    const existing=wx.getStorageSync('order_form') || {};
+    const projectFirst=existing.flowVersion==='project-first' && String(existing.petId)===String(petId);
+    this.setData({projectFirst});
+
     if(options.draft){const form=wx.getStorageSync('order_form');if(form && String(form.petId)===String(petId)){this.setData({petId:form.petId,petInfo:form.petInfo,sampleInfo:form.sampleInfo,deliveryInfo:form.deliveryInfo,otherInfo:form.otherInfo,animalInfo:form.animalInfo,displayAge:ageCalculator.formatAgeDisplay(form.animalInfo.age),selectedSampleTypeName:form.sampleInfo.sampleTypeName || '',resubmitting:!!form.resubmitOrderId});return;}}
 
     if (!petId) {
@@ -74,10 +83,13 @@ Page({
 
     this.setData({ petId });
     this.loadPetDetail(petId);
+    if(projectFirst && existing.sampleInfo){
+      this.setData({sampleInfo:existing.sampleInfo,deliveryInfo:existing.deliveryInfo || this.data.deliveryInfo,otherInfo:existing.otherInfo || this.data.otherInfo,animalInfo:existing.animalInfo || this.data.animalInfo,selectedSampleTypeName:existing.sampleInfo.sampleTypeName || ''});
+    }
 
     // 清除旧的订单表单缓存，确保数据新鲜
     try {
-      wx.removeStorageSync('order_form');
+      if(!projectFirst)wx.removeStorageSync('order_form');
       console.log('[OrderAddPet] 已清除旧的订单表单缓存');
     } catch (error) {
       console.error('[OrderAddPet] 清除缓存失败:', error);
@@ -86,7 +98,7 @@ Page({
     // 设置采样日期为当天（格式：yyyy-MM-dd）
     const today = this.getTodayDate();
     this.setData({
-      'sampleInfo.collectDt': today
+      'sampleInfo.collectDt': (projectFirst && existing.sampleInfo && existing.sampleInfo.collectDt) || today
     });
     console.log('[OrderAddPet] 采样日期已设置为当天:', today);
   },
@@ -95,6 +107,8 @@ Page({
    * 页面显示时检查是否有从样本类型选择页面返回的数据
    * 与宠物新增中的品种选择保持一致的交互方式
    */
+  onClinicalInput(e){const field=e.currentTarget.dataset.field;if(['medicalHistory','clinicalSymptoms','diagnosis','medication'].includes(field))this.setData({['clinicalInfo.'+field]:e.detail.value})},
+
   onShow() {
     if(this.data.selectedSpecies){const x=this.data.selectedSpecies;this.setData({'petInfo.infoAnimalId':x.infoAnimalId,'petInfo.infoAnimalName':x.animalName,'petInfo.infoVarietyId':null,'petInfo.infoVarietyName':'','petInfo.infoVarietyNameEn':'',selectedSpecies:null});}
     if(this.data.selectedBreed){const x=this.data.selectedBreed;this.setData({'petInfo.infoVarietyId':x.iid,'petInfo.infoVarietyName':x.varietyCn,'petInfo.infoVarietyNameEn':x.varietyEn,selectedBreed:null});}
@@ -112,6 +126,21 @@ Page({
     }
   },
 
+  onUnload() { this.onHide() },
+
+  onHide() {
+    // Preserve in-progress input when returning to change project selection.
+    // This is local form state, not a claim that a server draft was saved.
+    if(!this.data.projectFirst || !this.data.petInfo)return;
+    const current=wx.getStorageSync('order_form') || {};
+    if(String(current.petId)!==String(this.data.petId))return;
+    wx.setStorageSync('order_form',{
+      ...current,petInfo:this.data.petInfo,
+      sampleInfo:{...this.data.sampleInfo,sampleTypeName:this.data.selectedSampleTypeName},
+      deliveryInfo:this.data.deliveryInfo,otherInfo:this.data.otherInfo,clinicalInfo:this.data.clinicalInfo,animalInfo:this.data.animalInfo
+    });
+  },
+
   async loadPetDetail(petId) {
     try {
       wx.showLoading({ title: '加载中...' });
@@ -123,12 +152,12 @@ Page({
 
       this.setData({
         petInfo,
-        'deliveryInfo.masterName': masterName,
-        'deliveryInfo.masterNameEn': masterNameEn
+        'deliveryInfo.masterName': this.data.deliveryInfo.masterName || masterName,
+        'deliveryInfo.masterNameEn': this.data.deliveryInfo.masterNameEn || masterNameEn
       });
 
       // 如果有出生日期，自动计算年龄
-      if (petInfo.birthday) {
+      if (petInfo.birthday && !this.data.animalInfo.age) {
         const age = ageCalculator.calculateAgeForPicker(petInfo.birthday);
         if (age) {
           this.setData({
@@ -439,7 +468,7 @@ Page({
   },
   async saveDraft(){
     if(this._savingDraft || !this.data.petInfo)return;this._savingDraft=true;this.setData({draftSaving:true});
-    try{await require('../../utils/drafts').save({...wx.getStorageSync('order_form'),petId:this.data.petId,petInfo:this.data.petInfo,sampleInfo:{...this.data.sampleInfo,sampleTypeName:this.data.selectedSampleTypeName},deliveryInfo:this.data.deliveryInfo,otherInfo:this.data.otherInfo,animalInfo:this.data.animalInfo});wx.showToast({title:'草稿已保存'})}catch(e){wx.showModal({title:'保存草稿失败',content:e.message,showCancel:false})}finally{this._savingDraft=false;this.setData({draftSaving:false})}
+    try{await require('../../utils/drafts').save({...wx.getStorageSync('order_form'),petId:this.data.petId,petInfo:this.data.petInfo,sampleInfo:{...this.data.sampleInfo,sampleTypeName:this.data.selectedSampleTypeName},deliveryInfo:this.data.deliveryInfo,otherInfo:this.data.otherInfo,clinicalInfo:this.data.clinicalInfo,animalInfo:this.data.animalInfo});wx.showToast({title:'草稿已保存'})}catch(e){wx.showModal({title:'保存草稿失败',content:e.message,showCancel:false})}finally{this._savingDraft=false;this.setData({draftSaving:false})}
   },
   onSelectTestItems() {
     // 所有提交（含驳回重提）都必须先补全后端必填的宠物资料，提前提示而不是返回 400。
@@ -466,13 +495,14 @@ Page({
       },
       deliveryInfo: this.data.deliveryInfo,
       otherInfo: this.data.otherInfo,
+      clinicalInfo:this.data.clinicalInfo,
       animalInfo: this.data.animalInfo  // 新增: 包含年龄和体重
     };
 
     wx.setStorageSync('order_form', formData);
 
     wx.navigateTo({
-      url: '/pages/order-test-items/order-test-items'
+      url: formData.flowVersion==='project-first'?'/pages/order-preview/order-preview':'/pages/order-test-items/order-test-items'
     });
   }
 });

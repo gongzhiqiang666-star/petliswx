@@ -269,9 +269,10 @@ public class OrderServiceImpl implements OrderService {
         saveItems(project,request,quote,count);
         project.setTestFee(quote.payableAmount().doubleValue());
         project.setSampleStatus(OrderStatusEnum.PENDING_REVIEW.getCode());
-        projectRepository.save(project);
+        projectRepository.saveAndFlush(project);
         var hospital=hospitalRepository.findById(project.getInfoHospitalId()).orElseThrow(()->new BusinessException("医院不存在"));
         couponService.reviseOrder(orderId,quote,Integer.valueOf(1).equals(hospital.getPayType()));
+        orderWorkflows.reviseClinical(request,orderId,project.getInfoHospitalId());
         if(request.getDraftId()!=null)drafts.consume(request.getDraftId(),request.getDraftVersion());
         notifications.order(orderId,getCurrentUserId(),0);
     }
@@ -478,7 +479,7 @@ public class OrderServiceImpl implements OrderService {
      * @param targetStatus 目标状态
      */
     @Override
-    @Transactional(rollbackOn = Exception.class)
+    @org.springframework.transaction.annotation.Transactional(rollbackFor=Exception.class,isolation=org.springframework.transaction.annotation.Isolation.READ_COMMITTED)
     public void updateOrderStatus(Integer orderId, Integer targetStatus) {
         log.info("更新申请状态, 申请单ID: {}, 目标状态: {}", orderId, targetStatus);
 
@@ -536,9 +537,10 @@ public class OrderServiceImpl implements OrderService {
 
         if (currentStatusEnum == OrderStatusEnum.PENDING_REVIEW && targetStatusEnum == OrderStatusEnum.WAITING_REPORT
                 && project.getTestFee()!=null && project.getTestFee()==0d) project.setIsPayMoney(1);
-        if(currentStatusEnum!=OrderStatusEnum.PENDING_REVIEW || targetStatusEnum==OrderStatusEnum.CANCELLED)notifications.order(orderId,project.getCreateSampleId(),targetStatus);
         project.setSampleStatus(targetStatus);
-        projectRepository.save(project);
+        // Flush before ReviewService reads the legacy trigger notification for cross-system deduplication.
+        projectRepository.saveAndFlush(project);
+        if(currentStatusEnum!=OrderStatusEnum.PENDING_REVIEW || targetStatusEnum==OrderStatusEnum.CANCELLED)notifications.order(orderId,project.getCreateSampleId(),targetStatus);
 
         log.info("申请状态更新成功, 申请单ID: {}, 状态: {} -> {}",
                 orderId, currentStatusEnum.getDescription(), targetStatusEnum.getDescription());
@@ -564,7 +566,14 @@ public class OrderServiceImpl implements OrderService {
         String keyword=request.getKeyword()==null || request.getKeyword().isBlank()?null:request.getKeyword().trim();
         if(keyword!=null && keyword.length()>100)throw new BusinessException("搜索词过长");
         var pageable=PageRequest.of(page,size,Sort.by(Sort.Direction.DESC,"createDt").and(Sort.by(Sort.Direction.DESC,"listDiagnosisProjectId")));
-        return projectRepository.findPagedOrders(hospitalId,status,request.getStartDate(),request.getEndDate(),keyword,pageable).map(orderMapper::toResponse);
+        var orderPage=projectRepository.findPagedOrders(hospitalId,status,request.getStartDate(),request.getEndDate(),keyword,pageable);
+        java.util.Set<String> refundedIds=new java.util.HashSet<>();
+        if(!orderPage.isEmpty()) {
+            var ids=orderPage.getContent().stream().map(order->String.valueOf(order.getListDiagnosisProjectId())).toList();
+            String placeholders=String.join(",",java.util.Collections.nCopies(ids.size(),"?"));
+            for(var row:store.jdbc().queryForList("SELECT DISTINCT resource_id FROM lin_audit_record WHERE resource_type='MOCK_REFUND' AND action='MOCK_REFUND_COMPLETED' AND resource_id IN ("+placeholders+")",ids.toArray())) refundedIds.add(String.valueOf(row.get("resource_id")));
+        }
+        return orderPage.map(order->{var response=orderMapper.toResponse(order);response.setRefunded(refundedIds.contains(String.valueOf(order.getListDiagnosisProjectId())));return response;});
 
     }
 
@@ -608,6 +617,10 @@ public class OrderServiceImpl implements OrderService {
 
         var extensions=store.jdbc().queryForList("SELECT e.laboratory_id,l.name,e.user_coupon_id,e.review_reason FROM lin_order_extension e JOIN lin_laboratory l ON l.id=e.laboratory_id WHERE e.order_id=?",orderId);
         if(!extensions.isEmpty()){var e=extensions.get(0);response.setLaboratoryId(((Number)e.get("laboratory_id")).intValue());response.setLaboratoryName((String)e.get("name"));response.setUserCouponId(e.get("user_coupon_id")==null?null:((Number)e.get("user_coupon_id")).longValue());response.setReviewReason((String)e.get("review_reason"));}
+        var clinical=store.jdbc().queryForList("SELECT pet_id,medical_history,clinical_symptoms,diagnosis,medication FROM lin_order_clinical WHERE order_id=? AND hospital_id=?",orderId,currentHospitalId);
+        if(!clinical.isEmpty()){var c=clinical.get(0);response.setPetId(c.get("pet_id")==null?null:((Number)c.get("pet_id")).intValue());response.setMedicalHistory((String)c.get("medical_history"));response.setClinicalSymptoms((String)c.get("clinical_symptoms"));response.setDiagnosis((String)c.get("diagnosis"));response.setMedication((String)c.get("medication"));}
+        var refunds=store.jdbc().queryForList("SELECT created_at,reason,CAST(JSON_UNQUOTE(JSON_EXTRACT(after_json,'$.amount')) AS DECIMAL(18,2)) AS amount FROM lin_audit_record WHERE resource_type='MOCK_REFUND' AND action='MOCK_REFUND_COMPLETED' AND resource_id=? ORDER BY id DESC LIMIT 1",String.valueOf(orderId));
+        if(!refunds.isEmpty()) {var refund=refunds.get(0);response.setRefunded(true);response.setRefundMock(true);response.setRefundReason((String)refund.get("reason"));response.setRefundAmount(refund.get("amount")==null?null:new BigDecimal(refund.get("amount").toString()));var time=refund.get("created_at");if(time instanceof Date date)response.setRefundedAt(date);else if(time instanceof java.time.LocalDateTime local)response.setRefundedAt(java.sql.Timestamp.valueOf(local));}
         response.setCanResubmit(java.util.Objects.equals(project.getCreateSampleId(),getCurrentUserId()) && (Integer.valueOf(1).equals(project.getSampleStatus()) || Integer.valueOf(-2).equals(project.getSampleStatus())) && !Integer.valueOf(1).equals(project.getIsPayMoney()));
         response.setReviewHistory(store.jdbc().queryForList("SELECT id,title,message,created_at AS createdAt FROM lin_notification_event WHERE user_id=? AND event_type='order' AND JSON_EXTRACT(template_data,'$.orderId')=? ORDER BY id DESC LIMIT 20",getCurrentUserId(),orderId));
 

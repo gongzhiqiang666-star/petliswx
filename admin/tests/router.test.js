@@ -31,3 +31,13 @@ test('legacy reviewer 仅能进入审核中心且不能获得管理员页面', (
   assert.equal(isRouteAllowed('organizations', reviewer), false);
   assert.equal(isRouteAllowed('dashboard', reviewer), false);
 });
+
+test('迁移字典入口同时受管理员角色和服务端能力开关控制',()=>{
+ const admin={roles:['ADMIN']};assert.equal(isRouteAllowed('legacyDictionaries',admin),false);assert.equal(isRouteAllowed('legacyDictionaries',admin,{dictionaries:false}),false);assert.equal(isRouteAllowed('legacyDictionaries',admin,{dictionaries:true}),true);assert.equal(isRouteAllowed('legacyDictionaries',{roles:['DOCTOR']},{dictionaries:true}),false)
+});
+
+test('原网银核价仅管理员且业务开关开启可见',()=>{assert.equal(isRouteAllowed('legacyBankPayments',{roles:['ADMIN']},{bankPayments:true}),true);assert.equal(isRouteAllowed('legacyBankPayments',{roles:['ADMIN']},{}),false);assert.equal(isRouteAllowed('legacyBankPayments',{roles:['DOCTOR']},{bankPayments:true}),false);});
+
+test('客户账单核对仅管理员且显式开关开启可见',()=>{assert.equal(isRouteAllowed('legacyCustomerViews',{roles:['ADMIN']},{legacyCustomerViews:true}),true);assert.equal(isRouteAllowed('legacyCustomerViews',{roles:['ADMIN']},{}),false);assert.equal(isRouteAllowed('legacyCustomerViews',{roles:['DOCTOR']},{legacyCustomerViews:true}),false);});
+
+test('医院草稿入口同时要求医院角色和原草稿开关，不给实验员或审核员开放',()=>{for(const role of ['ADMIN','DOCTOR','HOSPITAL_ADMIN']){assert.equal(isRouteAllowed('hospitalDrafts',{roles:[role]},{legacyHospitalDrafts:true}),true);assert.equal(isRouteAllowed('hospitalDrafts',{roles:[role]},{}),false)}for(const role of ['LAB_STAFF','REVIEWER','COURIER'])assert.equal(isRouteAllowed('hospitalDrafts',{roles:[role]},{legacyHospitalDrafts:true}),false)})

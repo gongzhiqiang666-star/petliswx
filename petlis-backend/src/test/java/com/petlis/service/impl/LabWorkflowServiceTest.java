@@ -58,6 +58,19 @@ class LabWorkflowServiceTest {
     }
 
     @Test
+    void assignmentReturnsThePendingRetestRatherThanHistoricalInitialTask() {
+        when(store.one(contains("lin_shipment"), eq(8))).thenReturn(Map.of("laboratory_id", 2));
+        when(jdbc.queryForObject(contains("lin_user_role"), eq(Boolean.class), eq(5), eq(2))).thenReturn(true);
+        when(store.one(contains("SELECT * FROM lin_lab_task"), eq(8), eq(2))).thenReturn(Map.of("id", 12L));
+        when(jdbc.update(contains("WHERE id=? AND status='RECEIVED'"), eq(5), eq("PCR-2"), eq(12L))).thenReturn(1);
+        var child = new java.util.HashMap<String,Object>(task("TESTING"));
+        child.put("id", 12L); child.put("task_type", "RETEST");
+        when(store.one(contains("WHERE t.id=?"), eq(12L))).thenReturn(child);
+        assertEquals(12L, ((Number)service.assign(8, 5, "PCR-2").get("id")).longValue());
+        verify(notifications).emit(eq(5), eq("order"), eq("lab-task:12:ASSIGNED"), anyString(), anyString(), anyString());
+    }
+
+    @Test
     void resultsMustCoverEveryActiveDetailAndContainCompleteFields() {
         when(store.one(contains("lin_lab_task"), eq(11L))).thenReturn(task("TESTING"));
         when(jdbc.queryForList(contains("lin_lb_diagnosisdetail"), eq(Integer.class), eq(8))).thenReturn(List.of(21, 22));
@@ -141,5 +154,35 @@ class LabWorkflowServiceTest {
         assertThrows(BusinessException.class, () -> service.enterResults(11,
                 new LabWorkflowService.ResultsCommand(List.of())));
         verify(store, never()).insert(contains("lin_test_result"), any(Object[].class));
+    }
+    @Test void reassignPreservesStartTimeAndAuditsBeforeAndAfter() throws Exception {
+        var before=new java.util.LinkedHashMap<String,Object>(task("TESTING"));before.put("version",3);
+        when(store.one(contains("WHERE t.id=?"),eq(11L))).thenReturn(before);
+        when(jdbc.queryForObject(contains("lin_user_role"),eq(Boolean.class),eq(6),eq(2))).thenReturn(true);
+        when(jdbc.update(contains("WHERE id=? AND version=?"),eq(6),eq("PCR-2"),eq(11L),eq(3))).thenReturn(1);
+        when(store.encode(any())).thenAnswer(call->new com.fasterxml.jackson.databind.ObjectMapper().writeValueAsString(call.getArgument(0)));
+        var result=service.reassign(11,6,"PCR-2",3,"人员交接");
+        assertEquals(6,result.get("assigned_to"));assertEquals(4,result.get("version"));
+        verify(store).insert(contains("before_json,after_json"),eq(5),eq("LAB_TASK_REASSIGNED"),eq("11"),contains("\"assignedTo\":5"),contains("\"assignedTo\":6"),eq("人员交接"));
+        verify(notifications).emit(eq(6),eq("order"),eq("lab-task:11:REASSIGNED:4:new"),anyString(),anyString(),anyString());
+        verify(notifications).emit(eq(5),eq("order"),eq("lab-task:11:REASSIGNED:4:old"),anyString(),anyString(),anyString());
+    }
+    @Test void reassignRejectsStaleVersionRecordedResultAndForeignAssignee() {
+        var before=new java.util.LinkedHashMap<String,Object>(task("TESTING"));before.put("version",3);
+        when(store.one(contains("WHERE t.id=?"),eq(11L))).thenReturn(before);
+        assertThrows(BusinessException.class,()->service.reassign(11,6,"PCR-2",2,"交接"));
+        assertThrows(BusinessException.class,()->service.reassign(11,6,"PCR-2",3,"交接"));
+        when(jdbc.queryForObject(contains("lin_user_role"),eq(Boolean.class),eq(6),eq(2))).thenReturn(true);
+        when(jdbc.queryForObject(contains("lin_test_result"),eq(Boolean.class),eq(11L))).thenReturn(true);
+        assertThrows(BusinessException.class,()->service.reassign(11,6,"PCR-2",3,"交接"));
+        before.put("status","RESULT_ENTERED");assertThrows(BusinessException.class,()->service.reassign(11,6,"PCR-2",3,"交接"));
+        verify(jdbc,never()).update(contains("assigned_to"),any(Object[].class));verifyNoInteractions(notifications);
+    }
+    @Test void unchangedAssignmentIsReadOnly() {
+        var before=new java.util.LinkedHashMap<String,Object>(task("TESTING"));before.put("version",3);
+        when(store.one(contains("WHERE t.id=?"),eq(11L))).thenReturn(before);
+        when(jdbc.queryForObject(contains("lin_user_role"),eq(Boolean.class),eq(5),eq(2))).thenReturn(true);
+        service.reassign(11,5,"PCR-1",3,"核对未调整");
+        verify(jdbc,never()).update(contains("assigned_to"),any(Object[].class));verify(store,never()).insert(anyString(),any(Object[].class));verifyNoInteractions(notifications);
     }
 }

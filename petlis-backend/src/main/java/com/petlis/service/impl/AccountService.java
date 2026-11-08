@@ -16,6 +16,7 @@ public class AccountService {
     private final JdbcTemplate jdbc;
     private final ObjectMapper json;
     private final QualificationStorage qualifications;
+    private final QualificationOwnershipService ownership;
 
     public Map<String, Object> summary() {
         int userId = SecurityUtils.getCurrentUserId();
@@ -59,7 +60,7 @@ public class AccountService {
                 """, SecurityUtils.getCurrentUserId(), r.orderNotifications(), r.reportNotifications(), r.invoiceNotifications(), r.newsNotifications(), r.preferredLaboratoryId());
     }
     public record ProfileChange(String nickname, String title, String avatar, Integer hospitalId, List<String> qualificationFiles) { }
-    @Transactional
+    @Transactional(isolation=org.springframework.transaction.annotation.Isolation.READ_COMMITTED)
     public void requestProfileChange(ProfileChange r) {
         if (r.nickname() == null || r.nickname().isBlank() || r.nickname().length()>50 || r.hospitalId()==null || r.title()==null || r.title().length()>100) {
             throw new BusinessException("请完整填写姓名、职称和医院");
@@ -69,11 +70,12 @@ public class AccountService {
         qualifications.validate(r.qualificationFiles());
         int userId = SecurityUtils.getCurrentUserId();
         jdbc.queryForList("SELECT id FROM lin_user WHERE id=? FOR UPDATE", userId);
-        if (Boolean.TRUE.equals(jdbc.queryForObject("SELECT EXISTS(SELECT 1 FROM lin_profile_change WHERE user_id=? AND status='pending')", Boolean.class, userId))) throw new BusinessException("已有待审核资料，请等待审核");
+        ownership.validateOwner(r.qualificationFiles(),userId);
+        if (Boolean.TRUE.equals(jdbc.queryForObject("SELECT EXISTS(SELECT 1 FROM lin_profile_change WHERE user_id=? AND status='pending')", Boolean.class, userId))) throw new BusinessException(409,"已有待审核资料，请等待审核");
         jdbc.update("INSERT INTO lin_profile_change(user_id,requested_data,previous_data) VALUES(?,?,?)",userId,encode(new ProfileChange(r.nickname(),r.title(),r.avatar()==null?java.util.Objects.toString(summary().get("avatar"),""):r.avatar(),r.hospitalId(),r.qualificationFiles())),encode(summary()));
     }
     public List<Map<String,Object>> profileHistory() {
-        return jdbc.queryForList("SELECT id,status,review_reason AS reviewReason,created_at AS createdAt,reviewed_at AS reviewedAt FROM lin_profile_change WHERE user_id=? ORDER BY id DESC LIMIT 100",SecurityUtils.getCurrentUserId());
+        return jdbc.queryForList("SELECT id,status,requested_data AS requestedData,review_reason AS reviewReason,created_at AS createdAt,reviewed_at AS reviewedAt FROM lin_profile_change WHERE user_id=? ORDER BY id DESC LIMIT 100",SecurityUtils.getCurrentUserId());
     }
     private String encode(Object value) {
         try { return json.writeValueAsString(value); }

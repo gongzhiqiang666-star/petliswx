@@ -1,0 +1,112 @@
+{
+  "source": "application/common.php",
+  "sha256": "938bac0c43a307e4939e2d9d6a377d5a909578c7edd2505ddc6bbc1e6e16a19c",
+  "runtime": "existing PHP7.4; original helper; synthetic model adapter only",
+  "rows": [
+    {
+      "input": {
+        "project": {
+          "InfoAnimalAnimalName": "猫",
+          "AnimalType": "短毛",
+          "AnimalName": " 糖 糖 ",
+          "MasterName": "王医生",
+          "UserNO": " ABC "
+        },
+        "override": ""
+      },
+      "output": "猫短毛 糖 糖 （王医生）（ ABC ）的检测报告"
+    },
+    {
+      "input": {
+        "project": {
+          "InfoAnimalAnimalName": "猫",
+          "AnimalType": "短毛",
+          "AnimalName": " 糖 糖 ",
+          "MasterName": "王医生",
+          "UserNO": " ABC "
+        },
+        "override": null
+      },
+      "output": "猫短毛 糖 糖 （王医生）（ ABC ）的检测报告"
+    },
+    {
+      "input": {
+        "project": {
+          "InfoAnimalAnimalName": "猫",
+          "AnimalType": "短毛",
+          "AnimalName": " 糖 糖 ",
+          "MasterName": "王医生",
+          "UserNO": " ABC "
+        },
+        "override": "0"
+      },
+      "output": "猫短毛 糖 糖 （王医生）（ ABC ）的检测报告"
+    },
+    {
+      "input": {
+        "project": {
+          "InfoAnimalAnimalName": "猫",
+          "AnimalType": "短毛",
+          "AnimalName": " 糖 糖 ",
+          "MasterName": "王医生",
+          "UserNO": " ABC "
+        },
+        "override": "0.0"
+      },
+      "output": "0.0"
+    },
+    {
+      "input": {
+        "project": {
+          "InfoAnimalAnimalName": "猫",
+          "AnimalType": "短毛",
+          "AnimalName": " 糖 糖 ",
+          "MasterName": "王医生",
+          "UserNO": " ABC "
+        },
+        "override": ",,自定义,,,"
+      },
+      "output": "自定义"
+    },
+    {
+      "input": {
+        "project": {
+          "InfoAnimalAnimalName": "猫",
+          "AnimalType": "短毛",
+          "AnimalName": " 糖 糖 ",
+          "MasterName": "王医生",
+          "UserNO": " ABC "
+        },
+        "override": " ,保留空格, "
+      },
+      "output": " ,保留空格, "
+    },
+    {
+      "input": {
+        "project": {
+          "InfoAnimalAnimalName": "猫",
+          "AnimalType": "短毛",
+          "AnimalName": " 糖 糖 ",
+          "MasterName": "王医生",
+          "UserNO": " ABC "
+        },
+        "override": "已指定标题"
+      },
+      "output": "已指定标题"
+    },
+    {
+      "input": {
+        "project": {
+          "InfoAnimalAnimalName": null,
+          "AnimalType": "",
+          "AnimalName": ",宠物",
+          "MasterName": "",
+          "UserNO": "X"
+        },
+        "override": ""
+      },
+      "output": "宠物（）（X）的检测报告"
+    }
+  ],
+  "completionClaimed": false
+}

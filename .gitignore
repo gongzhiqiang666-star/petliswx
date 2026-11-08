@@ -17,6 +17,7 @@ miniprogram_npm/
 target/
 dist/
 build/
+admin/assets/legacy-editor.js
 uploads/
 logs/
 *.log
@@ -34,3 +35,10 @@ coverage/
 .vscode/
 .superpowers/
 .venv-assets/
+.gstack/
+
+# Local reference materials; never publish database backups
+docs/database/原数据库备份/
+/docs/*.xlsx
+/docs/微信图片_*.jpg
+/petlis-cost.xlsx

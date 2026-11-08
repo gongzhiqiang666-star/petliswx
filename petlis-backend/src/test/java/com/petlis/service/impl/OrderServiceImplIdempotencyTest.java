@@ -52,7 +52,19 @@ class OrderServiceImplIdempotencyTest {
         when(contracts.hasMonthlyContract(8)).thenReturn(false);
         service.updateOrderStatus(8, 2);
         verify(contracts, never()).reserveCredit(anyInt(), any());
-        verify(projectRepository).save(any());
+        verify(projectRepository).saveAndFlush(any());
+    }
+
+    @Test
+    void cancellationFlushesTriggerBeforeNotificationLooksUpLegacyId() {
+        var project=new com.petlis.entity.business.ListDiagnosisProject();
+        project.setListDiagnosisProjectId(8);project.setSampleStatus(0);project.setCreateSampleId(7);
+        when(reviewPermission.isReviewer()).thenReturn(true);
+        when(projectRepository.findLockedById(8)).thenReturn(Optional.of(project));
+        service.updateOrderStatus(8,4);
+        var ordered=inOrder(projectRepository,notifications);
+        ordered.verify(projectRepository).saveAndFlush(project);
+        ordered.verify(notifications).order(8,7,4);
     }
 
     @Test

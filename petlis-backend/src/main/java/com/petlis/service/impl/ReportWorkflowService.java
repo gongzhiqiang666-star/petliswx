@@ -176,12 +176,73 @@ public class ReportWorkflowService {
         return files.downloadReport(number(report.get("pdf_file_id")).longValue(), workflowId);
     }
 
+    @Transactional(readOnly = true)
+    public Map<String, Object> templates(Integer laboratoryId, Integer infoTestTypeId, String query, String status, int page, int size) {
+        labActor();
+        String from = " FROM lin_report_template t LEFT JOIN lin_lb_infotesttype i ON i.InfoTestTypeId=t.info_test_type_id";
+        StringBuilder where = new StringBuilder(" WHERE 1=1");
+        List<Object> args = new ArrayList<>();
+        if (!access.current().isAdmin()) {
+            where.append(" AND t.laboratory_id IN (SELECT laboratory_id FROM lin_user_role WHERE user_id=? AND role_code='LAB_STAFF' AND is_active=1)");
+            args.add(access.current().userId());
+        }
+        if (laboratoryId != null) { where.append(" AND t.laboratory_id=?"); args.add(laboratoryId); }
+        if (infoTestTypeId != null) { where.append(" AND t.info_test_type_id=?"); args.add(infoTestTypeId); }
+        if (!blank(status)) {
+            if (!List.of("ACTIVE", "ARCHIVED").contains(status)) throw new BusinessException(400, "模板状态无效");
+            where.append(" AND t.status=?"); args.add(status);
+        }
+        if (!blank(query)) {
+            String keyword = query.trim();
+            if (keyword.length() > 100) throw new BusinessException(400, "检索内容不能超过100字");
+            where.append(" AND (LOCATE(?,t.template_name)>0 OR LOCATE(?,t.template_code)>0 OR LOCATE(?,i.TestName)>0)");
+            args.add(keyword); args.add(keyword); args.add(keyword);
+        }
+        return store.page("SELECT COUNT(*)" + from + where,
+                "SELECT t.*,i.TestName AS test_name" + from + where + " ORDER BY t.id DESC", page, size, args.toArray());
+    }
+
+    @Transactional(readOnly = true)
+    public Map<String, Object> templateOptions(Integer laboratoryId) {
+        labActor();
+        var actor = access.current();
+        String scope = actor.isAdmin() ? "" : " AND id IN (SELECT laboratory_id FROM lin_user_role WHERE user_id=? AND role_code='LAB_STAFF' AND is_active=1)";
+        Object[] args = actor.isAdmin() ? new Object[]{} : new Object[]{actor.userId()};
+        var labs = store.jdbc().queryForList("SELECT id,name FROM lin_laboratory WHERE active=1" + scope + " ORDER BY sort_order,id", args);
+        List<Map<String, Object>> items = List.of();
+        if (laboratoryId != null) {
+            access.requireLaboratory(laboratoryId);
+            items = store.jdbc().queryForList("SELECT i.InfoTestTypeId AS id,i.TestName AS name,i.TestNO AS code FROM lin_lab_test lt JOIN lin_lb_infotesttype i ON i.InfoTestTypeId=lt.test_type_id JOIN lin_laboratory l ON l.id=lt.laboratory_id WHERE lt.laboratory_id=? AND l.active=1 AND lt.active=1 AND i.IsActive=1 ORDER BY i.TestName,i.InfoTestTypeId", laboratoryId);
+        }
+        return Map.of("laboratories", labs, "items", items);
+    }
+
+    @Transactional
+    public void archiveTemplate(long id) {
+        labActor();
+        Map<String, Object> initial = store.one("SELECT laboratory_id FROM lin_report_template WHERE id=?", id);
+        int laboratoryId = number(initial.get("laboratory_id")).intValue();
+        access.requireLaboratory(laboratoryId);
+        store.one("SELECT id FROM lin_laboratory WHERE id=? FOR UPDATE", laboratoryId);
+        Map<String, Object> template = store.one("SELECT id,status FROM lin_report_template WHERE id=? AND laboratory_id=? FOR UPDATE", id, laboratoryId);
+        if ("ARCHIVED".equals(template.get("status"))) return;
+        store.jdbc().update("UPDATE lin_report_template SET status='ARCHIVED' WHERE id=?", id);
+        store.insert("INSERT INTO lin_audit_record(actor_user_id,action,resource_type,resource_id,after_json) VALUES(?,'ARCHIVED','REPORT_TEMPLATE',?,?)",
+                access.current().userId(), String.valueOf(id), store.encode(Map.of("status", "ARCHIVED", "laboratoryId", laboratoryId)));
+    }
+
     @Transactional
     public long saveTemplate(int infoTestTypeId, int laboratoryId, String name, String code, String content) {
         labActor();
         if (!access.current().isAdmin()) access.requireLaboratory(laboratoryId);
         if (blank(name) || blank(code) || blank(content)) throw new BusinessException("模板名称、编码和内容不能为空");
-        Long version = store.jdbc().queryForObject("SELECT COALESCE(MAX(version),0)+1 FROM lin_report_template WHERE laboratory_id=? AND template_code=?", Long.class, laboratoryId, code);
+        name = name.trim(); code = code.trim();
+        // A stable parent lock also serializes the very first template version.
+        store.one("SELECT id FROM lin_laboratory WHERE id=? AND active=1 FOR UPDATE", laboratoryId);
+        store.one("SELECT lt.test_type_id FROM lin_lab_test lt JOIN lin_lb_infotesttype i ON i.InfoTestTypeId=lt.test_type_id WHERE lt.laboratory_id=? AND lt.test_type_id=? AND lt.active=1 AND i.IsActive=1", laboratoryId, infoTestTypeId);
+        // Current read after waiting: a prior access query may already have opened a RR snapshot.
+        List<Map<String, Object>> versions = store.jdbc().queryForList("SELECT version FROM lin_report_template WHERE laboratory_id=? AND template_code=? ORDER BY version DESC LIMIT 1 FOR UPDATE", laboratoryId, code);
+        long version = versions.isEmpty() ? 1 : number(versions.get(0).get("version")).longValue() + 1;
         store.jdbc().update("UPDATE lin_report_template SET status='ARCHIVED' WHERE laboratory_id=? AND info_test_type_id=? AND template_code=? AND status='ACTIVE'", laboratoryId, infoTestTypeId, code);
         return store.insert("INSERT INTO lin_report_template(laboratory_id,info_test_type_id,template_name,template_code,content,version,status,created_by) VALUES(?,?,?,?,?,?,'ACTIVE',?)",
                 laboratoryId, infoTestTypeId, name.trim(), code.trim(), content, version, access.current().userId());

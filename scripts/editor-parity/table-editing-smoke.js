@@ -1,0 +1,30 @@
+import assert from 'node:assert/strict';
+export async function tableEditingSmoke(page){
+ const mount=html=>page.evaluate(html=>window.petlisMountEditor(html),html);
+ await mount('<table width="400"><tbody><tr><td width="100">一</td><td width="300">二</td></tr></tbody></table><p>尾</p>');
+ assert.equal(await page.evaluate(()=>window.petlisLiveEditor.view.dom.querySelectorAll('colgroup').length),0,'Live editor must not invent column groups');
+ await mount('<table><colgroup><col width="100"></colgroup><colgroup><col width="300"></colgroup><tbody><tr><td>一</td><td>二</td></tr></tbody></table><p>尾</p>');
+ assert.equal(await page.evaluate(()=>window.petlisLiveEditor.view.dom.querySelectorAll('colgroup').length),2,'Live editor must retain every original column group');
+ await mount('<table><tbody><tr height="40"></tr><tr><td><p>格</p></td></tr></tbody></table><p>尾</p>');
+ const tableState=()=>page.evaluate(()=>{const editor=window.petlisLiveEditor;const root=document.createElement('div');root.innerHTML=editor.getHTML();return {rows:root.querySelector('table').rows.length,firstCells:root.querySelector('tr').cells.length,height:root.querySelector('tr').getAttribute('height'),text:root.querySelector('td').textContent};});
+ assert.equal((await tableState()).firstCells,0);
+ await page.evaluate(()=>{const editor=window.petlisLiveEditor;editor.view.focus();const node=editor.view.dom.querySelector('td p').firstChild,range=document.createRange();range.setStart(node,1);range.collapse(true);const selection=window.getSelection();selection.removeAllRanges();selection.addRange(range);});
+ await page.keyboard.type('X');const after=await tableState();assert.equal(after.firstCells,0,'Typing must not repair a legacy spacer row');assert.equal(after.text,'格X');assert.equal(after.rows,2);assert.equal(after.height,'40');
+ await page.keyboard.press('ControlOrMeta+z');assert.equal((await tableState()).text,'格');assert.equal((await tableState()).firstCells,0);
+ await mount('<table style="width:100%"></table><p>尾</p>');
+ await page.evaluate(()=>{const editor=window.petlisLiveEditor;editor.view.focus();const node=editor.view.dom.querySelector('p').firstChild,range=document.createRange();range.setStart(node,1);range.collapse(true);const selection=window.getSelection();selection.removeAllRanges();selection.addRange(range);});
+ await page.keyboard.type('X');assert.equal(await page.evaluate(()=>{const root=document.createElement('div');root.innerHTML=window.petlisLiveEditor.getHTML();return root.querySelector('table')?.rows.length;}),0,'Typing elsewhere must retain an original empty table');
+ await mount('<table><tbody><tr><td><p>格</p></td></tr></tbody></table><p>尾</p>');
+ assert.equal(await page.evaluate(()=>{const editor=window.petlisLiveEditor;editor.view.focus();let pos;editor.state.doc.descendants((node,p)=>{if(node.isText&&node.text==='格')pos=p;});editor.commands.setTextSelection(pos+1);return editor.commands.addRowAfter();}),true);
+ assert.equal(await page.evaluate(()=>window.petlisLiveEditor.view.dom.querySelector('table').rows.length),2);
+ await page.keyboard.press('ControlOrMeta+z');assert.equal(await page.evaluate(()=>window.petlisLiveEditor.view.dom.querySelector('table').rows.length),1);
+ await mount('<table><tbody><tr height="40"></tr><tr><td><p>格</p></td></tr></tbody></table><p>尾</p>');
+ await page.evaluate(()=>{const editor=window.petlisLiveEditor;editor.view.focus();let pos;editor.state.doc.descendants((node,p)=>{if(node.type.spec.tableRole==='row'&&!node.childCount)pos=p;});editor.commands.setNodeSelection(pos);});
+ await page.keyboard.press('Backspace');assert.equal(await page.evaluate(()=>window.petlisLiveEditor.view.dom.querySelector('table').rows.length),1);
+ await page.keyboard.press('ControlOrMeta+z');assert.equal((await tableState()).firstCells,0);assert.equal((await tableState()).height,'40');assert.equal((await tableState()).rows,2);
+ await mount('<table style="width:100%"></table><p>尾</p>');
+ await page.evaluate(()=>{const editor=window.petlisLiveEditor;editor.view.focus();editor.commands.setNodeSelection(0);});
+ await page.keyboard.press('Backspace');assert.equal(await page.evaluate(()=>window.petlisLiveEditor.view.dom.querySelectorAll('table').length),0);
+ await page.keyboard.press('ControlOrMeta+z');assert.equal(await page.evaluate(()=>window.petlisLiveEditor.view.dom.querySelector('table')?.rows.length),0);
+ return {liveColumnGroupsRetained:true,noGeneratedLiveColumns:true,spacerRowStableDuringTyping:true,emptyTableStableDuringTyping:true,ordinaryRowAddUndo:true,emptyTableSelectDeleteUndo:true,emptyRowSelectDeleteUndo:true};
+}

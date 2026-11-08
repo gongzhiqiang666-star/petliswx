@@ -49,7 +49,7 @@ public class SecurityConfig {
                 // 配置授权规则
                 .authorizeHttpRequests(auth -> auth
                         // 仅支付通知接收微信服务器回调，业务内仍校验签名、金额和商户。
-                        .requestMatchers(org.springframework.http.HttpMethod.POST, "/payment/notify").permitAll()
+                        .requestMatchers(org.springframework.http.HttpMethod.POST, "/payment/notify", "/payment/legacy-bank/notify").permitAll()
                         // 公开接口:认证相关
                         .requestMatchers("/auth/password/change", "/auth/mobile/change", "/auth/wechat/bind").authenticated()
                         .requestMatchers("/auth/**").permitAll()
@@ -59,7 +59,7 @@ public class SecurityConfig {
                         // 公开接口:Swagger UI
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
                         // 公开接口:静态资源(上传的文件)
-                        .requestMatchers("/files/qualifications/**").hasAnyRole("REVIEWER", "ADMIN")
+                        .requestMatchers("/files/qualifications/**").authenticated()
                         .requestMatchers("/uploads/**", "/files/**").permitAll()
                         // 公开接口:健康检查
                         .requestMatchers("/actuator/**").permitAll()
@@ -69,7 +69,9 @@ public class SecurityConfig {
                         .requestMatchers("/admin/catalog/**").hasAnyRole("ADMIN", "LAB_STAFF")
                         .requestMatchers("/admin/**").hasRole("ADMIN")
                         .requestMatchers("/review/**").hasAnyRole("REVIEWER", "ADMIN")
-                        .requestMatchers("/invoices/*/issue", "/invoices/*/reject").hasAnyRole("REVIEWER", "ADMIN")
+                        .requestMatchers("/invoices/*/issue", "/invoices/*/reject", "/invoices/*/file").hasAnyRole("REVIEWER", "ADMIN")
+                        .requestMatchers("/invoices/*/download").hasAnyRole("USER", "REVIEWER", "ADMIN")
+                        .requestMatchers("/orders/hospital-history", "/orders/hospital-history/**").hasAnyRole("USER", "HOSPITAL_ADMIN", "ADMIN")
                         .requestMatchers("/orders/**", "/pets/**", "/reports/**", "/billing/**", "/payment/**", "/pdf/**", "/invoices/**", "/drafts/**", "/account/**", "/wallet/**", "/notifications/**", "/inbox/**").hasRole("USER")
                         // 其他所有接口需要认证
                         .anyRequest().authenticated()

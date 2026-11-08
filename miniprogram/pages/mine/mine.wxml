@@ -82,9 +82,9 @@
       <image class="menu-chevron" src="/assets/icons/brand-chevron-right.png" mode="aspectFit" aria-hidden="true" />
     </view>
 
-    <navigator class="petlis-menu-item menu-item" url="/pages/preferences/preferences" hover-class="menu-item-active" role="listitem button" aria-label="通知偏好">
+    <navigator class="petlis-menu-item menu-item" url="/pages/preferences/preferences" hover-class="menu-item-active" role="listitem button" aria-label="通知与隐私">
       <view class="petlis-icon-badge menu-icon"><image src="/assets/icons/brand-settings.png" mode="aspectFit" aria-hidden="true" /></view>
-      <text class="menu-label">通知偏好</text>
+      <text class="menu-label">通知与隐私</text>
       <image class="menu-chevron" src="/assets/icons/brand-chevron-right.png" mode="aspectFit" aria-hidden="true" />
     </navigator>
 

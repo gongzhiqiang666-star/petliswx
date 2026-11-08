@@ -7,6 +7,7 @@ const { adaptListPage } = require('../../utils/logistics')
 
 Page({
   data: {
+    legacyHistoryEnabled:false,
     activeTab: 'all',
     tabs: [
       { id: 'all', label: '全部' },
@@ -39,7 +40,9 @@ Page({
     this._lastLoadTime = Date.now() // 记录首次加载时间
   },
 
-  onShow() {this.resetAndLoadOrders()},
+  onShow() {this.resetAndLoadOrders();this.loadHistoryCapability()},
+  async loadHistoryCapability(){try{const c=await request.get('/orders/hospital-history/capabilities');this.setData({legacyHistoryEnabled:c.legacyHospitalHistory===true})}catch(_){this.setData({legacyHistoryEnabled:false})}},
+  openHospitalHistory(){if(this.data.legacyHistoryEnabled)wx.navigateTo({url:'/pages/hospital-history/hospital-history'})},
   onUnload(){clearTimeout(this._searchTimer)},
   query(page){const tab=this.data.activeTab;return {page,size:this.data.pageSize,...(tab==='all'?{}:{status:tab==='draft'?-2:Number(tab)}),keyword:this.data.searchKeyword,startDate:this.data.startDate,endDate:this.data.endDate}},
   dateChange(e){this.setData({[e.currentTarget.dataset.key]:e.detail.value});this.resetAndLoadOrders()},
@@ -236,7 +239,7 @@ Page({
       logistics: this.data.logisticsByOrder[order.orderId] || null,
       collectDt: this.formatDate(order.collectDt),
       createDtText: this.formatDateTime(order.createDt),
-      statusLabel: this.getStatusLabel(order.sampleStatus)
+      statusLabel: this.getStatusLabel(order.sampleStatus)+(order.refunded?' · 已退款':'')
     }))
 
     // 只设置必要的数据

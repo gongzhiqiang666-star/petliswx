@@ -45,6 +45,19 @@ class OrderWorkflowServiceTest {
     }
 
     @Test
+    void clinicalRevisionValidatesPetHospitalAndPreservesOmittedLegacyFields() {
+        var request=request(null);request.setPetId(12);service.reviseClinical(request,8,1);
+        verify(store).one(contains("info_hospital_id=?"),eq(12),eq(1));
+        verify(jdbc).update(contains("pet_id=COALESCE(VALUES(pet_id),pet_id)"),eq(8),eq(12),eq(1),eq("既往病史"),eq("咳嗽"),eq("疑似气管炎"),eq("无"),any(),eq(7));
+    }
+    @Test
+    void oversizedClinicalTextRejectsBeforeWriting() {
+        var request=request(null);request.setDiagnosis("x".repeat(2001));
+        assertEquals(400,assertThrows(BusinessException.class,()->service.reviseClinical(request,8,1)).getCode());
+        verify(jdbc,never()).update(anyString(),any(Object[].class));
+    }
+
+    @Test
     void idempotentReplayReturnsOriginalOrderWithoutCreatingAnother() {
         when(store.one(contains("lin_order_idempotency"), eq(7), eq("ORDER_CREATE"), eq("same-key")))
                 .thenReturn(Map.of("order_id", 8, "request_hash", service.requestHash(request("same-key")), "status", "COMPLETED"));
@@ -66,4 +79,9 @@ class OrderWorkflowServiceTest {
         verify(jdbc).update(contains("INSERT INTO lin_order_clinical"), eq(8), isNull(), eq(1),
                 eq("既往病史"), eq("咳嗽"), eq("疑似气管炎"), eq("无"), any(), eq(7));
     }
+    @Test void completionUsesFullCompositeIdempotencyIdentityInsteadOfScanningOtherRequests() {
+        service.complete(request("distinct-key"),8,1);
+        verify(jdbc).update(contains("WHERE user_id=? AND operation='ORDER_CREATE' AND idempotency_key=?"),eq(8),any(),eq("COMPLETED"),eq(7),eq("distinct-key"));
+    }
+
 }

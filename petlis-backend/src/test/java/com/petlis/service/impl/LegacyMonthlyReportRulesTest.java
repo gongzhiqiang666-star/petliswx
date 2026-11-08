@@ -1,0 +1,6 @@
+package com.petlis.service.impl;
+import org.junit.jupiter.api.Test;import java.math.BigDecimal;import java.time.LocalDate;import java.util.*;import static org.junit.jupiter.api.Assertions.*;
+class LegacyMonthlyReportRulesTest {
+ @Test void originalUppercaseRetainsUnusualFenSuffixAndSizeMessage(){for(String[] sample:new String[][]{{"0","零元整"},{"0.01","壹分整"},{"0.10","壹角整"},{"1.00","壹元整"},{"12.50","壹拾贰元伍角整"},{"1001.01","壹仟零壹元零壹分整"},{"100000000","金额太大，请检查"}})assertEquals(sample[1],LegacyMonthlyReportRules.upperMoney(new BigDecimal(sample[0])),sample[0]);}
+ @Test void renderingIncludesAllRowsButChargesOnlyUnpaidNonExemptAndKeepsMissingLink(){var rows=List.<Map<String,Object>>of(Map.of("IsCheckPass",0,"PayStatus2",0,"TestPrice","12.50","TestName","Unpaid"),Map.of("IsCheckPass",0,"PayStatus2",2,"TestPrice","7.25","TestName","Paid"),Map.of("IsCheckPass",1,"PayStatus2",0,"TestPrice","50.00","TestName","Exempt"));String html=LegacyMonthlyReportRules.render("{结算单位}|{结算月份}|{起始时间}|{结束时间}|{总费用}|{总费用大写}|{表格内容}|{用户付款链接}","合成医院",1,LocalDate.of(2024,2,1),LocalDate.of(2024,2,29),rows,null,LocalDate.of(2024,3,1));for(String value:List.of("合成医院","2024年02月","2024-02-29","12.50","壹拾贰元伍角整","Unpaid","Paid","Exempt","{用户付款链接}"))assertTrue(html.contains(value),value);}
+}

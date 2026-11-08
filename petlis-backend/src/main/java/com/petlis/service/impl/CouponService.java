@@ -36,16 +36,16 @@ public class CouponService {
   if(resolution.contracted())for(int id:ids){var item=resolution.items().get(id);prices.put(id,item.finalPrice());contractPriceIds.put(id,item.id());total=total.add(item.finalPrice());}
   else for(int id:ids){var row=store.one("SELECT COALESCE(lt.price,(SELECT p.price FROM lin_lb_infotesttype_price p WHERE p.InfoTestTypeid=t.InfoTestTypeId AND p.IsActive=1 ORDER BY p.IID DESC LIMIT 1),t.Price) AS price FROM lin_lab_test lt JOIN lin_lb_infotesttype t ON t.InfoTestTypeId=lt.test_type_id WHERE lt.laboratory_id=? AND lt.test_type_id=? AND lt.active=1 AND t.IsActive=1",laboratoryId,id);BigDecimal price=new BigDecimal(row.get("price").toString()).setScale(2,java.math.RoundingMode.HALF_UP);if(price.signum()<0)throw new BusinessException("检测项目价格无效");prices.put(id,price);total=total.add(price);}
   BigDecimal discount=BigDecimal.ZERO;
-  if(couponId!=null){var c=store.one("SELECT uc.status,c.amount,c.minimum_amount,c.laboratory_id,(c.active=1 AND c.starts_at<=NOW() AND c.expires_at>=NOW()) AS usable FROM lin_user_coupon uc JOIN lin_coupon c ON c.id=uc.coupon_id WHERE uc.id=? AND uc.user_id=?"+(lock?" FOR UPDATE":""),couponId,SecurityUtils.getCurrentUserId());boolean usable=c.get("usable") instanceof Boolean b?b:((Number)c.get("usable")).intValue()==1;if(!"available".equals(c.get("status")) || !usable)throw new BusinessException("优惠券不可用或已过期");if(c.get("laboratory_id")!=null && ((Number)c.get("laboratory_id")).intValue()!=laboratoryId)throw new BusinessException("优惠券不适用于该实验室");if(total.compareTo(new BigDecimal(c.get("minimum_amount").toString()))<0)throw new BusinessException("未达到优惠券使用门槛");discount=new BigDecimal(c.get("amount").toString()).min(total);}
+  if(couponId!=null){var c=store.one("SELECT uc.status,c.amount,c.minimum_amount,c.laboratory_id,(c.active=1 AND c.starts_at<=NOW() AND c.expires_at>=NOW()) AS usable FROM lin_user_coupon uc JOIN lin_coupon c ON c.id=uc.coupon_id WHERE uc.id=? AND uc.user_id=?"+(lock?" FOR UPDATE":""),couponId,SecurityUtils.getCurrentUserId());boolean usable=c.get("usable") instanceof Boolean b?b:((Number)c.get("usable")).intValue()==1;if(!"available".equals(c.get("status")))throw new BusinessException(409,"优惠券已被预留或使用，请重新选择");if(!usable)throw new BusinessException(400,"优惠券未生效、已过期或已停用");if(c.get("laboratory_id")!=null && ((Number)c.get("laboratory_id")).intValue()!=laboratoryId)throw new BusinessException(400,"优惠券不适用于该实验室");if(total.compareTo(new BigDecimal(c.get("minimum_amount").toString()))<0)throw new BusinessException(400,"未达到优惠券使用门槛");discount=new BigDecimal(c.get("amount").toString()).min(total);}
   return new Quote(laboratoryId,prices,total,discount,total.subtract(discount),couponId,resolution.contracted()?resolution.contractId():null,resolution.contracted()?"MONTHLY".equals(resolution.settlementType()):null,contractPriceIds);
  }
  @Transactional public void recordOrder(int orderId,Quote q,boolean monthly){
-  if(q.userCouponId()!=null && store.jdbc().update("UPDATE lin_user_coupon SET status='reserved',order_id=? WHERE id=? AND user_id=? AND status='available'",orderId,q.userCouponId(),SecurityUtils.getCurrentUserId())!=1)throw new BusinessException("优惠券已被使用，请重新核价");
+  if(q.userCouponId()!=null && store.jdbc().update("UPDATE lin_user_coupon SET status='reserved',order_id=? WHERE id=? AND user_id=? AND status='available'",orderId,q.userCouponId(),SecurityUtils.getCurrentUserId())!=1)throw new BusinessException(409,"优惠券已被使用，请重新核价");
   store.jdbc().update("INSERT INTO lin_order_extension(order_id,user_id,laboratory_id,user_coupon_id,original_amount,discount_amount,payable_amount,settlement_mode) VALUES(?,?,?,?,?,?,?,?)",orderId,SecurityUtils.getCurrentUserId(),q.laboratoryId(),q.userCouponId(),q.originalAmount(),q.discountAmount(),q.payableAmount(),Boolean.TRUE.equals(q.monthly()) || q.monthly()==null && monthly?"monthly":"cash");
   recordPricingSnapshot(orderId,q,monthly);
  }
  @Transactional public void reviseOrder(int orderId,Quote q,boolean monthly){
-  if(q.userCouponId()!=null && store.jdbc().update("UPDATE lin_user_coupon SET status='reserved',order_id=? WHERE id=? AND user_id=? AND status='available'",orderId,q.userCouponId(),SecurityUtils.getCurrentUserId())!=1)throw new BusinessException("优惠券已被使用，请重新核价");
+  if(q.userCouponId()!=null && store.jdbc().update("UPDATE lin_user_coupon SET status='reserved',order_id=? WHERE id=? AND user_id=? AND status='available'",orderId,q.userCouponId(),SecurityUtils.getCurrentUserId())!=1)throw new BusinessException(409,"优惠券已被使用，请重新核价");
   store.jdbc().update("INSERT INTO lin_order_extension(order_id,user_id,laboratory_id,user_coupon_id,original_amount,discount_amount,payable_amount,settlement_mode) VALUES(?,?,?,?,?,?,?,?) ON DUPLICATE KEY UPDATE laboratory_id=VALUES(laboratory_id),user_coupon_id=VALUES(user_coupon_id),original_amount=VALUES(original_amount),discount_amount=VALUES(discount_amount),payable_amount=VALUES(payable_amount),settlement_mode=VALUES(settlement_mode),review_status='pending',review_reason='',reviewed_by=NULL,reviewed_at=NULL",orderId,SecurityUtils.getCurrentUserId(),q.laboratoryId(),q.userCouponId(),q.originalAmount(),q.discountAmount(),q.payableAmount(),Boolean.TRUE.equals(q.monthly()) || q.monthly()==null && monthly?"monthly":"cash");
   recordPricingSnapshot(orderId,q,monthly);
  }
@@ -59,11 +59,22 @@ public class CouponService {
  @Transactional public void release(int orderId){store.jdbc().update("UPDATE lin_user_coupon SET status='available',order_id=NULL WHERE order_id=? AND status='reserved'",orderId);}
  public record Coupon(String name,BigDecimal amount,BigDecimal minimumAmount,Integer laboratoryId,java.time.LocalDateTime startsAt,java.time.LocalDateTime expiresAt){}
  @Transactional public long create(Coupon r){permission.requireReviewer();validateCoupon(r);long id=store.insert("INSERT INTO lin_coupon(name,amount,minimum_amount,laboratory_id,starts_at,expires_at) VALUES(?,?,?,?,?,?)",r.name(),r.amount(),r.minimumAmount(),r.laboratoryId(),r.startsAt(),r.expiresAt());audit("COUPON_CREATED","COUPON",id,null);return id;}
- @Transactional public long grant(long couponId,int userId,String requestKey){
+ @Transactional(isolation=org.springframework.transaction.annotation.Isolation.READ_COMMITTED) public long grant(long couponId,int userId,String requestKey){
   permission.requireReviewer();if(requestKey==null || !requestKey.matches("[A-Za-z0-9_-]{8,100}"))throw new BusinessException("发放请求编号无效");
-  var existing=store.jdbc().queryForList("SELECT resource_id FROM lin_audit_record WHERE action='COUPON_GRANTED' AND request_id=?",requestKey);if(!existing.isEmpty())return Long.parseLong(existing.get(0).get("resource_id").toString());
-  store.one("SELECT id FROM lin_user WHERE id=? FOR UPDATE",userId);
-  existing=store.jdbc().queryForList("SELECT resource_id FROM lin_audit_record WHERE action='COUPON_GRANTED' AND request_id=?",requestKey);if(!existing.isEmpty())return Long.parseLong(existing.get(0).get("resource_id").toString());
+  if(couponId<=0 || userId<=0)throw new BusinessException(400,"优惠券或收券账号无效");
+  int actor=SecurityUtils.getCurrentUserId();
+  // Serialize this operator's request namespace before any replay lookup; no stale RR snapshot.
+  store.one("SELECT id FROM lin_user WHERE id=? FOR UPDATE",actor);
+  var existing=store.jdbc().queryForList("SELECT a.resource_id,uc.user_id,uc.coupon_id FROM lin_audit_record a LEFT JOIN lin_user_coupon uc ON uc.id=CAST(a.resource_id AS UNSIGNED) WHERE a.actor_user_id=? AND a.action='COUPON_GRANTED' AND a.resource_type='USER_COUPON' AND a.request_id=? FOR UPDATE",actor,requestKey);
+  if(!existing.isEmpty()){
+   if(existing.size()!=1)throw new BusinessException(409,"原发放请求存在多条记录，请核对发放日志");
+   var prior=existing.get(0);
+   if(!(prior.get("user_id") instanceof Number target) || target.intValue()!=userId || !(prior.get("coupon_id") instanceof Number coupon) || coupon.longValue()!=couponId)
+    throw new BusinessException(409,"该发放请求号已用于其他优惠券或收券账号");
+   return Long.parseLong(prior.get("resource_id").toString());
+  }
+  // Existence validation only: target balances are not changed by a grant, stock is locked below.
+  if(userId!=actor)store.one("SELECT id FROM lin_user WHERE id=?",userId);
   store.one("SELECT id FROM lin_coupon WHERE id=? AND active=1 AND expires_at>NOW() FOR UPDATE",couponId);
   var stockRow=store.one("SELECT config_value FROM lin_operational_config WHERE config_key=? AND scope_type='GLOBAL' AND scope_id=0 FOR UPDATE","coupon-stock:"+couponId);
   int[] stock=readStock(stockRow.get("config_value").toString());if(stock[1]>=stock[0])throw new BusinessException("优惠券库存不足");

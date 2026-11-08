@@ -33,6 +33,10 @@ public class LabWorkflowController {
         return Result.success(laboratory.assign(orderId, command.assigneeId(), command.equipmentCode()));
     }
 
+    @PostMapping("/{id}/reassign")
+    public Result<Map<String,Object>> reassign(@PathVariable long id,@RequestBody ReassignCommand command) {return Result.success(laboratory.reassign(id,command.assigneeId(),command.equipmentCode(),command.version(),command.reason()));}
+    public record ReassignCommand(int assigneeId,String equipmentCode,Integer version,String reason) { }
+
     @PostMapping("/{id}/results")
     public Result<Long> results(@PathVariable long id, @RequestBody LabWorkflowService.ResultsCommand command) {
         return Result.success(laboratory.enterResults(id, command));

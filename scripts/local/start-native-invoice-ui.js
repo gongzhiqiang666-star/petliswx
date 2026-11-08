@@ -1,0 +1,12 @@
+// Switch only this Petlis QA simulator through normal logout/password login; secrets never printed.
+const fs=require('fs'),assert=require('assert/strict'),root=process.env.HOME+'/.local/share/petlis',a=require(root+'/tools/miniprogram-qa/node_modules/miniprogram-automator'),f=JSON.parse(fs.readFileSync(root+'/qa/native-invoice-fixture-private.json')),old=JSON.parse(fs.readFileSync(root+'/simulator-fixture.json'));
+(async()=>{const m=await a.connect({wsEndpoint:'ws://127.0.0.1:9420'});const wait=async fn=>{for(let i=0;i<60;i++){if(await fn())return;await new Promise(r=>setTimeout(r,200))}throw Error('Native invoice page not ready')};try{
+ const current=await m.evaluate(()=>(getApp().globalData.userInfo||{}).username);assert.ok([old.account,f.account].includes(current),'Unexpected simulator account');
+ let p;if(current===old.account){await m.evaluate(async()=>{await getApp().logout();return true});await wait(async()=>{p=await m.currentPage();return p.path==='pages/login/login' && await p.$('input[data-field="account"]')});
+ await(await p.$('input[data-field="account"]')).trigger('input',{value:f.account});await(await p.$('input[data-field="password"]')).trigger('input',{value:f.password});await(await p.$('.login-button')).tap();
+ await wait(async()=>{p=await m.currentPage();return p.path==='pages/home/home'});}
+ p=await m.navigateTo('/pages/invoices/invoices');await wait(async()=>!(await p.data('busy')) && (await p.data('orders')).some(x=>Number(x.orderId)===f.orderId));
+ const add=await p.$('.card-actions button:last-child');assert.ok(add);await add.tap();await wait(async()=>await p.data('adding'));
+ const system=await m.systemInfo(),modal=await p.$('.petlis-modal'),size=await modal.size(),off=await modal.offset();
+ const stage=process.env.PETLIS_QA_INVOICE_STAGE||'before';assert.ok(['before','after'].includes(stage));const result={orderId:f.orderId,nativeLoginSucceeded:true,paidOrderEligible:true,viewportHeight:system.windowHeight,modalTop:off.top,modalHeight:size.height,modalFits:off.top>=0 && off.top+size.height<=system.windowHeight};fs.writeFileSync(root+'/qa/native-invoice-ui-start-'+stage+'.json',JSON.stringify(result,null,2));await new Promise(r=>setTimeout(r,650));await m.screenshot({path:root+'/qa/native-invoice-profile-'+stage+'.png'});console.log(JSON.stringify(result));
+}finally{await m.disconnect()}})().catch(e=>{console.error(e.stack);process.exitCode=1})

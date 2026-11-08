@@ -1,0 +1,10 @@
+{
+  "scope": "synthetic layout control fixtures only",
+  "identicalLayoutAccepted": true,
+  "widthChangeDetected": true,
+  "borderColorChangeDetected": true,
+  "inlineDataImageDecoded": true,
+  "fullLayoutApproved": false,
+  "browserVersion": "156.0.8078.80",
+  "blockedRequests": 0
+}
