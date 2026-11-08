@@ -54,13 +54,13 @@ public class LegacyMainOrderService {
  }
  @Transactional(readOnly=true) public Map<String,Object> list(Integer status,int page,int size){
   if(!policy(false)[0])throw new BusinessException(409,"原主单尚未开启");if(page<0||size<1||size>100)throw new BusinessException(400,"分页无效");
-  var groups=listGroups();var args=new ArrayList<Object>(groups);
-  String scope=groups.isEmpty()?"1=0":"o.CreateDataTypeIId IN ("+String.join(",",Collections.nCopies(groups.size(),"?"))+")";
-  String from=" FROM lin_lb_listdiagnosisproject o LEFT JOIN lin_lb_infohospital h ON h.InfoHospitalId=o.InfoHospitalId LEFT JOIN lin_order_extension e ON e.order_id=o.ListDiagnosisProjectId WHERE "+scope+" AND o.SampleStatus>=0";
-  if(status!=null){from+=" AND o.SampleStatus=?";args.add(status);}
+  var visible=visibleScope(status);var args=new ArrayList<Object>(visible.args());
+  String from=" FROM lin_lb_listdiagnosisproject o LEFT JOIN lin_lb_infohospital h ON h.InfoHospitalId=o.InfoHospitalId LEFT JOIN lin_order_extension e ON e.order_id=o.ListDiagnosisProjectId WHERE "+visible.where();
   String columns="SELECT o.ListDiagnosisProjectId AS orderId,o.UserNO AS orderNo,COALESCE(h.HospitalName,'未指定医院') AS hospitalName,o.AnimalName AS animalName,o.TestFee AS amount,o.SampleStatus AS status,o.IsPayMoney AS paid,o.CreateDt AS createdAt,e.settlement_mode AS settlementMode,EXISTS(SELECT 1 FROM lin_audit_record r WHERE r.resource_type='MOCK_REFUND' AND r.action='MOCK_REFUND_COMPLETED' AND CAST(r.resource_id AS UNSIGNED)=o.ListDiagnosisProjectId) AS refunded";
   return store.page("SELECT COUNT(*)"+from,columns+from+" ORDER BY o.ListDiagnosisProjectId DESC",page,size,args.toArray());
  }
+ record VisibleScope(String where,List<Object> args){}
+ VisibleScope visibleScope(Integer status){if(!policy(false)[0])throw new BusinessException(409,"原主单尚未开启");var groups=listGroups();var args=new ArrayList<Object>(groups);String where=(groups.isEmpty()?"1=0":"o.CreateDataTypeIId IN ("+String.join(",",Collections.nCopies(groups.size(),"?"))+")")+" AND o.SampleStatus>=0";if(status!=null){where+=" AND o.SampleStatus=?";args.add(status);}return new VisibleScope(where,List.copyOf(args));}
  private List<Long> listGroups(){
   var rows=store.jdbc().queryForList("SELECT config_value FROM lin_operational_config WHERE config_key='legacy-main-orders' AND scope_type='GLOBAL' AND scope_id=0 AND status='ACTIVE'");
   com.fasterxml.jackson.databind.JsonNode config;

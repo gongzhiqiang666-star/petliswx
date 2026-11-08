@@ -1,3 +1,4 @@
+import {downloadVisibleOrderDetails} from '../components/legacy-order-export.js';
 import {openLegacyAdoption} from '../components/legacy-order-adoption.js';
 import {openSampleNotice} from '../components/legacy-sample-notice.js';
 import {openLegacyMainOrder} from '../components/legacy-main-order.js';
@@ -13,11 +14,12 @@ export async function render(container, context) {
   try { detailEnabled = (await api.request('/admin/legacy/order-details/capabilities')).orderDetails === true; } catch (error) { if (error.status !== 403) toast(error.message, 'error'); }
   let mainOrderWrites=false,mainOrders=false,mainOrderCreates=false;
   if(context.store?.getState().user?.roles?.includes('ADMIN'))try{const cap=await api.request('/admin/legacy/main-orders/capabilities');mainOrderWrites=cap.mainOrderWrites===true;mainOrders=cap.mainOrders===true;mainOrderCreates=cap.mainOrderCreates===true}catch(_){}
+  let exportEnabled=false;if(mainOrders)try{exportEnabled=(await api.request('/admin/legacy/order-export/capabilities')).orderExport===true}catch(_){}
   let adoptionRead=false;const adoptionAttempts=new Map();
   if(context.store?.getState().user?.roles?.includes('ADMIN'))try{adoptionRead=(await api.request('/admin/legacy/order-adoption/capabilities')).legacyOrderAdoption===true}catch(_){}
   let filters = { page: 0, size: 20, status: '' };
   container.innerHTML = `${pageHeader('送检管理', '查询统一旧订单主表并打印送检单与可扫描标本标签',mainOrderCreates?'<button type="button" class="button" data-main-order-new>新增原后台主单</button>':'')}
-    <section class="panel"><form id="order-filter" class="toolbar">${field({ name: 'status', label: '订单状态', options: [{ value: '', label: '全部' }, { value: '0', label: '待审核' }, { value: '-3', label: '待支付' }, { value: '2', label: '等待报告' }, { value: '3', label: '已完成' }, { value: '4', label: '已取消' }] })}<button class="button secondary">查询</button></form><div id="order-list"></div></section>`;
+    <section class="panel"><form id="order-filter" class="toolbar">${field({ name: 'status', label: '订单状态', options: [{ value: '', label: '全部' }, { value: '0', label: '待审核' }, { value: '-3', label: '待支付' }, { value: '2', label: '等待报告' }, { value: '3', label: '已完成' }, { value: '4', label: '已取消' }] })}<button class="button secondary">查询</button>${exportEnabled?'<button type="button" class="button secondary" data-order-export>导出检测明细（最多10000条）</button>':''}</form><div id="order-list"></div></section>`;
   const list = container.querySelector('#order-list');
   async function load() {
     list.innerHTML = renderState('loading');
@@ -34,6 +36,7 @@ export async function render(container, context) {
   container.querySelector('#order-filter').addEventListener('submit', (event) => { event.preventDefault(); filters = { ...formData(event.currentTarget), page: 0, size: 20 }; load(); });
   container.addEventListener('click', async (event) => {
     const page = event.target.closest('[data-page]'); if (page && !page.disabled) { filters.page = Number(page.dataset.page); load(); }
+    const exporting=event.target.closest('[data-order-export]');if(exporting&&!exporting.disabled){exporting.disabled=true;try{await downloadVisibleOrderDetails(context,filters.status)}catch(error){toast(error.message,'error')}finally{exporting.disabled=false}return;}
     const create=event.target.closest('[data-main-order-new]');if(create){const requestKey=crypto.randomUUID();let sent=null;context.dialog({title:'新增原后台主单',submitLabel:'创建并填写资料',body:field({name:'autoLogistics',label:'自动添加运费模板（项目246）',value:'false',options:[{value:'false',label:'不添加'},{value:'true',label:'添加'}]}),async onSubmit(form){const command={autoLogistics:formData(form).autoLogistics==='true',requestKey};const canonical=JSON.stringify(command);if(sent&&sent!==canonical)throw Error('上次结果未确认，请先用原选项重试');sent=canonical;const id=await api.request('/admin/legacy/main-orders',{method:'POST',data:command});if(form.isConnected)await openLegacyMainOrder(context,id,load);}});return;}
     const notice=event.target.closest('[data-sample-notice]');if(notice&&!notice.disabled){notice.disabled=true;try{await openSampleNotice(context,Number(notice.dataset.sampleNotice))}catch(error){toast(error.message,'error')}finally{notice.disabled=false;}return;}
     const adopt=event.target.closest('[data-order-adoption]');if(adopt&&!adopt.disabled){const id=Number(adopt.dataset.orderAdoption);if(!adoptionAttempts.has(id))adoptionAttempts.set(id,{});adopt.disabled=true;try{await openLegacyAdoption(context,id,load,adoptionAttempts.get(id))}catch(error){toast(error.message,'error')}finally{adopt.disabled=false}return;}

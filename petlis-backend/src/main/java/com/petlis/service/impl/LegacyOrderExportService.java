@@ -1,0 +1,12 @@
+package com.petlis.service.impl;
+import com.fasterxml.jackson.databind.ObjectMapper;import com.petlis.common.exception.BusinessException;import com.petlis.common.security.AccessService;import lombok.RequiredArgsConstructor;import org.springframework.stereotype.Service;import org.springframework.transaction.annotation.Transactional;import java.util.*;
+@Service @RequiredArgsConstructor public class LegacyOrderExportService {
+ private final FeatureStore store;private final AccessService access;private final LegacyMainOrderService main;
+ @Transactional(readOnly=true) public Map<String,Boolean> capabilities(){access.requireAdmin();var rows=store.jdbc().queryForList("SELECT config_value FROM lin_operational_config WHERE config_key='legacy-order-export' AND scope_type='GLOBAL' AND scope_id=0 AND status='ACTIVE'");boolean enabled=false;if(rows.size()==1)try{var j=new ObjectMapper().readTree(rows.get(0).get("config_value").toString()).path("enabled");enabled=j.isBoolean()&&j.asBoolean();}catch(Exception e){throw new BusinessException(409,"送检明细导出参数无效");}return Map.of("orderExport",enabled&&Boolean.TRUE.equals(main.capabilities().get("mainOrders")));}
+ @Transactional(readOnly=true) public byte[] export(Integer status){if(!capabilities().get("orderExport"))throw new BusinessException(409,"送检明细导出尚未开启");var scope=main.visibleScope(status);String from=" FROM vwdiagnosisdetail v JOIN lin_lb_listdiagnosisproject o ON o.ListDiagnosisProjectId=v.ListDiagnosisProjectId LEFT JOIN lin_lb_infoanimal a ON a.InfoAnimalId=v.InfoAnimalId LEFT JOIN lin_lb_dictsex s ON s.DictSexId=v.DictSexId LEFT JOIN lin_lb_infohospital h ON h.InfoHospitalId=v.InfoHospitalId LEFT JOIN lin_lb_infosampletype t ON t.InfoSampleTypeId=v.InfoSampleTypeId WHERE "+scope.where();
+  long total=Objects.requireNonNullElse(store.jdbc().queryForObject("SELECT COUNT(*)"+from,Long.class,scope.args().toArray()),0L);
+  var rows=store.jdbc().queryForList("SELECT v.*,a.AnimalName AS ExportSpecies,s.SexName AS ExportSex,h.HospitalName AS ExportHospital,t.SampleName AS ExportSample"+from+" ORDER BY v.DiagnosisDetailId DESC LIMIT 10000",scope.args().toArray());
+  var cities=new HashMap<Long,Map<String,Object>>();for(var city:store.jdbc().queryForList("SELECT CityId,CityName,BelongCity_cityId FROM lin_lb_city"))cities.put(((Number)city.get("CityId")).longValue(),city);
+  return LegacyOrderExportWorkbook.write(rows,cities,total,status);
+ }
+}
