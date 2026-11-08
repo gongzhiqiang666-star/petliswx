@@ -22,9 +22,10 @@
     </view>
   </view>
 
+  <view class="primary-entry"><button class="petlis-btn petlis-btn-primary" bindtap="onOrderSelect">新建送检</button></view>
   <view class="quick-card">
-    <view class="quick-entry-item" role="button" aria-label="我要检测" data-id="test" bindtap="openShortcut">
-      <image class="quick-icon" src="/assets/icons/brand-test.png" mode="aspectFit" /><text class="quick-label">我要检测</text>
+    <view class="quick-entry-item" role="button" aria-label="送检草稿" data-id="drafts" bindtap="openShortcut">
+      <image class="quick-icon" src="/assets/icons/brand-test.png" mode="aspectFit" /><text class="quick-label">送检草稿</text>
     </view>
     <view class="quick-entry-item" role="button" aria-label="档案中心" data-id="pets" bindtap="openShortcut">
       <image class="quick-icon" src="/assets/icons/brand-archive.png" mode="aspectFit" /><text class="quick-label">档案中心</text>
@@ -37,9 +38,7 @@
     </view>
   </view>
 
-  <navigator wx:if="{{!posterError}}" class="poster-banner" url="/pages/articles/articles" aria-label="专注宠物医学检验，查看资讯与活动">
-    <image src="/assets/posters/lab-banner.webp" mode="aspectFit" binderror="onPosterError" />
-  </navigator>
+
 
   <view class="home-content">
     <view class="home-section">
@@ -87,8 +86,8 @@
         <view class="service-item" role="button" aria-label="优惠券" data-id="coupons" bindtap="openShortcut">
           <image class="service-icon" src="/assets/icons/brand-coupon.png" mode="aspectFit" /><text class="service-label">优惠券</text>
         </view>
-        <view class="service-item" role="button" aria-label="送检记录" data-id="orders" bindtap="openShortcut">
-          <image class="service-icon" src="/assets/icons/brand-records.png" mode="aspectFit" /><text class="service-label">送检记录</text>
+        <view class="service-item" role="button" aria-label="新建送检" data-id="orders" bindtap="openShortcut">
+          <image class="service-icon" src="/assets/icons/brand-records.png" mode="aspectFit" /><text class="service-label">新建送检</text>
         </view>
         <view class="service-item" role="button" aria-label="发票管理" data-id="invoices" bindtap="openShortcut">
           <image class="service-icon" src="/assets/icons/brand-invoice.png" mode="aspectFit" /><text class="service-label">发票管理</text>
@@ -117,4 +116,7 @@
       </view>
     </view>
   </view>
+  <navigator wx:if="{{!posterError}}" class="poster-banner" url="/pages/articles/articles" aria-label="专注宠物医学检验，查看资讯与活动">
+    <image src="/assets/posters/lab-banner.webp" mode="aspectFit" binderror="onPosterError" />
+  </navigator>
 </view>

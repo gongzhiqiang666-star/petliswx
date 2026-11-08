@@ -13,5 +13,5 @@ public class ArticleController {
  @GetMapping("/{id}") public Result<Map<String,Object>> detail(@PathVariable long id){return Result.success(service.detail(id));}
  public record Action(boolean liked,boolean bookmarked){}
  @PutMapping("/{id}/action") public Result<Void> action(@PathVariable long id,@RequestBody Action r){service.action(id,r.liked(),r.bookmarked());return Result.success();}
- @PostMapping public Result<Long> publish(@RequestBody ArticleService.Article r){return Result.success(service.publish(r));}
+ @PostMapping public Result<Long> publish(@RequestBody ArticleService.Article r,@RequestHeader(value="Idempotency-Key",required=false)String requestKey){return Result.success(service.publish(r,requestKey));}
 }

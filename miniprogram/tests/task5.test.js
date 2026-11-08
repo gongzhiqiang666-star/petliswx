@@ -21,7 +21,7 @@ test('确认版38路由和5个Tab完整保留', () => {
   assert.equal(originalRoutes.length, 38)
   originalRoutes.forEach(route => assert.ok(app.pages.includes(`pages/${route}`), route))
   assert.equal(app.tabBar.list.length, 5)
-  assert.deepEqual(app.tabBar.list.map(x => x.text), ['首页','检测','报告','消息','我的'])
+  assert.deepEqual(app.tabBar.list.map(x => x.text), ['首页','送检','报告','消息','我的'])
   assert.deepEqual(freshRequire('config/routes.js'), app.pages)
 })
 
@@ -120,6 +120,7 @@ test('物流适配保留时间线预计到达和异常', () => {
   assert.equal(result.timeline[0].title,'已揽收')
   assert.match(result.expectedArrivedAt,/2026-10-30/)
   assert.equal(result.exceptionNote,'天气延误')
+  assert.equal(result.exceptionTypeLabel,'超时未送达')
 })
 
 test('订单详情物流失败不覆盖订单主流程', async () => {
@@ -272,3 +273,19 @@ test('所有页面WXML绑定事件都有Page方法', () => {
     }
   }
 })
+
+test('物流异常历史展示处理状态和说明，当前预警清除后仍保留历史',()=>{
+  const {adaptShipment}=require('../utils/logistics')
+  const data=adaptShipment({status:'IN_TRANSIT',exceptionNote:null,exceptions:[{id:1,exceptionType:'DAMAGE',note:'破损核对',reportedAt:'2026-11-08T00:00:00',resolvedAt:'2026-11-08T00:05:00',resolutionNote:'已处理'}]})
+  assert.equal(data.exceptionNote,'')
+  assert.equal(data.exceptions[0].typeLabel,'标本破损')
+  assert.equal(data.exceptions[0].stateLabel,'已处理')
+  assert.equal(data.exceptions[0].resolutionNote,'已处理')
+  assert.equal(data.exceptions[0].resolvedTime,'2026-11-08 00:05')
+})
+
+test('物流内置操作原因显示中文，人工说明保持原文',()=>{
+ const {adaptShipment}=freshRequire('utils/logistics.js');
+ const shipment=adaptShipment({timeline:[{action:'PICKED_UP',reason:'PICKUP'},{action:'IN_TRANSIT',reason:'TRANSIT'},{action:'DELIVERED',reason:'DELIVER'},{action:'RECEIVED',reason:'RECEIVE'},{action:'EXCEPTION_RESOLVED'},{action:'EXCEPTION',reason:'人工确认后继续运输'}]});
+ assert.deepEqual(shipment.timeline.map(row=>row.title),['配送员已揽收','开始运输','已送达','实验室已签收','异常已处理','人工确认后继续运输']);
+});

@@ -4,7 +4,7 @@ const root=path.resolve(__dirname,'../..','miniprogram')
 const tick=()=>new Promise(resolve=>setImmediate(resolve))
 function loadPage(name,request,api,wx={},app={getHospitalId:()=>1}){
  let definition
- const context={console:{log(){},warn(){},error(){}},require(id){if(id.includes('api/index'))return api;if(id.includes('utils/request'))return request;if(id.includes('utils/age-calculator'))return require(path.join(root,'utils/age-calculator.js'));if(id.includes('utils/pinyin-full'))return require(path.join(root,'utils/pinyin-full.js'));if(id.includes('config/notification'))return {};if(id.includes('logger'))return {log(){},error(){}};throw new Error('Unexpected dependency '+id)},getApp:()=>app,Page(value){definition=value},wx:{showToast(){},showModal:async()=>({confirm:true}),...wx},setTimeout(fn){fn();return 1},clearTimeout(){}}
+ const context={console:{log(){},warn(){},error(){}},require(id){if(id.includes('analytics'))return {track(){},flush(){}};if(id.includes('utils/roles'))return require(path.join(root,'utils/roles.js'));if(id.includes('utils/logistics'))return require(path.join(root,'utils/logistics.js'));if(id.includes('api/index'))return api;if(id.includes('utils/request'))return request;if(id.includes('utils/age-calculator'))return require(path.join(root,'utils/age-calculator.js'));if(id.includes('utils/pinyin-full'))return require(path.join(root,'utils/pinyin-full.js'));if(id.includes('config/notification'))return {};if(id.includes('logger'))return {log(){},error(){}};throw new Error('Unexpected dependency '+id)},getApp:()=>app,Page(value){definition=value},wx:{showToast(){},showModal:async()=>({confirm:true}),...wx},setTimeout(fn){fn();return 1},clearTimeout(){}}
  vm.runInNewContext(fs.readFileSync(path.join(root,'pages',name,name+'.js'),'utf8'),context)
  const page={...definition,data:JSON.parse(JSON.stringify(definition.data)),setData(update){for(const [key,value] of Object.entries(update)){const parts=key.split('.');let target=this.data;for(const part of parts.slice(0,-1))target=target[part]||(target[part]={});target[parts.at(-1)]=value}}}
  return page
@@ -178,28 +178,28 @@ async function reportPagingAndRetry(){
  page.onViewReport({currentTarget:{dataset:{id:1}}});assert.equal(destination,'/pages/report-view/report-view?id=1')
 }
 async function devMockPaymentOnlyCompletesLocally(){
- const load=baseURL=>{
+ const load=(baseURL,allowMockPayment)=>{
   const calls=[];let paid=0
   const context={module:{exports:{}},console:{log(){},error(){}},setTimeout:(fn)=>{fn();return 1},clearTimeout(){},
-   require:id=>{if(id.includes('config'))return {baseURL};if(id.includes('request'))return {post:async url=>{calls.push(url);return url.includes('/payment/create')?{paymentNo:'P1',mock:true}:{}},get:async()=>({status:1})};throw new Error('Unexpected dependency '+id)},
+   require:id=>{if(id.includes('analytics'))return {track(){}};if(id.includes('config'))return {baseURL,allowMockPayment};if(id.includes('request'))return {post:async url=>{calls.push(url);return url.includes('/payment/create')?{paymentNo:'P1',mock:true}:{}},get:async()=>({status:1})};throw new Error('Unexpected dependency '+id)},
    wx:{requestPayment:async()=>{paid++}}}
   vm.runInNewContext(fs.readFileSync(path.join(root,'utils/payment.js'),'utf8'),context)
-  return {calls,paid,payOrder:context.module.exports.payOrder}
+  return {calls,get paid(){return paid},payOrder:context.module.exports.payOrder}
  }
- const local=load('http://127.0.0.1:8082/api')
+ const local=load('http://127.0.0.1:8082/api',true)
  assert.equal(await local.payOrder(123),true,'local development mock callback must confirm the payment')
  assert.equal(local.paid,0,'mock payment must never invoke wx.requestPayment')
  assert.ok(local.calls.includes('/payment/mock-callback/P1'))
- const remote=load('https://api.example.test/api')
+ const remote=load('https://api.example.test/api',false)
  await assert.rejects(remote.payOrder(123),/开发模式/)
- assert.equal(remote.paid,0);assert.equal(remote.calls.some(url=>url.includes('mock-callback')),false,'non-local environment must never call the development mock callback')
+ assert.equal(remote.paid,0);assert.equal(remote.calls.some(url=>url.includes('mock-callback')),false,'disabled mock environment must never call the development mock callback')
 }
 async function orderAgeDisplayIsFormattedWithoutChangingFormValue(){
  const draft={petId:7,petInfo:{animalName:'Draft Pet'},sampleInfo:{sampleTypeName:''},deliveryInfo:{},otherInfo:{remark:''},animalInfo:{age:'3Y9M',animalWeight:''}}
  const wx={showLoading(){},hideLoading(){},getStorageSync:key=>key==='order_form'?draft:null,removeStorageSync(){}}
  const api={pets:{getDetail:async()=>({animalName:'Pet',birthday:'2023-01-01',ownerName:'Owner'})}}
  const page=loadPage('order-add-pet',{},api,wx)
- page.setData({petId:7});await page.loadPetDetail(7)
+ page.setData({petId:7});page.onAgeChange({detail:{value:'3Y9M'}});await page.loadPetDetail(7)
  assert.equal(page.data.animalInfo.age,'3Y9M');assert.equal(page.data.displayAge,'3岁9个月','Pet details must derive a Chinese display age')
  for(const [age,label] of [['3Y','3岁'],['9M','9个月'],['3Y9M','3岁9个月']]){
   page.onAgeChange({detail:{value:age}});assert.equal(page.data.animalInfo.age,age);assert.equal(page.data.displayAge,label,'Age selection must only derive the display label')
@@ -221,9 +221,10 @@ async function rabiesOrderSubmitsWithChipNO(){
  const api={billing:{checkStatus:async()=>({})},orders:{create:async data=>{created=data;return {orderId:1,needPayment:false}}}}
  const wx={showModal:o=>o.success(),removeStorageSync(){},redirectTo(){}}
  const page=loadPage('order-preview',{},api,wx)
- page.setData({quote:{payableAmount:100},formData:{petInfo:{chipNO:'CHIP-1',birthday:'2023-01-01'},sampleInfo:{},deliveryInfo:{},animalInfo:{},otherInfo:{remark:'EXPRESS-1'},selectedTestItems:[{infoTestTypeId:1225}]}})
+ page.setData({quote:{payableAmount:100},formData:{petId:17,clinicalInfo:{medicalHistory:'病史',clinicalSymptoms:'症状',diagnosis:'诊断',medication:'用药'},petInfo:{chipNO:'CHIP-1',birthday:'2023-01-01'},sampleInfo:{},deliveryInfo:{},animalInfo:{},otherInfo:{remark:'EXPRESS-1'},selectedTestItems:[{infoTestTypeId:1225}]}})
  await page.onSubmit()
  assert.equal(created.chipNO,'CHIP-1','Rabies submission must accept the backend chipNO field')
+ assert.equal(created.petId,17);assert.equal(created.medicalHistory,'病史');assert.equal(created.clinicalSymptoms,'症状');assert.equal(created.diagnosis,'诊断');assert.equal(created.medication,'用药')
 }
 async function latestCouponQuoteWinsOutOfOrderResponses(){
  const pending={};let stored

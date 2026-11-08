@@ -2,15 +2,15 @@
 <view class="page" role="form" aria-label="预约信息填写">
   <view class="content">
     <view class="flow-header">
-      <view class="flow-steps" aria-label="送检进度：第 1 步，共 3 步">
-        <view class="flow-step active">
+      <view class="flow-steps" aria-label="送检进度：第 {{projectFirst?2:1}} 步，共 3 步">
+        <view class="flow-step {{projectFirst?'':'active'}}">
           <view class="flow-step-dot">1</view>
-          <text class="flow-step-label">填写资料</text>
+          <text class="flow-step-label">{{projectFirst?'选择项目':'填写资料'}}</text>
         </view>
         <view class="flow-connector"></view>
-        <view class="flow-step">
+        <view class="flow-step {{projectFirst?'active':''}}">
           <view class="flow-step-dot">2</view>
-          <text class="flow-step-label">选择项目</text>
+          <text class="flow-step-label">{{projectFirst?'采样资料':'选择项目'}}</text>
         </view>
         <view class="flow-connector"></view>
         <view class="flow-step">
@@ -194,6 +194,13 @@
       </view>
     </view>
 
+    <view class="card petlis-card"><view class="card-header"><view class="header-line"></view><text class="card-title">临床资料（选填）</text></view>
+      <view class="form-group"><view class="form-label">既往病史</view><textarea class="form-textarea petlis-input" maxlength="2000" placeholder="与本次送检相关的既往病史" value="{{clinicalInfo.medicalHistory}}" data-field="medicalHistory" bindinput="onClinicalInput" aria-label="既往病史"></textarea></view>
+      <view class="form-group"><view class="form-label">临床症状</view><textarea class="form-textarea petlis-input" maxlength="2000" placeholder="本次症状及持续时间" value="{{clinicalInfo.clinicalSymptoms}}" data-field="clinicalSymptoms" bindinput="onClinicalInput" aria-label="临床症状"></textarea></view>
+      <view class="form-group"><view class="form-label">临床诊断</view><textarea class="form-textarea petlis-input" maxlength="2000" placeholder="目前的临床判断" value="{{clinicalInfo.diagnosis}}" data-field="diagnosis" bindinput="onClinicalInput" aria-label="临床诊断"></textarea></view>
+      <view class="form-group"><view class="form-label">用药情况</view><textarea class="form-textarea petlis-input" maxlength="2000" placeholder="近期用药及治疗情况" value="{{clinicalInfo.medication}}" data-field="medication" bindinput="onClinicalInput" aria-label="用药情况"></textarea></view>
+    </view>
+
     <!-- 其他信息 -->
     <view class="card petlis-card">
       <view class="card-header">
@@ -216,7 +223,7 @@
 
   <!-- Bottom Actions -->
   <view class="bottom-actions"><button class="draft-button petlis-btn petlis-btn-outline" bindtap="saveDraft" disabled="{{!petInfo || draftSaving}}" loading="{{draftSaving}}">保存为草稿</button>
-    <button class="btn-primary petlis-btn petlis-btn-primary next-button" disabled="{{!petInfo || draftSaving}}" bindtap="onSelectTestItems" aria-label="选择检测项目">选择检测项目</button>
+    <button class="btn-primary petlis-btn petlis-btn-primary next-button" disabled="{{!petInfo || draftSaving}}" bindtap="onSelectTestItems" aria-label="{{projectFirst?'核对送检':'选择检测项目'}}">{{projectFirst?'核对送检':'选择检测项目'}}</button>
   </view>
 
   <view class="sample-picker-mask petlis-modal-mask {{samplePickerVisible ? 'show' : ''}}" role="presentation" bindtap="onCloseSamplePicker">

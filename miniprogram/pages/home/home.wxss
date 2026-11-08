@@ -66,3 +66,17 @@
 .notice-title { color: #263832; font-size: 26rpx; font-weight: 500; line-height: 1.55; letter-spacing: .6rpx; overflow-wrap: anywhere; }
 .notice-description { margin-top: 8rpx; color: #7E908A; font-size: 24rpx; font-weight: 300; line-height: 1.7; overflow-wrap: anywhere; }
 .notice-time { flex-shrink: 0; color: #A3B2AC; font-size: 20rpx; line-height: 1.8; letter-spacing: 1rpx; white-space: nowrap; }
+
+/* Approved UX V1: compact identity, warm canvas, business before promotion. */
+.home-page{background:#F7F8F5}
+.home-hero{padding:24rpx 32rpx 28rpx;background:#FFFFFF;color:#1A1A1A}
+.home-hero .hero-bg,.home-hero::before{display:none}
+.hero-eyebrow{font-size:22rpx;color:#0D6E6E;letter-spacing:2rpx}
+.hero-hospital{margin-top:12rpx;font-size:36rpx;color:#183F3A}
+.hero-greeting{margin-top:10rpx;color:#666666;font-size:26rpx;font-weight:400}
+.hero-qualification{margin-top:16rpx;color:#0D6E6E;background:#EBF5F5;border:1rpx solid #DCE8E4;font-size:24rpx;letter-spacing:0}
+.primary-entry{padding:16rpx 32rpx 24rpx;background:#FFFFFF}
+.primary-entry button{width:100%}
+.quick-card{margin:20rpx 32rpx 0}
+.poster-banner{margin:0 32rpx 32rpx}
+.hero-bell{background:#EBF5F5;border-color:#DCE8E4}

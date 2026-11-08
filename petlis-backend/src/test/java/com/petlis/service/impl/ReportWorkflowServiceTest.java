@@ -50,6 +50,76 @@ class ReportWorkflowServiceTest {
     }
 
     @Test
+    void templateSearchIsParameterizedLiteralAndKeepsScopeAndStatus() {
+        service.templates(2, null, "  QA_%'  ", "ARCHIVED", 1, 3);
+        verify(store).page(contains("AND t.status=?"), contains("LOCATE(?,t.template_name)"), eq(1), eq(3),
+                eq(5), eq(2), eq("ARCHIVED"), eq("QA_%'"), eq("QA_%'"), eq("QA_%'"));
+    }
+
+    @Test
+    void invalidTemplateFiltersAreRejectedBeforeQuery() {
+        assertEquals(400, assertThrows(BusinessException.class, () -> service.templates(null, null, null, "DELETED", 0, 20)).getCode());
+        assertEquals(400, assertThrows(BusinessException.class, () -> service.templates(null, null, "x".repeat(101), null, 0, 20)).getCode());
+        verify(store, never()).page(anyString(), anyString(), anyInt(), anyInt(), any(Object[].class));
+    }
+
+    @Test
+    void templateOptionsAreRoleScopedAndOnlyActiveCatalogItems() {
+        service.templateOptions(2);
+        verify(jdbc).queryForList(contains("role_code='LAB_STAFF'"), eq(5));
+        verify(access).requireLaboratory(2);
+        verify(jdbc).queryForList(contains("lt.active=1 AND i.IsActive=1"), eq(2));
+    }
+
+    @Test
+    void repeatedTemplateArchiveDoesNotDuplicateAuditOrChangeReports() {
+        when(store.one(startsWith("SELECT laboratory_id FROM lin_report_template"), eq(10L))).thenReturn(Map.of("laboratory_id", 2));
+        when(store.one(startsWith("SELECT id,status FROM lin_report_template"), eq(10L), eq(2)))
+                .thenReturn(Map.of("status", "ACTIVE"), Map.of("status", "ARCHIVED"));
+        service.archiveTemplate(10); service.archiveTemplate(10);
+        verify(access, times(2)).requireLaboratory(2);
+        verify(jdbc, times(1)).update("UPDATE lin_report_template SET status='ARCHIVED' WHERE id=?", 10L);
+        verify(store, times(1)).insert(contains("'ARCHIVED','REPORT_TEMPLATE'"), eq(5), eq("10"), any());
+        verify(jdbc, never()).update(contains("lin_report_workflow"), any(Object[].class));
+    }
+
+    @Test
+    void foreignLabCannotArchiveTemplate() {
+        when(store.one(startsWith("SELECT laboratory_id FROM lin_report_template"), eq(10L))).thenReturn(Map.of("laboratory_id", 9));
+        doThrow(new BusinessException(403, "无权访问")).when(access).requireLaboratory(9);
+        assertThrows(BusinessException.class, () -> service.archiveTemplate(10));
+        verify(jdbc, never()).update(anyString(), any(Object[].class));
+    }
+
+    @Test
+    void templateListScopesLaboratoryStaffBeforeReturningContent() {
+        service.templates(2, 91, null, null, 0, 20);
+        verify(store).page(contains("role_code='LAB_STAFF'"), contains("t.info_test_type_id=?"), eq(0), eq(20), eq(5), eq(2), eq(91));
+    }
+
+    @Test
+    void doctorCannotListOrSaveTemplates() {
+        when(access.current()).thenReturn(new CurrentActor(7, Set.of(PlatformRole.DOCTOR), Set.of(1), Set.of(),
+                new DataScope(false, Set.of(1), Set.of(), null)));
+        assertThrows(BusinessException.class, () -> service.templates(null, null, null, null, 0, 20));
+        assertThrows(BusinessException.class, () -> service.saveTemplate(91, 2, "模板", "CBC", "内容"));
+        verify(store, never()).insert(anyString(), any(Object[].class));
+    }
+
+    @Test
+    void templateVersionUsesStableLaboratoryLockThenCurrentRead() {
+        when(jdbc.queryForList(contains("ORDER BY version DESC LIMIT 1 FOR UPDATE"), eq(2), eq("CBC")))
+                .thenReturn(java.util.List.of(Map.of("version", 3)));
+        service.saveTemplate(91, 2, " 血常规 ", " CBC ", "内容");
+        var sequence = inOrder(store, jdbc);
+        sequence.verify(store).one(contains("lin_laboratory WHERE id=? AND active=1 FOR UPDATE"), eq(2));
+        sequence.verify(store).one(contains("lt.test_type_id=?"), eq(2), eq(91));
+        sequence.verify(jdbc).queryForList(contains("LIMIT 1 FOR UPDATE"), eq(2), eq("CBC"));
+        sequence.verify(jdbc).update(contains("status='ARCHIVED'"), eq(2), eq(91), eq("CBC"));
+        sequence.verify(store).insert(contains("lin_report_template"), eq(2), eq(91), eq("血常规"), eq("CBC"), eq("内容"), eq(4L), eq(5));
+    }
+
+    @Test
     void pendingReviewCannotBePublished() {
         when(store.one(contains("SELECT w.*"), eq(41L))).thenReturn(report("PENDING_REVIEW", 1, 0));
         assertThrows(BusinessException.class, () -> service.publish(41));

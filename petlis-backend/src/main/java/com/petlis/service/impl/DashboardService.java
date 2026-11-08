@@ -45,6 +45,18 @@ public class DashboardService {
                 "monthlyRevenue", monthly, "arrears", money(totals.get("arrears")), "hospitalRanking", hospitals, "projectRanking", projects);
     }
 
+    /** Submission cohort, classified by current status; not historical review-decision throughput. */
+    public Map<String,Object> registrationSummary(String from,String to) {
+        access.requireAdmin();
+        LocalDate start,end;
+        try { start=LocalDate.parse(from); end=LocalDate.parse(to); }
+        catch(Exception error) { throw new BusinessException(400,"注册统计日期无效"); }
+        long days=java.time.temporal.ChronoUnit.DAYS.between(start,end);
+        if(days<1 || days>366) throw new BusinessException(400,"注册统计范围须为1至366天");
+        // requested_hospital_id is set by registration, unlike profiles created only for credential revocation.
+        return store.one("SELECT COUNT(*) AS submittedCount,COALESCE(SUM(p.review_status='pending'),0) AS pendingCount,COALESCE(SUM(p.review_status='approved'),0) AS approvedCount,COALESCE(SUM(p.review_status='rejected'),0) AS rejectedCount,(SELECT COUNT(*) FROM lin_doctor_profile b WHERE b.requested_hospital_id IS NOT NULL AND b.review_status='pending') AS totalPending FROM lin_doctor_profile p WHERE p.requested_hospital_id IS NOT NULL AND p.created_at>=? AND p.created_at<?",start,end);
+    }
+
     private Object[] summaryArgs(CurrentActor actor, LocalDate start, LocalDate end) {
         List<Object> args = new ArrayList<>();
         for (int i = 0; i < 3; i++) { args.add(start); args.add(end); if (!actor.isAdmin()) args.add(actor.userId()); }

@@ -5,6 +5,8 @@
   "type": "module",
   "description": "Petlis 原生 Web 管理后台",
   "scripts": {
+    "build:editor": "node ../scripts/editor-parity/build-admin-editor.js",
+    "prestart": "npm run build:editor",
     "start": "node server.js",
     "test": "node --test tests/*.test.js"
   },

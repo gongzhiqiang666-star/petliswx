@@ -38,6 +38,20 @@ public class AccessService {
         if (!current().isAdmin()) throw new BusinessException(403, "需要平台管理员权限");
     }
 
+    public void requireHospitalAdmin(Integer hospitalId) {
+        var actor=current();
+        if (!actor.isAdmin() && !managedHospitalIds().contains(hospitalId)) throw forbidden();
+    }
+
+    public Set<Integer> managedHospitalIds() {
+        Set<Integer> result=new HashSet<>();
+        for(var assignment:userRoles.assignments(SecurityUtils.getCurrentUserId())) {
+            if(assignment.role()==PlatformRole.HOSPITAL_ADMIN && assignment.hospitalId()!=null
+                    && "HOSPITAL".equals(assignment.scopeType()) && assignment.hospitalId().equals(assignment.scopeId())) result.add(assignment.hospitalId());
+        }
+        return Set.copyOf(result);
+    }
+
     public void requireHospital(Integer hospitalId) {
         if (!current().canAccessHospital(hospitalId)) throw forbidden();
     }

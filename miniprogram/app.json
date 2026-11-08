@@ -62,7 +62,7 @@
       },
       {
         "pagePath": "pages/order-select-pet/order-select-pet",
-        "text": "检测",
+        "text": "送检",
         "iconPath": "assets/icons/tab/test.png",
         "selectedIconPath": "assets/icons/tab/test-active.png"
       },

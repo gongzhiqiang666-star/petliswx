@@ -53,4 +53,16 @@ class CouponServiceContractTest {
         verify(jdbc).update(contains("lin_order_pricing_snapshot"), eq(8), eq(11L), eq(7), eq(2), eq("monthly"),
                 eq(new BigDecimal("85.00")), eq(BigDecimal.ZERO), eq(new BigDecimal("85.00")), any());
     }
+    @Test void couponConflictsAndInvalidRulesAreNotServerErrors() {
+        when(contracts.priceForOrder(7,2,List.of(91))).thenReturn(new ContractService.Resolution(11,true,"MONTHLY",Map.of(91,new ContractService.ItemPrice(101,new BigDecimal("100"),new BigDecimal("85"),new BigDecimal("8.5")))));
+        var valid=new java.util.HashMap<String,Object>(Map.of("status","available","usable",1,"amount",BigDecimal.TEN,"minimum_amount",BigDecimal.ZERO,"laboratory_id",2));
+        for(String fault:List.of("reserved","expired","laboratory","minimum")){
+            var row=new java.util.HashMap<>(valid);
+            switch(fault){case "reserved"->row.put("status","reserved");case "expired"->row.put("usable",0);case "laboratory"->row.put("laboratory_id",3);default->row.put("minimum_amount",new BigDecimal("86"));}
+            when(store.one(contains("uc.status"),eq(6L),eq(5))).thenReturn(row);
+            var error=assertThrows(com.petlis.common.exception.BusinessException.class,()->service.quote(2,List.of(91),6L));
+            assertEquals(fault.equals("reserved")?409:400,error.getCode());
+        }
+    }
+
 }

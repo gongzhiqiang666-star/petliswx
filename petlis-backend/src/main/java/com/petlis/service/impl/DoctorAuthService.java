@@ -21,9 +21,10 @@ public class DoctorAuthService {
  private final SmsVerificationService sms;
  private final WechatUtil wechat;
  private final QualificationStorage qualifications;
+ private final QualificationOwnershipService ownership;
  private final BCryptPasswordEncoder encoder=new BCryptPasswordEncoder(12);
- public record Registration(String username,String password,String mobile,String code,Integer hospitalId,String nickname,String title,List<String> qualificationFiles,String wechatCode){}
- @Transactional public long register(Registration r){
+ public record Registration(String username,String password,String mobile,String code,Integer hospitalId,String nickname,String title,List<String> qualificationFiles,String wechatCode,Map<String,String> qualificationTokens){}
+ @Transactional(isolation=org.springframework.transaction.annotation.Isolation.READ_COMMITTED) public long register(Registration r){
   if(r.username()==null || !r.username().matches("[A-Za-z0-9_]{4,32}") || r.nickname()==null || r.nickname().isBlank() || r.nickname().length()>50 || r.hospitalId()==null || r.title()==null || r.title().length()>100 || r.mobile()==null || !r.mobile().matches("1[0-9]{10}"))throw new BusinessException("请完整填写账号、姓名、手机号、医院和职称");
   validatePassword(r.password());
   qualifications.validate(r.qualificationFiles());
@@ -33,6 +34,7 @@ public class DoctorAuthService {
   sms.consume(r.mobile(),"register",r.code());
   String openid=r.wechatCode()==null || r.wechatCode().isBlank()?null:wechat.code2Session(r.wechatCode()).openid();
   long id=store.insert("INSERT INTO lin_user(group_id,username,nickname,mobile,openid,password,salt,money,score,level,gender,successions,maxsuccessions,loginfailure,status,createtime,updatetime,jointime) VALUES(0,?,?,?,?, '', '',0,0,0,0,0,0,0,'hidden',UNIX_TIMESTAMP(),UNIX_TIMESTAMP(),UNIX_TIMESTAMP())",r.username(),r.nickname(),r.mobile(),openid);
+  ownership.claim(r.qualificationFiles(),r.qualificationTokens(),Math.toIntExact(id));
   store.jdbc().update("INSERT INTO lin_doctor_profile(user_id,password_hash,title,qualification_files,requested_hospital_id,review_status) VALUES(?,?,?,?,?,'pending')",id,encoder.encode(r.password()),r.title(),store.encode(r.qualificationFiles()),r.hospitalId());
   return id;
  }

@@ -1,0 +1,4090 @@
+{
+  "source": "application/common.php",
+  "sha256": "938bac0c43a307e4939e2d9d6a377d5a909578c7edd2505ddc6bbc1e6e16a19c",
+  "runtime": "Original filterContents + decodeUnicode, synthetic reads; test-only URL/encryption adapter",
+  "rows": [
+    {
+      "input": {
+        "body": "{报告链接}",
+        "type": 1,
+        "rows": {
+          "ListDiagnosisProject": {
+            "InfoHospitalId": 1,
+            "DictSexId": 1,
+            "InfoAnimalId": 1,
+            "InfoSampleTypeId": 1,
+            "AnimalName": "{医院名}",
+            "When": "2025-02-03 04:05:06",
+            "Zero": "0",
+            "Nullable": null,
+            "True": true,
+            "False": false
+          },
+          "InfoHospital": {
+            "HospitalName": "测试医院"
+          },
+          "DictSex": {
+            "SexName": "雄"
+          },
+          "InfoAnimal": {
+            "AnimalName": "猫"
+          },
+          "InfoSampleType": {
+            "SampleName": "血样"
+          },
+          "VwDiagnosisDetail": {
+            "TestName": "PCR",
+            "Amount": "125.50"
+          }
+        },
+        "bindings": [
+          {
+            "table": "ListDiagnosisProject",
+            "column": "AnimalName",
+            "description": "宠物"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "When",
+            "description": "日期"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "Nullable",
+            "description": "空值"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "Zero",
+            "description": "零"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "True",
+            "description": "真"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "False",
+            "description": "假"
+          },
+          {
+            "table": "InfoHospital",
+            "column": "HospitalName",
+            "description": "医院名"
+          },
+          {
+            "table": "DictSex",
+            "column": "SexName",
+            "description": "性别"
+          },
+          {
+            "table": "InfoAnimal",
+            "column": "AnimalName",
+            "description": "物种"
+          },
+          {
+            "table": "InfoSampleType",
+            "column": "SampleName",
+            "description": "采样类型"
+          },
+          {
+            "table": "VwDiagnosisDetail",
+            "column": "TestName",
+            "description": "项目"
+          },
+          {
+            "table": "VwDiagnosisDetail",
+            "column": "Amount",
+            "description": "金额"
+          }
+        ],
+        "diagnosticNames": "检测A,检测B",
+        "today": "2026-11-08",
+        "url": "https://petlis.invalid/Project/View/Detail.aspx?CID=TEST-7"
+      },
+      "output": "{报告链接}<br/><br/><span style='color:red'>附件-报告地址:<a target='_blank' href='https://petlis.invalid/Project/View/Detail.aspx?CID=TEST-7'>https://petlis.invalid/Project/View/Detail.aspx?CID=TEST-7</a></span>"
+    },
+    {
+      "input": {
+        "body": "{报告链接}",
+        "type": 2,
+        "rows": {
+          "ListDiagnosisProject": {
+            "InfoHospitalId": 1,
+            "DictSexId": 1,
+            "InfoAnimalId": 1,
+            "InfoSampleTypeId": 1,
+            "AnimalName": "{医院名}",
+            "When": "2025-02-03 04:05:06",
+            "Zero": "0",
+            "Nullable": null,
+            "True": true,
+            "False": false
+          },
+          "InfoHospital": {
+            "HospitalName": "测试医院"
+          },
+          "DictSex": {
+            "SexName": "雄"
+          },
+          "InfoAnimal": {
+            "AnimalName": "猫"
+          },
+          "InfoSampleType": {
+            "SampleName": "血样"
+          },
+          "VwDiagnosisDetail": {
+            "TestName": "PCR",
+            "Amount": "125.50"
+          }
+        },
+        "bindings": [
+          {
+            "table": "ListDiagnosisProject",
+            "column": "AnimalName",
+            "description": "宠物"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "When",
+            "description": "日期"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "Nullable",
+            "description": "空值"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "Zero",
+            "description": "零"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "True",
+            "description": "真"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "False",
+            "description": "假"
+          },
+          {
+            "table": "InfoHospital",
+            "column": "HospitalName",
+            "description": "医院名"
+          },
+          {
+            "table": "DictSex",
+            "column": "SexName",
+            "description": "性别"
+          },
+          {
+            "table": "InfoAnimal",
+            "column": "AnimalName",
+            "description": "物种"
+          },
+          {
+            "table": "InfoSampleType",
+            "column": "SampleName",
+            "description": "采样类型"
+          },
+          {
+            "table": "VwDiagnosisDetail",
+            "column": "TestName",
+            "description": "项目"
+          },
+          {
+            "table": "VwDiagnosisDetail",
+            "column": "Amount",
+            "description": "金额"
+          }
+        ],
+        "diagnosticNames": "检测A,检测B",
+        "today": "2026-11-08",
+        "url": "https://petlis.invalid/Project/View/Detail.aspx?CID=TEST-7"
+      },
+      "output": "{报告链接}"
+    },
+    {
+      "input": {
+        "body": "X{报告链接}",
+        "type": 1,
+        "rows": {
+          "ListDiagnosisProject": {
+            "InfoHospitalId": 1,
+            "DictSexId": 1,
+            "InfoAnimalId": 1,
+            "InfoSampleTypeId": 1,
+            "AnimalName": "{医院名}",
+            "When": "2025-02-03 04:05:06",
+            "Zero": "0",
+            "Nullable": null,
+            "True": true,
+            "False": false
+          },
+          "InfoHospital": {
+            "HospitalName": "测试医院"
+          },
+          "DictSex": {
+            "SexName": "雄"
+          },
+          "InfoAnimal": {
+            "AnimalName": "猫"
+          },
+          "InfoSampleType": {
+            "SampleName": "血样"
+          },
+          "VwDiagnosisDetail": {
+            "TestName": "PCR",
+            "Amount": "125.50"
+          }
+        },
+        "bindings": [
+          {
+            "table": "ListDiagnosisProject",
+            "column": "AnimalName",
+            "description": "宠物"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "When",
+            "description": "日期"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "Nullable",
+            "description": "空值"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "Zero",
+            "description": "零"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "True",
+            "description": "真"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "False",
+            "description": "假"
+          },
+          {
+            "table": "InfoHospital",
+            "column": "HospitalName",
+            "description": "医院名"
+          },
+          {
+            "table": "DictSex",
+            "column": "SexName",
+            "description": "性别"
+          },
+          {
+            "table": "InfoAnimal",
+            "column": "AnimalName",
+            "description": "物种"
+          },
+          {
+            "table": "InfoSampleType",
+            "column": "SampleName",
+            "description": "采样类型"
+          },
+          {
+            "table": "VwDiagnosisDetail",
+            "column": "TestName",
+            "description": "项目"
+          },
+          {
+            "table": "VwDiagnosisDetail",
+            "column": "Amount",
+            "description": "金额"
+          }
+        ],
+        "diagnosticNames": "检测A,检测B",
+        "today": "2026-11-08",
+        "url": "https://petlis.invalid/Project/View/Detail.aspx?CID=TEST-7"
+      },
+      "output": "X<br/><br/><span style='color:red'>附件-报告地址:<a target='_blank' href='https://petlis.invalid/Project/View/Detail.aspx?CID=TEST-7'>https://petlis.invalid/Project/View/Detail.aspx?CID=TEST-7</a></span><br/><br/><span style='color:red'>附件-报告地址:<a target='_blank' href='https://petlis.invalid/Project/View/Detail.aspx?CID=TEST-7'>https://petlis.invalid/Project/View/Detail.aspx?CID=TEST-7</a></span>"
+    },
+    {
+      "input": {
+        "body": "X{报告链接}",
+        "type": 2,
+        "rows": {
+          "ListDiagnosisProject": {
+            "InfoHospitalId": 1,
+            "DictSexId": 1,
+            "InfoAnimalId": 1,
+            "InfoSampleTypeId": 1,
+            "AnimalName": "{医院名}",
+            "When": "2025-02-03 04:05:06",
+            "Zero": "0",
+            "Nullable": null,
+            "True": true,
+            "False": false
+          },
+          "InfoHospital": {
+            "HospitalName": "测试医院"
+          },
+          "DictSex": {
+            "SexName": "雄"
+          },
+          "InfoAnimal": {
+            "AnimalName": "猫"
+          },
+          "InfoSampleType": {
+            "SampleName": "血样"
+          },
+          "VwDiagnosisDetail": {
+            "TestName": "PCR",
+            "Amount": "125.50"
+          }
+        },
+        "bindings": [
+          {
+            "table": "ListDiagnosisProject",
+            "column": "AnimalName",
+            "description": "宠物"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "When",
+            "description": "日期"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "Nullable",
+            "description": "空值"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "Zero",
+            "description": "零"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "True",
+            "description": "真"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "False",
+            "description": "假"
+          },
+          {
+            "table": "InfoHospital",
+            "column": "HospitalName",
+            "description": "医院名"
+          },
+          {
+            "table": "DictSex",
+            "column": "SexName",
+            "description": "性别"
+          },
+          {
+            "table": "InfoAnimal",
+            "column": "AnimalName",
+            "description": "物种"
+          },
+          {
+            "table": "InfoSampleType",
+            "column": "SampleName",
+            "description": "采样类型"
+          },
+          {
+            "table": "VwDiagnosisDetail",
+            "column": "TestName",
+            "description": "项目"
+          },
+          {
+            "table": "VwDiagnosisDetail",
+            "column": "Amount",
+            "description": "金额"
+          }
+        ],
+        "diagnosticNames": "检测A,检测B",
+        "today": "2026-11-08",
+        "url": "https://petlis.invalid/Project/View/Detail.aspx?CID=TEST-7"
+      },
+      "output": "X<br/><br/><span style='color:red'>附件-报告地址:<a target='_blank' href='https://petlis.invalid/Project/View/Detail.aspx?CID=TEST-7'>https://petlis.invalid/Project/View/Detail.aspx?CID=TEST-7</a></span>"
+    },
+    {
+      "input": {
+        "body": "{用户付款链接}",
+        "type": 1,
+        "rows": {
+          "ListDiagnosisProject": {
+            "InfoHospitalId": 1,
+            "DictSexId": 1,
+            "InfoAnimalId": 1,
+            "InfoSampleTypeId": 1,
+            "AnimalName": "{医院名}",
+            "When": "2025-02-03 04:05:06",
+            "Zero": "0",
+            "Nullable": null,
+            "True": true,
+            "False": false
+          },
+          "InfoHospital": {
+            "HospitalName": "测试医院"
+          },
+          "DictSex": {
+            "SexName": "雄"
+          },
+          "InfoAnimal": {
+            "AnimalName": "猫"
+          },
+          "InfoSampleType": {
+            "SampleName": "血样"
+          },
+          "VwDiagnosisDetail": {
+            "TestName": "PCR",
+            "Amount": "125.50"
+          }
+        },
+        "bindings": [
+          {
+            "table": "ListDiagnosisProject",
+            "column": "AnimalName",
+            "description": "宠物"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "When",
+            "description": "日期"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "Nullable",
+            "description": "空值"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "Zero",
+            "description": "零"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "True",
+            "description": "真"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "False",
+            "description": "假"
+          },
+          {
+            "table": "InfoHospital",
+            "column": "HospitalName",
+            "description": "医院名"
+          },
+          {
+            "table": "DictSex",
+            "column": "SexName",
+            "description": "性别"
+          },
+          {
+            "table": "InfoAnimal",
+            "column": "AnimalName",
+            "description": "物种"
+          },
+          {
+            "table": "InfoSampleType",
+            "column": "SampleName",
+            "description": "采样类型"
+          },
+          {
+            "table": "VwDiagnosisDetail",
+            "column": "TestName",
+            "description": "项目"
+          },
+          {
+            "table": "VwDiagnosisDetail",
+            "column": "Amount",
+            "description": "金额"
+          }
+        ],
+        "diagnosticNames": "检测A,检测B",
+        "today": "2026-11-08",
+        "url": "https://petlis.invalid/Project/View/Detail.aspx?CID=TEST-7"
+      },
+      "output": "{用户付款链接}<br/><br/><span style='color:red'>附件-报告地址:<a target='_blank' href='https://petlis.invalid/Project/View/Detail.aspx?CID=TEST-7'>https://petlis.invalid/Project/View/Detail.aspx?CID=TEST-7</a></span>"
+    },
+    {
+      "input": {
+        "body": "{用户付款链接}",
+        "type": 2,
+        "rows": {
+          "ListDiagnosisProject": {
+            "InfoHospitalId": 1,
+            "DictSexId": 1,
+            "InfoAnimalId": 1,
+            "InfoSampleTypeId": 1,
+            "AnimalName": "{医院名}",
+            "When": "2025-02-03 04:05:06",
+            "Zero": "0",
+            "Nullable": null,
+            "True": true,
+            "False": false
+          },
+          "InfoHospital": {
+            "HospitalName": "测试医院"
+          },
+          "DictSex": {
+            "SexName": "雄"
+          },
+          "InfoAnimal": {
+            "AnimalName": "猫"
+          },
+          "InfoSampleType": {
+            "SampleName": "血样"
+          },
+          "VwDiagnosisDetail": {
+            "TestName": "PCR",
+            "Amount": "125.50"
+          }
+        },
+        "bindings": [
+          {
+            "table": "ListDiagnosisProject",
+            "column": "AnimalName",
+            "description": "宠物"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "When",
+            "description": "日期"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "Nullable",
+            "description": "空值"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "Zero",
+            "description": "零"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "True",
+            "description": "真"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "False",
+            "description": "假"
+          },
+          {
+            "table": "InfoHospital",
+            "column": "HospitalName",
+            "description": "医院名"
+          },
+          {
+            "table": "DictSex",
+            "column": "SexName",
+            "description": "性别"
+          },
+          {
+            "table": "InfoAnimal",
+            "column": "AnimalName",
+            "description": "物种"
+          },
+          {
+            "table": "InfoSampleType",
+            "column": "SampleName",
+            "description": "采样类型"
+          },
+          {
+            "table": "VwDiagnosisDetail",
+            "column": "TestName",
+            "description": "项目"
+          },
+          {
+            "table": "VwDiagnosisDetail",
+            "column": "Amount",
+            "description": "金额"
+          }
+        ],
+        "diagnosticNames": "检测A,检测B",
+        "today": "2026-11-08",
+        "url": "https://petlis.invalid/Project/View/Detail.aspx?CID=TEST-7"
+      },
+      "output": "{用户付款链接}"
+    },
+    {
+      "input": {
+        "body": "X{用户付款链接}",
+        "type": 1,
+        "rows": {
+          "ListDiagnosisProject": {
+            "InfoHospitalId": 1,
+            "DictSexId": 1,
+            "InfoAnimalId": 1,
+            "InfoSampleTypeId": 1,
+            "AnimalName": "{医院名}",
+            "When": "2025-02-03 04:05:06",
+            "Zero": "0",
+            "Nullable": null,
+            "True": true,
+            "False": false
+          },
+          "InfoHospital": {
+            "HospitalName": "测试医院"
+          },
+          "DictSex": {
+            "SexName": "雄"
+          },
+          "InfoAnimal": {
+            "AnimalName": "猫"
+          },
+          "InfoSampleType": {
+            "SampleName": "血样"
+          },
+          "VwDiagnosisDetail": {
+            "TestName": "PCR",
+            "Amount": "125.50"
+          }
+        },
+        "bindings": [
+          {
+            "table": "ListDiagnosisProject",
+            "column": "AnimalName",
+            "description": "宠物"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "When",
+            "description": "日期"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "Nullable",
+            "description": "空值"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "Zero",
+            "description": "零"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "True",
+            "description": "真"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "False",
+            "description": "假"
+          },
+          {
+            "table": "InfoHospital",
+            "column": "HospitalName",
+            "description": "医院名"
+          },
+          {
+            "table": "DictSex",
+            "column": "SexName",
+            "description": "性别"
+          },
+          {
+            "table": "InfoAnimal",
+            "column": "AnimalName",
+            "description": "物种"
+          },
+          {
+            "table": "InfoSampleType",
+            "column": "SampleName",
+            "description": "采样类型"
+          },
+          {
+            "table": "VwDiagnosisDetail",
+            "column": "TestName",
+            "description": "项目"
+          },
+          {
+            "table": "VwDiagnosisDetail",
+            "column": "Amount",
+            "description": "金额"
+          }
+        ],
+        "diagnosticNames": "检测A,检测B",
+        "today": "2026-11-08",
+        "url": "https://petlis.invalid/Project/View/Detail.aspx?CID=TEST-7"
+      },
+      "output": "X<a target='_blank' href='https://petlis.invalid/Project/View/Detail.aspx?CID=TEST-7'>https://petlis.invalid/Project/View/Detail.aspx?CID=TEST-7</a><br/><br/><span style='color:red'>附件-报告地址:<a target='_blank' href='https://petlis.invalid/Project/View/Detail.aspx?CID=TEST-7'>https://petlis.invalid/Project/View/Detail.aspx?CID=TEST-7</a></span>"
+    },
+    {
+      "input": {
+        "body": "X{用户付款链接}",
+        "type": 2,
+        "rows": {
+          "ListDiagnosisProject": {
+            "InfoHospitalId": 1,
+            "DictSexId": 1,
+            "InfoAnimalId": 1,
+            "InfoSampleTypeId": 1,
+            "AnimalName": "{医院名}",
+            "When": "2025-02-03 04:05:06",
+            "Zero": "0",
+            "Nullable": null,
+            "True": true,
+            "False": false
+          },
+          "InfoHospital": {
+            "HospitalName": "测试医院"
+          },
+          "DictSex": {
+            "SexName": "雄"
+          },
+          "InfoAnimal": {
+            "AnimalName": "猫"
+          },
+          "InfoSampleType": {
+            "SampleName": "血样"
+          },
+          "VwDiagnosisDetail": {
+            "TestName": "PCR",
+            "Amount": "125.50"
+          }
+        },
+        "bindings": [
+          {
+            "table": "ListDiagnosisProject",
+            "column": "AnimalName",
+            "description": "宠物"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "When",
+            "description": "日期"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "Nullable",
+            "description": "空值"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "Zero",
+            "description": "零"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "True",
+            "description": "真"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "False",
+            "description": "假"
+          },
+          {
+            "table": "InfoHospital",
+            "column": "HospitalName",
+            "description": "医院名"
+          },
+          {
+            "table": "DictSex",
+            "column": "SexName",
+            "description": "性别"
+          },
+          {
+            "table": "InfoAnimal",
+            "column": "AnimalName",
+            "description": "物种"
+          },
+          {
+            "table": "InfoSampleType",
+            "column": "SampleName",
+            "description": "采样类型"
+          },
+          {
+            "table": "VwDiagnosisDetail",
+            "column": "TestName",
+            "description": "项目"
+          },
+          {
+            "table": "VwDiagnosisDetail",
+            "column": "Amount",
+            "description": "金额"
+          }
+        ],
+        "diagnosticNames": "检测A,检测B",
+        "today": "2026-11-08",
+        "url": "https://petlis.invalid/Project/View/Detail.aspx?CID=TEST-7"
+      },
+      "output": "X{用户付款链接}"
+    },
+    {
+      "input": {
+        "body": "{宠物}|{医院名}|{物种}|{性别}|{采样类型}|{项目}|{金额}",
+        "type": 1,
+        "rows": {
+          "ListDiagnosisProject": {
+            "InfoHospitalId": 1,
+            "DictSexId": 1,
+            "InfoAnimalId": 1,
+            "InfoSampleTypeId": 1,
+            "AnimalName": "{医院名}",
+            "When": "2025-02-03 04:05:06",
+            "Zero": "0",
+            "Nullable": null,
+            "True": true,
+            "False": false
+          },
+          "InfoHospital": {
+            "HospitalName": "测试医院"
+          },
+          "DictSex": {
+            "SexName": "雄"
+          },
+          "InfoAnimal": {
+            "AnimalName": "猫"
+          },
+          "InfoSampleType": {
+            "SampleName": "血样"
+          },
+          "VwDiagnosisDetail": {
+            "TestName": "PCR",
+            "Amount": "125.50"
+          }
+        },
+        "bindings": [
+          {
+            "table": "ListDiagnosisProject",
+            "column": "AnimalName",
+            "description": "宠物"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "When",
+            "description": "日期"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "Nullable",
+            "description": "空值"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "Zero",
+            "description": "零"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "True",
+            "description": "真"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "False",
+            "description": "假"
+          },
+          {
+            "table": "InfoHospital",
+            "column": "HospitalName",
+            "description": "医院名"
+          },
+          {
+            "table": "DictSex",
+            "column": "SexName",
+            "description": "性别"
+          },
+          {
+            "table": "InfoAnimal",
+            "column": "AnimalName",
+            "description": "物种"
+          },
+          {
+            "table": "InfoSampleType",
+            "column": "SampleName",
+            "description": "采样类型"
+          },
+          {
+            "table": "VwDiagnosisDetail",
+            "column": "TestName",
+            "description": "项目"
+          },
+          {
+            "table": "VwDiagnosisDetail",
+            "column": "Amount",
+            "description": "金额"
+          }
+        ],
+        "diagnosticNames": "检测A,检测B",
+        "today": "2026-11-08",
+        "url": "https://petlis.invalid/Project/View/Detail.aspx?CID=TEST-7"
+      },
+      "output": "测试医院|测试医院|猫|雄|血样|PCR|125.50<br/><br/><span style='color:red'>附件-报告地址:<a target='_blank' href='https://petlis.invalid/Project/View/Detail.aspx?CID=TEST-7'>https://petlis.invalid/Project/View/Detail.aspx?CID=TEST-7</a></span>"
+    },
+    {
+      "input": {
+        "body": "{宠物}|{医院名}|{物种}|{性别}|{采样类型}|{项目}|{金额}",
+        "type": 2,
+        "rows": {
+          "ListDiagnosisProject": {
+            "InfoHospitalId": 1,
+            "DictSexId": 1,
+            "InfoAnimalId": 1,
+            "InfoSampleTypeId": 1,
+            "AnimalName": "{医院名}",
+            "When": "2025-02-03 04:05:06",
+            "Zero": "0",
+            "Nullable": null,
+            "True": true,
+            "False": false
+          },
+          "InfoHospital": {
+            "HospitalName": "测试医院"
+          },
+          "DictSex": {
+            "SexName": "雄"
+          },
+          "InfoAnimal": {
+            "AnimalName": "猫"
+          },
+          "InfoSampleType": {
+            "SampleName": "血样"
+          },
+          "VwDiagnosisDetail": {
+            "TestName": "PCR",
+            "Amount": "125.50"
+          }
+        },
+        "bindings": [
+          {
+            "table": "ListDiagnosisProject",
+            "column": "AnimalName",
+            "description": "宠物"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "When",
+            "description": "日期"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "Nullable",
+            "description": "空值"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "Zero",
+            "description": "零"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "True",
+            "description": "真"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "False",
+            "description": "假"
+          },
+          {
+            "table": "InfoHospital",
+            "column": "HospitalName",
+            "description": "医院名"
+          },
+          {
+            "table": "DictSex",
+            "column": "SexName",
+            "description": "性别"
+          },
+          {
+            "table": "InfoAnimal",
+            "column": "AnimalName",
+            "description": "物种"
+          },
+          {
+            "table": "InfoSampleType",
+            "column": "SampleName",
+            "description": "采样类型"
+          },
+          {
+            "table": "VwDiagnosisDetail",
+            "column": "TestName",
+            "description": "项目"
+          },
+          {
+            "table": "VwDiagnosisDetail",
+            "column": "Amount",
+            "description": "金额"
+          }
+        ],
+        "diagnosticNames": "检测A,检测B",
+        "today": "2026-11-08",
+        "url": "https://petlis.invalid/Project/View/Detail.aspx?CID=TEST-7"
+      },
+      "output": "测试医院|测试医院|猫|雄|血样|PCR|125.50"
+    },
+    {
+      "input": {
+        "body": "{日期}|{当前时间}|{空值}|{零}|{真}|{假}|{未知}",
+        "type": 1,
+        "rows": {
+          "ListDiagnosisProject": {
+            "InfoHospitalId": 1,
+            "DictSexId": 1,
+            "InfoAnimalId": 1,
+            "InfoSampleTypeId": 1,
+            "AnimalName": "{医院名}",
+            "When": "2025-02-03 04:05:06",
+            "Zero": "0",
+            "Nullable": null,
+            "True": true,
+            "False": false
+          },
+          "InfoHospital": {
+            "HospitalName": "测试医院"
+          },
+          "DictSex": {
+            "SexName": "雄"
+          },
+          "InfoAnimal": {
+            "AnimalName": "猫"
+          },
+          "InfoSampleType": {
+            "SampleName": "血样"
+          },
+          "VwDiagnosisDetail": {
+            "TestName": "PCR",
+            "Amount": "125.50"
+          }
+        },
+        "bindings": [
+          {
+            "table": "ListDiagnosisProject",
+            "column": "AnimalName",
+            "description": "宠物"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "When",
+            "description": "日期"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "Nullable",
+            "description": "空值"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "Zero",
+            "description": "零"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "True",
+            "description": "真"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "False",
+            "description": "假"
+          },
+          {
+            "table": "InfoHospital",
+            "column": "HospitalName",
+            "description": "医院名"
+          },
+          {
+            "table": "DictSex",
+            "column": "SexName",
+            "description": "性别"
+          },
+          {
+            "table": "InfoAnimal",
+            "column": "AnimalName",
+            "description": "物种"
+          },
+          {
+            "table": "InfoSampleType",
+            "column": "SampleName",
+            "description": "采样类型"
+          },
+          {
+            "table": "VwDiagnosisDetail",
+            "column": "TestName",
+            "description": "项目"
+          },
+          {
+            "table": "VwDiagnosisDetail",
+            "column": "Amount",
+            "description": "金额"
+          }
+        ],
+        "diagnosticNames": "检测A,检测B",
+        "today": "2026-11-08",
+        "url": "https://petlis.invalid/Project/View/Detail.aspx?CID=TEST-7"
+      },
+      "output": "2025-02-03|2026-11-08|{空值}|0|1||{未知}<br/><br/><span style='color:red'>附件-报告地址:<a target='_blank' href='https://petlis.invalid/Project/View/Detail.aspx?CID=TEST-7'>https://petlis.invalid/Project/View/Detail.aspx?CID=TEST-7</a></span>"
+    },
+    {
+      "input": {
+        "body": "{日期}|{当前时间}|{空值}|{零}|{真}|{假}|{未知}",
+        "type": 2,
+        "rows": {
+          "ListDiagnosisProject": {
+            "InfoHospitalId": 1,
+            "DictSexId": 1,
+            "InfoAnimalId": 1,
+            "InfoSampleTypeId": 1,
+            "AnimalName": "{医院名}",
+            "When": "2025-02-03 04:05:06",
+            "Zero": "0",
+            "Nullable": null,
+            "True": true,
+            "False": false
+          },
+          "InfoHospital": {
+            "HospitalName": "测试医院"
+          },
+          "DictSex": {
+            "SexName": "雄"
+          },
+          "InfoAnimal": {
+            "AnimalName": "猫"
+          },
+          "InfoSampleType": {
+            "SampleName": "血样"
+          },
+          "VwDiagnosisDetail": {
+            "TestName": "PCR",
+            "Amount": "125.50"
+          }
+        },
+        "bindings": [
+          {
+            "table": "ListDiagnosisProject",
+            "column": "AnimalName",
+            "description": "宠物"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "When",
+            "description": "日期"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "Nullable",
+            "description": "空值"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "Zero",
+            "description": "零"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "True",
+            "description": "真"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "False",
+            "description": "假"
+          },
+          {
+            "table": "InfoHospital",
+            "column": "HospitalName",
+            "description": "医院名"
+          },
+          {
+            "table": "DictSex",
+            "column": "SexName",
+            "description": "性别"
+          },
+          {
+            "table": "InfoAnimal",
+            "column": "AnimalName",
+            "description": "物种"
+          },
+          {
+            "table": "InfoSampleType",
+            "column": "SampleName",
+            "description": "采样类型"
+          },
+          {
+            "table": "VwDiagnosisDetail",
+            "column": "TestName",
+            "description": "项目"
+          },
+          {
+            "table": "VwDiagnosisDetail",
+            "column": "Amount",
+            "description": "金额"
+          }
+        ],
+        "diagnosticNames": "检测A,检测B",
+        "today": "2026-11-08",
+        "url": "https://petlis.invalid/Project/View/Detail.aspx?CID=TEST-7"
+      },
+      "output": "2025-02-03|2026-11-08|{空值}|0|1||{未知}"
+    },
+    {
+      "input": {
+        "body": "----分页符号----{诊断项名称}",
+        "type": 1,
+        "rows": {
+          "ListDiagnosisProject": {
+            "InfoHospitalId": 1,
+            "DictSexId": 1,
+            "InfoAnimalId": 1,
+            "InfoSampleTypeId": 1,
+            "AnimalName": "{医院名}",
+            "When": "2025-02-03 04:05:06",
+            "Zero": "0",
+            "Nullable": null,
+            "True": true,
+            "False": false
+          },
+          "InfoHospital": {
+            "HospitalName": "测试医院"
+          },
+          "DictSex": {
+            "SexName": "雄"
+          },
+          "InfoAnimal": {
+            "AnimalName": "猫"
+          },
+          "InfoSampleType": {
+            "SampleName": "血样"
+          },
+          "VwDiagnosisDetail": {
+            "TestName": "PCR",
+            "Amount": "125.50"
+          }
+        },
+        "bindings": [
+          {
+            "table": "ListDiagnosisProject",
+            "column": "AnimalName",
+            "description": "宠物"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "When",
+            "description": "日期"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "Nullable",
+            "description": "空值"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "Zero",
+            "description": "零"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "True",
+            "description": "真"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "False",
+            "description": "假"
+          },
+          {
+            "table": "InfoHospital",
+            "column": "HospitalName",
+            "description": "医院名"
+          },
+          {
+            "table": "DictSex",
+            "column": "SexName",
+            "description": "性别"
+          },
+          {
+            "table": "InfoAnimal",
+            "column": "AnimalName",
+            "description": "物种"
+          },
+          {
+            "table": "InfoSampleType",
+            "column": "SampleName",
+            "description": "采样类型"
+          },
+          {
+            "table": "VwDiagnosisDetail",
+            "column": "TestName",
+            "description": "项目"
+          },
+          {
+            "table": "VwDiagnosisDetail",
+            "column": "Amount",
+            "description": "金额"
+          }
+        ],
+        "diagnosticNames": "检测A,检测B",
+        "today": "2026-11-08",
+        "url": "https://petlis.invalid/Project/View/Detail.aspx?CID=TEST-7"
+      },
+      "output": "检测A,检测B<br/><br/><span style='color:red'>附件-报告地址:<a target='_blank' href='https://petlis.invalid/Project/View/Detail.aspx?CID=TEST-7'>https://petlis.invalid/Project/View/Detail.aspx?CID=TEST-7</a></span>"
+    },
+    {
+      "input": {
+        "body": "----分页符号----{诊断项名称}",
+        "type": 2,
+        "rows": {
+          "ListDiagnosisProject": {
+            "InfoHospitalId": 1,
+            "DictSexId": 1,
+            "InfoAnimalId": 1,
+            "InfoSampleTypeId": 1,
+            "AnimalName": "{医院名}",
+            "When": "2025-02-03 04:05:06",
+            "Zero": "0",
+            "Nullable": null,
+            "True": true,
+            "False": false
+          },
+          "InfoHospital": {
+            "HospitalName": "测试医院"
+          },
+          "DictSex": {
+            "SexName": "雄"
+          },
+          "InfoAnimal": {
+            "AnimalName": "猫"
+          },
+          "InfoSampleType": {
+            "SampleName": "血样"
+          },
+          "VwDiagnosisDetail": {
+            "TestName": "PCR",
+            "Amount": "125.50"
+          }
+        },
+        "bindings": [
+          {
+            "table": "ListDiagnosisProject",
+            "column": "AnimalName",
+            "description": "宠物"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "When",
+            "description": "日期"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "Nullable",
+            "description": "空值"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "Zero",
+            "description": "零"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "True",
+            "description": "真"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "False",
+            "description": "假"
+          },
+          {
+            "table": "InfoHospital",
+            "column": "HospitalName",
+            "description": "医院名"
+          },
+          {
+            "table": "DictSex",
+            "column": "SexName",
+            "description": "性别"
+          },
+          {
+            "table": "InfoAnimal",
+            "column": "AnimalName",
+            "description": "物种"
+          },
+          {
+            "table": "InfoSampleType",
+            "column": "SampleName",
+            "description": "采样类型"
+          },
+          {
+            "table": "VwDiagnosisDetail",
+            "column": "TestName",
+            "description": "项目"
+          },
+          {
+            "table": "VwDiagnosisDetail",
+            "column": "Amount",
+            "description": "金额"
+          }
+        ],
+        "diagnosticNames": "检测A,检测B",
+        "today": "2026-11-08",
+        "url": "https://petlis.invalid/Project/View/Detail.aspx?CID=TEST-7"
+      },
+      "output": "检测A,检测B"
+    },
+    {
+      "input": {
+        "body": "X{报告链接}{报告链接}",
+        "type": 1,
+        "rows": {
+          "ListDiagnosisProject": {
+            "InfoHospitalId": 1,
+            "DictSexId": 1,
+            "InfoAnimalId": 1,
+            "InfoSampleTypeId": 1,
+            "AnimalName": "{医院名}",
+            "When": "2025-02-03 04:05:06",
+            "Zero": "0",
+            "Nullable": null,
+            "True": true,
+            "False": false
+          },
+          "InfoHospital": {
+            "HospitalName": "测试医院"
+          },
+          "DictSex": {
+            "SexName": "雄"
+          },
+          "InfoAnimal": {
+            "AnimalName": "猫"
+          },
+          "InfoSampleType": {
+            "SampleName": "血样"
+          },
+          "VwDiagnosisDetail": {
+            "TestName": "PCR",
+            "Amount": "125.50"
+          }
+        },
+        "bindings": [
+          {
+            "table": "ListDiagnosisProject",
+            "column": "AnimalName",
+            "description": "宠物"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "When",
+            "description": "日期"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "Nullable",
+            "description": "空值"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "Zero",
+            "description": "零"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "True",
+            "description": "真"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "False",
+            "description": "假"
+          },
+          {
+            "table": "InfoHospital",
+            "column": "HospitalName",
+            "description": "医院名"
+          },
+          {
+            "table": "DictSex",
+            "column": "SexName",
+            "description": "性别"
+          },
+          {
+            "table": "InfoAnimal",
+            "column": "AnimalName",
+            "description": "物种"
+          },
+          {
+            "table": "InfoSampleType",
+            "column": "SampleName",
+            "description": "采样类型"
+          },
+          {
+            "table": "VwDiagnosisDetail",
+            "column": "TestName",
+            "description": "项目"
+          },
+          {
+            "table": "VwDiagnosisDetail",
+            "column": "Amount",
+            "description": "金额"
+          }
+        ],
+        "diagnosticNames": "检测A,检测B",
+        "today": "2026-11-08",
+        "url": "https://petlis.invalid/Project/View/Detail.aspx?CID=TEST-7"
+      },
+      "output": "X<br/><br/><span style='color:red'>附件-报告地址:<a target='_blank' href='https://petlis.invalid/Project/View/Detail.aspx?CID=TEST-7'>https://petlis.invalid/Project/View/Detail.aspx?CID=TEST-7</a></span><br/><br/><span style='color:red'>附件-报告地址:<a target='_blank' href='https://petlis.invalid/Project/View/Detail.aspx?CID=TEST-7'>https://petlis.invalid/Project/View/Detail.aspx?CID=TEST-7</a></span><br/><br/><span style='color:red'>附件-报告地址:<a target='_blank' href='https://petlis.invalid/Project/View/Detail.aspx?CID=TEST-7'>https://petlis.invalid/Project/View/Detail.aspx?CID=TEST-7</a></span>"
+    },
+    {
+      "input": {
+        "body": "X{报告链接}{报告链接}",
+        "type": 2,
+        "rows": {
+          "ListDiagnosisProject": {
+            "InfoHospitalId": 1,
+            "DictSexId": 1,
+            "InfoAnimalId": 1,
+            "InfoSampleTypeId": 1,
+            "AnimalName": "{医院名}",
+            "When": "2025-02-03 04:05:06",
+            "Zero": "0",
+            "Nullable": null,
+            "True": true,
+            "False": false
+          },
+          "InfoHospital": {
+            "HospitalName": "测试医院"
+          },
+          "DictSex": {
+            "SexName": "雄"
+          },
+          "InfoAnimal": {
+            "AnimalName": "猫"
+          },
+          "InfoSampleType": {
+            "SampleName": "血样"
+          },
+          "VwDiagnosisDetail": {
+            "TestName": "PCR",
+            "Amount": "125.50"
+          }
+        },
+        "bindings": [
+          {
+            "table": "ListDiagnosisProject",
+            "column": "AnimalName",
+            "description": "宠物"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "When",
+            "description": "日期"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "Nullable",
+            "description": "空值"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "Zero",
+            "description": "零"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "True",
+            "description": "真"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "False",
+            "description": "假"
+          },
+          {
+            "table": "InfoHospital",
+            "column": "HospitalName",
+            "description": "医院名"
+          },
+          {
+            "table": "DictSex",
+            "column": "SexName",
+            "description": "性别"
+          },
+          {
+            "table": "InfoAnimal",
+            "column": "AnimalName",
+            "description": "物种"
+          },
+          {
+            "table": "InfoSampleType",
+            "column": "SampleName",
+            "description": "采样类型"
+          },
+          {
+            "table": "VwDiagnosisDetail",
+            "column": "TestName",
+            "description": "项目"
+          },
+          {
+            "table": "VwDiagnosisDetail",
+            "column": "Amount",
+            "description": "金额"
+          }
+        ],
+        "diagnosticNames": "检测A,检测B",
+        "today": "2026-11-08",
+        "url": "https://petlis.invalid/Project/View/Detail.aspx?CID=TEST-7"
+      },
+      "output": "X<br/><br/><span style='color:red'>附件-报告地址:<a target='_blank' href='https://petlis.invalid/Project/View/Detail.aspx?CID=TEST-7'>https://petlis.invalid/Project/View/Detail.aspx?CID=TEST-7</a></span><br/><br/><span style='color:red'>附件-报告地址:<a target='_blank' href='https://petlis.invalid/Project/View/Detail.aspx?CID=TEST-7'>https://petlis.invalid/Project/View/Detail.aspx?CID=TEST-7</a></span>"
+    },
+    {
+      "input": {
+        "body": "\\u732b {宠物}",
+        "type": 1,
+        "rows": {
+          "ListDiagnosisProject": {
+            "InfoHospitalId": 1,
+            "DictSexId": 1,
+            "InfoAnimalId": 1,
+            "InfoSampleTypeId": 1,
+            "AnimalName": "{医院名}",
+            "When": "2025-02-03 04:05:06",
+            "Zero": "0",
+            "Nullable": null,
+            "True": true,
+            "False": false
+          },
+          "InfoHospital": {
+            "HospitalName": "测试医院"
+          },
+          "DictSex": {
+            "SexName": "雄"
+          },
+          "InfoAnimal": {
+            "AnimalName": "猫"
+          },
+          "InfoSampleType": {
+            "SampleName": "血样"
+          },
+          "VwDiagnosisDetail": {
+            "TestName": "PCR",
+            "Amount": "125.50"
+          }
+        },
+        "bindings": [
+          {
+            "table": "ListDiagnosisProject",
+            "column": "AnimalName",
+            "description": "宠物"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "When",
+            "description": "日期"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "Nullable",
+            "description": "空值"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "Zero",
+            "description": "零"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "True",
+            "description": "真"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "False",
+            "description": "假"
+          },
+          {
+            "table": "InfoHospital",
+            "column": "HospitalName",
+            "description": "医院名"
+          },
+          {
+            "table": "DictSex",
+            "column": "SexName",
+            "description": "性别"
+          },
+          {
+            "table": "InfoAnimal",
+            "column": "AnimalName",
+            "description": "物种"
+          },
+          {
+            "table": "InfoSampleType",
+            "column": "SampleName",
+            "description": "采样类型"
+          },
+          {
+            "table": "VwDiagnosisDetail",
+            "column": "TestName",
+            "description": "项目"
+          },
+          {
+            "table": "VwDiagnosisDetail",
+            "column": "Amount",
+            "description": "金额"
+          }
+        ],
+        "diagnosticNames": "检测A,检测B",
+        "today": "2026-11-08",
+        "url": "https://petlis.invalid/Project/View/Detail.aspx?CID=TEST-7"
+      },
+      "output": "猫 测试医院<br/><br/><span style='color:red'>附件-报告地址:<a target='_blank' href='https://petlis.invalid/Project/View/Detail.aspx?CID=TEST-7'>https://petlis.invalid/Project/View/Detail.aspx?CID=TEST-7</a></span>"
+    },
+    {
+      "input": {
+        "body": "\\u732b {宠物}",
+        "type": 2,
+        "rows": {
+          "ListDiagnosisProject": {
+            "InfoHospitalId": 1,
+            "DictSexId": 1,
+            "InfoAnimalId": 1,
+            "InfoSampleTypeId": 1,
+            "AnimalName": "{医院名}",
+            "When": "2025-02-03 04:05:06",
+            "Zero": "0",
+            "Nullable": null,
+            "True": true,
+            "False": false
+          },
+          "InfoHospital": {
+            "HospitalName": "测试医院"
+          },
+          "DictSex": {
+            "SexName": "雄"
+          },
+          "InfoAnimal": {
+            "AnimalName": "猫"
+          },
+          "InfoSampleType": {
+            "SampleName": "血样"
+          },
+          "VwDiagnosisDetail": {
+            "TestName": "PCR",
+            "Amount": "125.50"
+          }
+        },
+        "bindings": [
+          {
+            "table": "ListDiagnosisProject",
+            "column": "AnimalName",
+            "description": "宠物"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "When",
+            "description": "日期"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "Nullable",
+            "description": "空值"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "Zero",
+            "description": "零"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "True",
+            "description": "真"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "False",
+            "description": "假"
+          },
+          {
+            "table": "InfoHospital",
+            "column": "HospitalName",
+            "description": "医院名"
+          },
+          {
+            "table": "DictSex",
+            "column": "SexName",
+            "description": "性别"
+          },
+          {
+            "table": "InfoAnimal",
+            "column": "AnimalName",
+            "description": "物种"
+          },
+          {
+            "table": "InfoSampleType",
+            "column": "SampleName",
+            "description": "采样类型"
+          },
+          {
+            "table": "VwDiagnosisDetail",
+            "column": "TestName",
+            "description": "项目"
+          },
+          {
+            "table": "VwDiagnosisDetail",
+            "column": "Amount",
+            "description": "金额"
+          }
+        ],
+        "diagnosticNames": "检测A,检测B",
+        "today": "2026-11-08",
+        "url": "https://petlis.invalid/Project/View/Detail.aspx?CID=TEST-7"
+      },
+      "output": "猫 测试医院"
+    },
+    {
+      "input": {
+        "body": null,
+        "type": 1,
+        "rows": {
+          "ListDiagnosisProject": {
+            "InfoHospitalId": 1,
+            "DictSexId": 1,
+            "InfoAnimalId": 1,
+            "InfoSampleTypeId": 1,
+            "AnimalName": "{医院名}",
+            "When": "2025-02-03 04:05:06",
+            "Zero": "0",
+            "Nullable": null,
+            "True": true,
+            "False": false
+          },
+          "InfoHospital": {
+            "HospitalName": "测试医院"
+          },
+          "DictSex": {
+            "SexName": "雄"
+          },
+          "InfoAnimal": {
+            "AnimalName": "猫"
+          },
+          "InfoSampleType": {
+            "SampleName": "血样"
+          },
+          "VwDiagnosisDetail": {
+            "TestName": "PCR",
+            "Amount": "125.50"
+          }
+        },
+        "bindings": [
+          {
+            "table": "ListDiagnosisProject",
+            "column": "AnimalName",
+            "description": "宠物"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "When",
+            "description": "日期"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "Nullable",
+            "description": "空值"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "Zero",
+            "description": "零"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "True",
+            "description": "真"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "False",
+            "description": "假"
+          },
+          {
+            "table": "InfoHospital",
+            "column": "HospitalName",
+            "description": "医院名"
+          },
+          {
+            "table": "DictSex",
+            "column": "SexName",
+            "description": "性别"
+          },
+          {
+            "table": "InfoAnimal",
+            "column": "AnimalName",
+            "description": "物种"
+          },
+          {
+            "table": "InfoSampleType",
+            "column": "SampleName",
+            "description": "采样类型"
+          },
+          {
+            "table": "VwDiagnosisDetail",
+            "column": "TestName",
+            "description": "项目"
+          },
+          {
+            "table": "VwDiagnosisDetail",
+            "column": "Amount",
+            "description": "金额"
+          }
+        ],
+        "diagnosticNames": "检测A,检测B",
+        "today": "2026-11-08",
+        "url": "https://petlis.invalid/Project/View/Detail.aspx?CID=TEST-7"
+      },
+      "output": "<br/><br/><span style='color:red'>附件-报告地址:<a target='_blank' href='https://petlis.invalid/Project/View/Detail.aspx?CID=TEST-7'>https://petlis.invalid/Project/View/Detail.aspx?CID=TEST-7</a></span>"
+    },
+    {
+      "input": {
+        "body": null,
+        "type": 2,
+        "rows": {
+          "ListDiagnosisProject": {
+            "InfoHospitalId": 1,
+            "DictSexId": 1,
+            "InfoAnimalId": 1,
+            "InfoSampleTypeId": 1,
+            "AnimalName": "{医院名}",
+            "When": "2025-02-03 04:05:06",
+            "Zero": "0",
+            "Nullable": null,
+            "True": true,
+            "False": false
+          },
+          "InfoHospital": {
+            "HospitalName": "测试医院"
+          },
+          "DictSex": {
+            "SexName": "雄"
+          },
+          "InfoAnimal": {
+            "AnimalName": "猫"
+          },
+          "InfoSampleType": {
+            "SampleName": "血样"
+          },
+          "VwDiagnosisDetail": {
+            "TestName": "PCR",
+            "Amount": "125.50"
+          }
+        },
+        "bindings": [
+          {
+            "table": "ListDiagnosisProject",
+            "column": "AnimalName",
+            "description": "宠物"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "When",
+            "description": "日期"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "Nullable",
+            "description": "空值"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "Zero",
+            "description": "零"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "True",
+            "description": "真"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "False",
+            "description": "假"
+          },
+          {
+            "table": "InfoHospital",
+            "column": "HospitalName",
+            "description": "医院名"
+          },
+          {
+            "table": "DictSex",
+            "column": "SexName",
+            "description": "性别"
+          },
+          {
+            "table": "InfoAnimal",
+            "column": "AnimalName",
+            "description": "物种"
+          },
+          {
+            "table": "InfoSampleType",
+            "column": "SampleName",
+            "description": "采样类型"
+          },
+          {
+            "table": "VwDiagnosisDetail",
+            "column": "TestName",
+            "description": "项目"
+          },
+          {
+            "table": "VwDiagnosisDetail",
+            "column": "Amount",
+            "description": "金额"
+          }
+        ],
+        "diagnosticNames": "检测A,检测B",
+        "today": "2026-11-08",
+        "url": "https://petlis.invalid/Project/View/Detail.aspx?CID=TEST-7"
+      },
+      "output": ""
+    },
+    {
+      "input": {
+        "body": "{日期}|{诊断项名称}",
+        "type": 2,
+        "rows": {
+          "ListDiagnosisProject": {
+            "InfoHospitalId": 1,
+            "DictSexId": 1,
+            "InfoAnimalId": 1,
+            "InfoSampleTypeId": 1,
+            "AnimalName": "{医院名}",
+            "When": "1900-01-01 00:00:00",
+            "Zero": "0",
+            "Nullable": null,
+            "True": true,
+            "False": false
+          },
+          "InfoHospital": {
+            "HospitalName": "测试医院"
+          },
+          "DictSex": {
+            "SexName": "雄"
+          },
+          "InfoAnimal": {
+            "AnimalName": "猫"
+          },
+          "InfoSampleType": {
+            "SampleName": "血样"
+          },
+          "VwDiagnosisDetail": {
+            "TestName": "PCR",
+            "Amount": "125.50"
+          }
+        },
+        "bindings": [
+          {
+            "table": "ListDiagnosisProject",
+            "column": "AnimalName",
+            "description": "宠物"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "When",
+            "description": "日期"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "Nullable",
+            "description": "空值"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "Zero",
+            "description": "零"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "True",
+            "description": "真"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "False",
+            "description": "假"
+          },
+          {
+            "table": "InfoHospital",
+            "column": "HospitalName",
+            "description": "医院名"
+          },
+          {
+            "table": "DictSex",
+            "column": "SexName",
+            "description": "性别"
+          },
+          {
+            "table": "InfoAnimal",
+            "column": "AnimalName",
+            "description": "物种"
+          },
+          {
+            "table": "InfoSampleType",
+            "column": "SampleName",
+            "description": "采样类型"
+          },
+          {
+            "table": "VwDiagnosisDetail",
+            "column": "TestName",
+            "description": "项目"
+          },
+          {
+            "table": "VwDiagnosisDetail",
+            "column": "Amount",
+            "description": "金额"
+          }
+        ],
+        "diagnosticNames": null,
+        "today": "2026-11-08",
+        "url": "https://petlis.invalid/Project/View/Detail.aspx?CID=TEST-7"
+      },
+      "output": "1900-01-01 00:00:00|"
+    },
+    {
+      "input": {
+        "body": "{日期}|{诊断项名称}",
+        "type": 2,
+        "rows": {
+          "ListDiagnosisProject": {
+            "InfoHospitalId": 1,
+            "DictSexId": 1,
+            "InfoAnimalId": 1,
+            "InfoSampleTypeId": 1,
+            "AnimalName": "{医院名}",
+            "When": "1970-01-01 00:00:00",
+            "Zero": "0",
+            "Nullable": null,
+            "True": true,
+            "False": false
+          },
+          "InfoHospital": {
+            "HospitalName": "测试医院"
+          },
+          "DictSex": {
+            "SexName": "雄"
+          },
+          "InfoAnimal": {
+            "AnimalName": "猫"
+          },
+          "InfoSampleType": {
+            "SampleName": "血样"
+          },
+          "VwDiagnosisDetail": {
+            "TestName": "PCR",
+            "Amount": "125.50"
+          }
+        },
+        "bindings": [
+          {
+            "table": "ListDiagnosisProject",
+            "column": "AnimalName",
+            "description": "宠物"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "When",
+            "description": "日期"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "Nullable",
+            "description": "空值"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "Zero",
+            "description": "零"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "True",
+            "description": "真"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "False",
+            "description": "假"
+          },
+          {
+            "table": "InfoHospital",
+            "column": "HospitalName",
+            "description": "医院名"
+          },
+          {
+            "table": "DictSex",
+            "column": "SexName",
+            "description": "性别"
+          },
+          {
+            "table": "InfoAnimal",
+            "column": "AnimalName",
+            "description": "物种"
+          },
+          {
+            "table": "InfoSampleType",
+            "column": "SampleName",
+            "description": "采样类型"
+          },
+          {
+            "table": "VwDiagnosisDetail",
+            "column": "TestName",
+            "description": "项目"
+          },
+          {
+            "table": "VwDiagnosisDetail",
+            "column": "Amount",
+            "description": "金额"
+          }
+        ],
+        "diagnosticNames": null,
+        "today": "2026-11-08",
+        "url": "https://petlis.invalid/Project/View/Detail.aspx?CID=TEST-7"
+      },
+      "output": "1970-01-01 00:00:00|"
+    },
+    {
+      "input": {
+        "body": "{日期}|{诊断项名称}",
+        "type": 2,
+        "rows": {
+          "ListDiagnosisProject": {
+            "InfoHospitalId": 1,
+            "DictSexId": 1,
+            "InfoAnimalId": 1,
+            "InfoSampleTypeId": 1,
+            "AnimalName": "{医院名}",
+            "When": "1970-01-01 08:00:00",
+            "Zero": "0",
+            "Nullable": null,
+            "True": true,
+            "False": false
+          },
+          "InfoHospital": {
+            "HospitalName": "测试医院"
+          },
+          "DictSex": {
+            "SexName": "雄"
+          },
+          "InfoAnimal": {
+            "AnimalName": "猫"
+          },
+          "InfoSampleType": {
+            "SampleName": "血样"
+          },
+          "VwDiagnosisDetail": {
+            "TestName": "PCR",
+            "Amount": "125.50"
+          }
+        },
+        "bindings": [
+          {
+            "table": "ListDiagnosisProject",
+            "column": "AnimalName",
+            "description": "宠物"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "When",
+            "description": "日期"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "Nullable",
+            "description": "空值"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "Zero",
+            "description": "零"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "True",
+            "description": "真"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "False",
+            "description": "假"
+          },
+          {
+            "table": "InfoHospital",
+            "column": "HospitalName",
+            "description": "医院名"
+          },
+          {
+            "table": "DictSex",
+            "column": "SexName",
+            "description": "性别"
+          },
+          {
+            "table": "InfoAnimal",
+            "column": "AnimalName",
+            "description": "物种"
+          },
+          {
+            "table": "InfoSampleType",
+            "column": "SampleName",
+            "description": "采样类型"
+          },
+          {
+            "table": "VwDiagnosisDetail",
+            "column": "TestName",
+            "description": "项目"
+          },
+          {
+            "table": "VwDiagnosisDetail",
+            "column": "Amount",
+            "description": "金额"
+          }
+        ],
+        "diagnosticNames": null,
+        "today": "2026-11-08",
+        "url": "https://petlis.invalid/Project/View/Detail.aspx?CID=TEST-7"
+      },
+      "output": "1970-01-01 08:00:00|"
+    },
+    {
+      "input": {
+        "body": "{日期}|{诊断项名称}",
+        "type": 2,
+        "rows": {
+          "ListDiagnosisProject": {
+            "InfoHospitalId": 1,
+            "DictSexId": 1,
+            "InfoAnimalId": 1,
+            "InfoSampleTypeId": 1,
+            "AnimalName": "{医院名}",
+            "When": "1970-01-01 08:00:01",
+            "Zero": "0",
+            "Nullable": null,
+            "True": true,
+            "False": false
+          },
+          "InfoHospital": {
+            "HospitalName": "测试医院"
+          },
+          "DictSex": {
+            "SexName": "雄"
+          },
+          "InfoAnimal": {
+            "AnimalName": "猫"
+          },
+          "InfoSampleType": {
+            "SampleName": "血样"
+          },
+          "VwDiagnosisDetail": {
+            "TestName": "PCR",
+            "Amount": "125.50"
+          }
+        },
+        "bindings": [
+          {
+            "table": "ListDiagnosisProject",
+            "column": "AnimalName",
+            "description": "宠物"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "When",
+            "description": "日期"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "Nullable",
+            "description": "空值"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "Zero",
+            "description": "零"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "True",
+            "description": "真"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "False",
+            "description": "假"
+          },
+          {
+            "table": "InfoHospital",
+            "column": "HospitalName",
+            "description": "医院名"
+          },
+          {
+            "table": "DictSex",
+            "column": "SexName",
+            "description": "性别"
+          },
+          {
+            "table": "InfoAnimal",
+            "column": "AnimalName",
+            "description": "物种"
+          },
+          {
+            "table": "InfoSampleType",
+            "column": "SampleName",
+            "description": "采样类型"
+          },
+          {
+            "table": "VwDiagnosisDetail",
+            "column": "TestName",
+            "description": "项目"
+          },
+          {
+            "table": "VwDiagnosisDetail",
+            "column": "Amount",
+            "description": "金额"
+          }
+        ],
+        "diagnosticNames": null,
+        "today": "2026-11-08",
+        "url": "https://petlis.invalid/Project/View/Detail.aspx?CID=TEST-7"
+      },
+      "output": "1970-01-01|"
+    },
+    {
+      "input": {
+        "body": "{日期}|{诊断项名称}",
+        "type": 2,
+        "rows": {
+          "ListDiagnosisProject": {
+            "InfoHospitalId": 1,
+            "DictSexId": 1,
+            "InfoAnimalId": 1,
+            "InfoSampleTypeId": 1,
+            "AnimalName": "{医院名}",
+            "When": "2025-02-30 00:00:00",
+            "Zero": "0",
+            "Nullable": null,
+            "True": true,
+            "False": false
+          },
+          "InfoHospital": {
+            "HospitalName": "测试医院"
+          },
+          "DictSex": {
+            "SexName": "雄"
+          },
+          "InfoAnimal": {
+            "AnimalName": "猫"
+          },
+          "InfoSampleType": {
+            "SampleName": "血样"
+          },
+          "VwDiagnosisDetail": {
+            "TestName": "PCR",
+            "Amount": "125.50"
+          }
+        },
+        "bindings": [
+          {
+            "table": "ListDiagnosisProject",
+            "column": "AnimalName",
+            "description": "宠物"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "When",
+            "description": "日期"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "Nullable",
+            "description": "空值"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "Zero",
+            "description": "零"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "True",
+            "description": "真"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "False",
+            "description": "假"
+          },
+          {
+            "table": "InfoHospital",
+            "column": "HospitalName",
+            "description": "医院名"
+          },
+          {
+            "table": "DictSex",
+            "column": "SexName",
+            "description": "性别"
+          },
+          {
+            "table": "InfoAnimal",
+            "column": "AnimalName",
+            "description": "物种"
+          },
+          {
+            "table": "InfoSampleType",
+            "column": "SampleName",
+            "description": "采样类型"
+          },
+          {
+            "table": "VwDiagnosisDetail",
+            "column": "TestName",
+            "description": "项目"
+          },
+          {
+            "table": "VwDiagnosisDetail",
+            "column": "Amount",
+            "description": "金额"
+          }
+        ],
+        "diagnosticNames": null,
+        "today": "2026-11-08",
+        "url": "https://petlis.invalid/Project/View/Detail.aspx?CID=TEST-7"
+      },
+      "output": "2025-03-02|"
+    },
+    {
+      "input": {
+        "body": "{日期}|{诊断项名称}",
+        "type": 2,
+        "rows": {
+          "ListDiagnosisProject": {
+            "InfoHospitalId": 1,
+            "DictSexId": 1,
+            "InfoAnimalId": 1,
+            "InfoSampleTypeId": 1,
+            "AnimalName": "{医院名}",
+            "When": "2025-13-01 00:00:00",
+            "Zero": "0",
+            "Nullable": null,
+            "True": true,
+            "False": false
+          },
+          "InfoHospital": {
+            "HospitalName": "测试医院"
+          },
+          "DictSex": {
+            "SexName": "雄"
+          },
+          "InfoAnimal": {
+            "AnimalName": "猫"
+          },
+          "InfoSampleType": {
+            "SampleName": "血样"
+          },
+          "VwDiagnosisDetail": {
+            "TestName": "PCR",
+            "Amount": "125.50"
+          }
+        },
+        "bindings": [
+          {
+            "table": "ListDiagnosisProject",
+            "column": "AnimalName",
+            "description": "宠物"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "When",
+            "description": "日期"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "Nullable",
+            "description": "空值"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "Zero",
+            "description": "零"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "True",
+            "description": "真"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "False",
+            "description": "假"
+          },
+          {
+            "table": "InfoHospital",
+            "column": "HospitalName",
+            "description": "医院名"
+          },
+          {
+            "table": "DictSex",
+            "column": "SexName",
+            "description": "性别"
+          },
+          {
+            "table": "InfoAnimal",
+            "column": "AnimalName",
+            "description": "物种"
+          },
+          {
+            "table": "InfoSampleType",
+            "column": "SampleName",
+            "description": "采样类型"
+          },
+          {
+            "table": "VwDiagnosisDetail",
+            "column": "TestName",
+            "description": "项目"
+          },
+          {
+            "table": "VwDiagnosisDetail",
+            "column": "Amount",
+            "description": "金额"
+          }
+        ],
+        "diagnosticNames": null,
+        "today": "2026-11-08",
+        "url": "https://petlis.invalid/Project/View/Detail.aspx?CID=TEST-7"
+      },
+      "output": "2025-13-01 00:00:00|"
+    },
+    {
+      "input": {
+        "body": "{日期}|{诊断项名称}",
+        "type": 2,
+        "rows": {
+          "ListDiagnosisProject": {
+            "InfoHospitalId": 1,
+            "DictSexId": 1,
+            "InfoAnimalId": 1,
+            "InfoSampleTypeId": 1,
+            "AnimalName": "{医院名}",
+            "When": "2025-00-01 00:00:00",
+            "Zero": "0",
+            "Nullable": null,
+            "True": true,
+            "False": false
+          },
+          "InfoHospital": {
+            "HospitalName": "测试医院"
+          },
+          "DictSex": {
+            "SexName": "雄"
+          },
+          "InfoAnimal": {
+            "AnimalName": "猫"
+          },
+          "InfoSampleType": {
+            "SampleName": "血样"
+          },
+          "VwDiagnosisDetail": {
+            "TestName": "PCR",
+            "Amount": "125.50"
+          }
+        },
+        "bindings": [
+          {
+            "table": "ListDiagnosisProject",
+            "column": "AnimalName",
+            "description": "宠物"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "When",
+            "description": "日期"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "Nullable",
+            "description": "空值"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "Zero",
+            "description": "零"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "True",
+            "description": "真"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "False",
+            "description": "假"
+          },
+          {
+            "table": "InfoHospital",
+            "column": "HospitalName",
+            "description": "医院名"
+          },
+          {
+            "table": "DictSex",
+            "column": "SexName",
+            "description": "性别"
+          },
+          {
+            "table": "InfoAnimal",
+            "column": "AnimalName",
+            "description": "物种"
+          },
+          {
+            "table": "InfoSampleType",
+            "column": "SampleName",
+            "description": "采样类型"
+          },
+          {
+            "table": "VwDiagnosisDetail",
+            "column": "TestName",
+            "description": "项目"
+          },
+          {
+            "table": "VwDiagnosisDetail",
+            "column": "Amount",
+            "description": "金额"
+          }
+        ],
+        "diagnosticNames": null,
+        "today": "2026-11-08",
+        "url": "https://petlis.invalid/Project/View/Detail.aspx?CID=TEST-7"
+      },
+      "output": "2024-12-01|"
+    },
+    {
+      "input": {
+        "body": "{日期}|{诊断项名称}",
+        "type": 2,
+        "rows": {
+          "ListDiagnosisProject": {
+            "InfoHospitalId": 1,
+            "DictSexId": 1,
+            "InfoAnimalId": 1,
+            "InfoSampleTypeId": 1,
+            "AnimalName": "{医院名}",
+            "When": "2025-01-00 00:00:00",
+            "Zero": "0",
+            "Nullable": null,
+            "True": true,
+            "False": false
+          },
+          "InfoHospital": {
+            "HospitalName": "测试医院"
+          },
+          "DictSex": {
+            "SexName": "雄"
+          },
+          "InfoAnimal": {
+            "AnimalName": "猫"
+          },
+          "InfoSampleType": {
+            "SampleName": "血样"
+          },
+          "VwDiagnosisDetail": {
+            "TestName": "PCR",
+            "Amount": "125.50"
+          }
+        },
+        "bindings": [
+          {
+            "table": "ListDiagnosisProject",
+            "column": "AnimalName",
+            "description": "宠物"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "When",
+            "description": "日期"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "Nullable",
+            "description": "空值"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "Zero",
+            "description": "零"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "True",
+            "description": "真"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "False",
+            "description": "假"
+          },
+          {
+            "table": "InfoHospital",
+            "column": "HospitalName",
+            "description": "医院名"
+          },
+          {
+            "table": "DictSex",
+            "column": "SexName",
+            "description": "性别"
+          },
+          {
+            "table": "InfoAnimal",
+            "column": "AnimalName",
+            "description": "物种"
+          },
+          {
+            "table": "InfoSampleType",
+            "column": "SampleName",
+            "description": "采样类型"
+          },
+          {
+            "table": "VwDiagnosisDetail",
+            "column": "TestName",
+            "description": "项目"
+          },
+          {
+            "table": "VwDiagnosisDetail",
+            "column": "Amount",
+            "description": "金额"
+          }
+        ],
+        "diagnosticNames": null,
+        "today": "2026-11-08",
+        "url": "https://petlis.invalid/Project/View/Detail.aspx?CID=TEST-7"
+      },
+      "output": "2024-12-31|"
+    },
+    {
+      "input": {
+        "body": "{日期}|{诊断项名称}",
+        "type": 2,
+        "rows": {
+          "ListDiagnosisProject": {
+            "InfoHospitalId": 1,
+            "DictSexId": 1,
+            "InfoAnimalId": 1,
+            "InfoSampleTypeId": 1,
+            "AnimalName": "{医院名}",
+            "When": "2025-01-01 24:01:00",
+            "Zero": "0",
+            "Nullable": null,
+            "True": true,
+            "False": false
+          },
+          "InfoHospital": {
+            "HospitalName": "测试医院"
+          },
+          "DictSex": {
+            "SexName": "雄"
+          },
+          "InfoAnimal": {
+            "AnimalName": "猫"
+          },
+          "InfoSampleType": {
+            "SampleName": "血样"
+          },
+          "VwDiagnosisDetail": {
+            "TestName": "PCR",
+            "Amount": "125.50"
+          }
+        },
+        "bindings": [
+          {
+            "table": "ListDiagnosisProject",
+            "column": "AnimalName",
+            "description": "宠物"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "When",
+            "description": "日期"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "Nullable",
+            "description": "空值"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "Zero",
+            "description": "零"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "True",
+            "description": "真"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "False",
+            "description": "假"
+          },
+          {
+            "table": "InfoHospital",
+            "column": "HospitalName",
+            "description": "医院名"
+          },
+          {
+            "table": "DictSex",
+            "column": "SexName",
+            "description": "性别"
+          },
+          {
+            "table": "InfoAnimal",
+            "column": "AnimalName",
+            "description": "物种"
+          },
+          {
+            "table": "InfoSampleType",
+            "column": "SampleName",
+            "description": "采样类型"
+          },
+          {
+            "table": "VwDiagnosisDetail",
+            "column": "TestName",
+            "description": "项目"
+          },
+          {
+            "table": "VwDiagnosisDetail",
+            "column": "Amount",
+            "description": "金额"
+          }
+        ],
+        "diagnosticNames": null,
+        "today": "2026-11-08",
+        "url": "https://petlis.invalid/Project/View/Detail.aspx?CID=TEST-7"
+      },
+      "output": "2025-01-02|"
+    },
+    {
+      "input": {
+        "body": "{日期}|{诊断项名称}",
+        "type": 2,
+        "rows": {
+          "ListDiagnosisProject": {
+            "InfoHospitalId": 1,
+            "DictSexId": 1,
+            "InfoAnimalId": 1,
+            "InfoSampleTypeId": 1,
+            "AnimalName": "{医院名}",
+            "When": "2025/01/02 03:04:05",
+            "Zero": "0",
+            "Nullable": null,
+            "True": true,
+            "False": false
+          },
+          "InfoHospital": {
+            "HospitalName": "测试医院"
+          },
+          "DictSex": {
+            "SexName": "雄"
+          },
+          "InfoAnimal": {
+            "AnimalName": "猫"
+          },
+          "InfoSampleType": {
+            "SampleName": "血样"
+          },
+          "VwDiagnosisDetail": {
+            "TestName": "PCR",
+            "Amount": "125.50"
+          }
+        },
+        "bindings": [
+          {
+            "table": "ListDiagnosisProject",
+            "column": "AnimalName",
+            "description": "宠物"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "When",
+            "description": "日期"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "Nullable",
+            "description": "空值"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "Zero",
+            "description": "零"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "True",
+            "description": "真"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "False",
+            "description": "假"
+          },
+          {
+            "table": "InfoHospital",
+            "column": "HospitalName",
+            "description": "医院名"
+          },
+          {
+            "table": "DictSex",
+            "column": "SexName",
+            "description": "性别"
+          },
+          {
+            "table": "InfoAnimal",
+            "column": "AnimalName",
+            "description": "物种"
+          },
+          {
+            "table": "InfoSampleType",
+            "column": "SampleName",
+            "description": "采样类型"
+          },
+          {
+            "table": "VwDiagnosisDetail",
+            "column": "TestName",
+            "description": "项目"
+          },
+          {
+            "table": "VwDiagnosisDetail",
+            "column": "Amount",
+            "description": "金额"
+          }
+        ],
+        "diagnosticNames": null,
+        "today": "2026-11-08",
+        "url": "https://petlis.invalid/Project/View/Detail.aspx?CID=TEST-7"
+      },
+      "output": "2025-01-02|"
+    },
+    {
+      "input": {
+        "body": "{日期}|{诊断项名称}",
+        "type": 2,
+        "rows": {
+          "ListDiagnosisProject": {
+            "InfoHospitalId": 1,
+            "DictSexId": 1,
+            "InfoAnimalId": 1,
+            "InfoSampleTypeId": 1,
+            "AnimalName": "{医院名}",
+            "When": "0000-00-00 00:00:00",
+            "Zero": "0",
+            "Nullable": null,
+            "True": true,
+            "False": false
+          },
+          "InfoHospital": {
+            "HospitalName": "测试医院"
+          },
+          "DictSex": {
+            "SexName": "雄"
+          },
+          "InfoAnimal": {
+            "AnimalName": "猫"
+          },
+          "InfoSampleType": {
+            "SampleName": "血样"
+          },
+          "VwDiagnosisDetail": {
+            "TestName": "PCR",
+            "Amount": "125.50"
+          }
+        },
+        "bindings": [
+          {
+            "table": "ListDiagnosisProject",
+            "column": "AnimalName",
+            "description": "宠物"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "When",
+            "description": "日期"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "Nullable",
+            "description": "空值"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "Zero",
+            "description": "零"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "True",
+            "description": "真"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "False",
+            "description": "假"
+          },
+          {
+            "table": "InfoHospital",
+            "column": "HospitalName",
+            "description": "医院名"
+          },
+          {
+            "table": "DictSex",
+            "column": "SexName",
+            "description": "性别"
+          },
+          {
+            "table": "InfoAnimal",
+            "column": "AnimalName",
+            "description": "物种"
+          },
+          {
+            "table": "InfoSampleType",
+            "column": "SampleName",
+            "description": "采样类型"
+          },
+          {
+            "table": "VwDiagnosisDetail",
+            "column": "TestName",
+            "description": "项目"
+          },
+          {
+            "table": "VwDiagnosisDetail",
+            "column": "Amount",
+            "description": "金额"
+          }
+        ],
+        "diagnosticNames": null,
+        "today": "2026-11-08",
+        "url": "https://petlis.invalid/Project/View/Detail.aspx?CID=TEST-7"
+      },
+      "output": "0000-00-00 00:00:00|"
+    },
+    {
+      "input": {
+        "body": "{日期}|{诊断项名称}",
+        "type": 2,
+        "rows": {
+          "ListDiagnosisProject": {
+            "InfoHospitalId": 1,
+            "DictSexId": 1,
+            "InfoAnimalId": 1,
+            "InfoSampleTypeId": 1,
+            "AnimalName": "{医院名}",
+            "When": "not a date value!!!",
+            "Zero": "0",
+            "Nullable": null,
+            "True": true,
+            "False": false
+          },
+          "InfoHospital": {
+            "HospitalName": "测试医院"
+          },
+          "DictSex": {
+            "SexName": "雄"
+          },
+          "InfoAnimal": {
+            "AnimalName": "猫"
+          },
+          "InfoSampleType": {
+            "SampleName": "血样"
+          },
+          "VwDiagnosisDetail": {
+            "TestName": "PCR",
+            "Amount": "125.50"
+          }
+        },
+        "bindings": [
+          {
+            "table": "ListDiagnosisProject",
+            "column": "AnimalName",
+            "description": "宠物"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "When",
+            "description": "日期"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "Nullable",
+            "description": "空值"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "Zero",
+            "description": "零"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "True",
+            "description": "真"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "False",
+            "description": "假"
+          },
+          {
+            "table": "InfoHospital",
+            "column": "HospitalName",
+            "description": "医院名"
+          },
+          {
+            "table": "DictSex",
+            "column": "SexName",
+            "description": "性别"
+          },
+          {
+            "table": "InfoAnimal",
+            "column": "AnimalName",
+            "description": "物种"
+          },
+          {
+            "table": "InfoSampleType",
+            "column": "SampleName",
+            "description": "采样类型"
+          },
+          {
+            "table": "VwDiagnosisDetail",
+            "column": "TestName",
+            "description": "项目"
+          },
+          {
+            "table": "VwDiagnosisDetail",
+            "column": "Amount",
+            "description": "金额"
+          }
+        ],
+        "diagnosticNames": null,
+        "today": "2026-11-08",
+        "url": "https://petlis.invalid/Project/View/Detail.aspx?CID=TEST-7"
+      },
+      "output": "not a date value!!!|"
+    },
+    {
+      "input": {
+        "body": "{日期}|{诊断项名称}",
+        "type": 2,
+        "rows": {
+          "ListDiagnosisProject": {
+            "InfoHospitalId": 1,
+            "DictSexId": 1,
+            "InfoAnimalId": 1,
+            "InfoSampleTypeId": 1,
+            "AnimalName": "{医院名}",
+            "When": "2025-01-02T03:04:05",
+            "Zero": "0",
+            "Nullable": null,
+            "True": true,
+            "False": false
+          },
+          "InfoHospital": {
+            "HospitalName": "测试医院"
+          },
+          "DictSex": {
+            "SexName": "雄"
+          },
+          "InfoAnimal": {
+            "AnimalName": "猫"
+          },
+          "InfoSampleType": {
+            "SampleName": "血样"
+          },
+          "VwDiagnosisDetail": {
+            "TestName": "PCR",
+            "Amount": "125.50"
+          }
+        },
+        "bindings": [
+          {
+            "table": "ListDiagnosisProject",
+            "column": "AnimalName",
+            "description": "宠物"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "When",
+            "description": "日期"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "Nullable",
+            "description": "空值"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "Zero",
+            "description": "零"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "True",
+            "description": "真"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "False",
+            "description": "假"
+          },
+          {
+            "table": "InfoHospital",
+            "column": "HospitalName",
+            "description": "医院名"
+          },
+          {
+            "table": "DictSex",
+            "column": "SexName",
+            "description": "性别"
+          },
+          {
+            "table": "InfoAnimal",
+            "column": "AnimalName",
+            "description": "物种"
+          },
+          {
+            "table": "InfoSampleType",
+            "column": "SampleName",
+            "description": "采样类型"
+          },
+          {
+            "table": "VwDiagnosisDetail",
+            "column": "TestName",
+            "description": "项目"
+          },
+          {
+            "table": "VwDiagnosisDetail",
+            "column": "Amount",
+            "description": "金额"
+          }
+        ],
+        "diagnosticNames": null,
+        "today": "2026-11-08",
+        "url": "https://petlis.invalid/Project/View/Detail.aspx?CID=TEST-7"
+      },
+      "output": "2025-01-02|"
+    },
+    {
+      "input": {
+        "body": "{日期}|{诊断项名称}",
+        "type": 2,
+        "rows": {
+          "ListDiagnosisProject": {
+            "InfoHospitalId": 1,
+            "DictSexId": 1,
+            "InfoAnimalId": 1,
+            "InfoSampleTypeId": 1,
+            "AnimalName": "{医院名}",
+            "When": "2025-01-02t03:04:05",
+            "Zero": "0",
+            "Nullable": null,
+            "True": true,
+            "False": false
+          },
+          "InfoHospital": {
+            "HospitalName": "测试医院"
+          },
+          "DictSex": {
+            "SexName": "雄"
+          },
+          "InfoAnimal": {
+            "AnimalName": "猫"
+          },
+          "InfoSampleType": {
+            "SampleName": "血样"
+          },
+          "VwDiagnosisDetail": {
+            "TestName": "PCR",
+            "Amount": "125.50"
+          }
+        },
+        "bindings": [
+          {
+            "table": "ListDiagnosisProject",
+            "column": "AnimalName",
+            "description": "宠物"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "When",
+            "description": "日期"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "Nullable",
+            "description": "空值"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "Zero",
+            "description": "零"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "True",
+            "description": "真"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "False",
+            "description": "假"
+          },
+          {
+            "table": "InfoHospital",
+            "column": "HospitalName",
+            "description": "医院名"
+          },
+          {
+            "table": "DictSex",
+            "column": "SexName",
+            "description": "性别"
+          },
+          {
+            "table": "InfoAnimal",
+            "column": "AnimalName",
+            "description": "物种"
+          },
+          {
+            "table": "InfoSampleType",
+            "column": "SampleName",
+            "description": "采样类型"
+          },
+          {
+            "table": "VwDiagnosisDetail",
+            "column": "TestName",
+            "description": "项目"
+          },
+          {
+            "table": "VwDiagnosisDetail",
+            "column": "Amount",
+            "description": "金额"
+          }
+        ],
+        "diagnosticNames": null,
+        "today": "2026-11-08",
+        "url": "https://petlis.invalid/Project/View/Detail.aspx?CID=TEST-7"
+      },
+      "output": "2025-01-02|"
+    },
+    {
+      "input": {
+        "body": "{日期}|{诊断项名称}",
+        "type": 2,
+        "rows": {
+          "ListDiagnosisProject": {
+            "InfoHospitalId": 1,
+            "DictSexId": 1,
+            "InfoAnimalId": 1,
+            "InfoSampleTypeId": 1,
+            "AnimalName": "{医院名}",
+            "When": "2025.01.02 03:04:05",
+            "Zero": "0",
+            "Nullable": null,
+            "True": true,
+            "False": false
+          },
+          "InfoHospital": {
+            "HospitalName": "测试医院"
+          },
+          "DictSex": {
+            "SexName": "雄"
+          },
+          "InfoAnimal": {
+            "AnimalName": "猫"
+          },
+          "InfoSampleType": {
+            "SampleName": "血样"
+          },
+          "VwDiagnosisDetail": {
+            "TestName": "PCR",
+            "Amount": "125.50"
+          }
+        },
+        "bindings": [
+          {
+            "table": "ListDiagnosisProject",
+            "column": "AnimalName",
+            "description": "宠物"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "When",
+            "description": "日期"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "Nullable",
+            "description": "空值"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "Zero",
+            "description": "零"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "True",
+            "description": "真"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "False",
+            "description": "假"
+          },
+          {
+            "table": "InfoHospital",
+            "column": "HospitalName",
+            "description": "医院名"
+          },
+          {
+            "table": "DictSex",
+            "column": "SexName",
+            "description": "性别"
+          },
+          {
+            "table": "InfoAnimal",
+            "column": "AnimalName",
+            "description": "物种"
+          },
+          {
+            "table": "InfoSampleType",
+            "column": "SampleName",
+            "description": "采样类型"
+          },
+          {
+            "table": "VwDiagnosisDetail",
+            "column": "TestName",
+            "description": "项目"
+          },
+          {
+            "table": "VwDiagnosisDetail",
+            "column": "Amount",
+            "description": "金额"
+          }
+        ],
+        "diagnosticNames": null,
+        "today": "2026-11-08",
+        "url": "https://petlis.invalid/Project/View/Detail.aspx?CID=TEST-7"
+      },
+      "output": "2025.01.02 03:04:05|"
+    },
+    {
+      "input": {
+        "body": "{日期}|{诊断项名称}",
+        "type": 2,
+        "rows": {
+          "ListDiagnosisProject": {
+            "InfoHospitalId": 1,
+            "DictSexId": 1,
+            "InfoAnimalId": 1,
+            "InfoSampleTypeId": 1,
+            "AnimalName": "{医院名}",
+            "When": "02.01.2025 03:04:05",
+            "Zero": "0",
+            "Nullable": null,
+            "True": true,
+            "False": false
+          },
+          "InfoHospital": {
+            "HospitalName": "测试医院"
+          },
+          "DictSex": {
+            "SexName": "雄"
+          },
+          "InfoAnimal": {
+            "AnimalName": "猫"
+          },
+          "InfoSampleType": {
+            "SampleName": "血样"
+          },
+          "VwDiagnosisDetail": {
+            "TestName": "PCR",
+            "Amount": "125.50"
+          }
+        },
+        "bindings": [
+          {
+            "table": "ListDiagnosisProject",
+            "column": "AnimalName",
+            "description": "宠物"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "When",
+            "description": "日期"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "Nullable",
+            "description": "空值"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "Zero",
+            "description": "零"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "True",
+            "description": "真"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "False",
+            "description": "假"
+          },
+          {
+            "table": "InfoHospital",
+            "column": "HospitalName",
+            "description": "医院名"
+          },
+          {
+            "table": "DictSex",
+            "column": "SexName",
+            "description": "性别"
+          },
+          {
+            "table": "InfoAnimal",
+            "column": "AnimalName",
+            "description": "物种"
+          },
+          {
+            "table": "InfoSampleType",
+            "column": "SampleName",
+            "description": "采样类型"
+          },
+          {
+            "table": "VwDiagnosisDetail",
+            "column": "TestName",
+            "description": "项目"
+          },
+          {
+            "table": "VwDiagnosisDetail",
+            "column": "Amount",
+            "description": "金额"
+          }
+        ],
+        "diagnosticNames": null,
+        "today": "2026-11-08",
+        "url": "https://petlis.invalid/Project/View/Detail.aspx?CID=TEST-7"
+      },
+      "output": "2025-01-02|"
+    },
+    {
+      "input": {
+        "body": "{日期}|{诊断项名称}",
+        "type": 2,
+        "rows": {
+          "ListDiagnosisProject": {
+            "InfoHospitalId": 1,
+            "DictSexId": 1,
+            "InfoAnimalId": 1,
+            "InfoSampleTypeId": 1,
+            "AnimalName": "{医院名}",
+            "When": "01/02/2025 03:04:05",
+            "Zero": "0",
+            "Nullable": null,
+            "True": true,
+            "False": false
+          },
+          "InfoHospital": {
+            "HospitalName": "测试医院"
+          },
+          "DictSex": {
+            "SexName": "雄"
+          },
+          "InfoAnimal": {
+            "AnimalName": "猫"
+          },
+          "InfoSampleType": {
+            "SampleName": "血样"
+          },
+          "VwDiagnosisDetail": {
+            "TestName": "PCR",
+            "Amount": "125.50"
+          }
+        },
+        "bindings": [
+          {
+            "table": "ListDiagnosisProject",
+            "column": "AnimalName",
+            "description": "宠物"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "When",
+            "description": "日期"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "Nullable",
+            "description": "空值"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "Zero",
+            "description": "零"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "True",
+            "description": "真"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "False",
+            "description": "假"
+          },
+          {
+            "table": "InfoHospital",
+            "column": "HospitalName",
+            "description": "医院名"
+          },
+          {
+            "table": "DictSex",
+            "column": "SexName",
+            "description": "性别"
+          },
+          {
+            "table": "InfoAnimal",
+            "column": "AnimalName",
+            "description": "物种"
+          },
+          {
+            "table": "InfoSampleType",
+            "column": "SampleName",
+            "description": "采样类型"
+          },
+          {
+            "table": "VwDiagnosisDetail",
+            "column": "TestName",
+            "description": "项目"
+          },
+          {
+            "table": "VwDiagnosisDetail",
+            "column": "Amount",
+            "description": "金额"
+          }
+        ],
+        "diagnosticNames": null,
+        "today": "2026-11-08",
+        "url": "https://petlis.invalid/Project/View/Detail.aspx?CID=TEST-7"
+      },
+      "output": "2025-01-02|"
+    },
+    {
+      "input": {
+        "body": "{日期}|{诊断项名称}",
+        "type": 2,
+        "rows": {
+          "ListDiagnosisProject": {
+            "InfoHospitalId": 1,
+            "DictSexId": 1,
+            "InfoAnimalId": 1,
+            "InfoSampleTypeId": 1,
+            "AnimalName": "{医院名}",
+            "When": "02-01-2025 03:04:05",
+            "Zero": "0",
+            "Nullable": null,
+            "True": true,
+            "False": false
+          },
+          "InfoHospital": {
+            "HospitalName": "测试医院"
+          },
+          "DictSex": {
+            "SexName": "雄"
+          },
+          "InfoAnimal": {
+            "AnimalName": "猫"
+          },
+          "InfoSampleType": {
+            "SampleName": "血样"
+          },
+          "VwDiagnosisDetail": {
+            "TestName": "PCR",
+            "Amount": "125.50"
+          }
+        },
+        "bindings": [
+          {
+            "table": "ListDiagnosisProject",
+            "column": "AnimalName",
+            "description": "宠物"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "When",
+            "description": "日期"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "Nullable",
+            "description": "空值"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "Zero",
+            "description": "零"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "True",
+            "description": "真"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "False",
+            "description": "假"
+          },
+          {
+            "table": "InfoHospital",
+            "column": "HospitalName",
+            "description": "医院名"
+          },
+          {
+            "table": "DictSex",
+            "column": "SexName",
+            "description": "性别"
+          },
+          {
+            "table": "InfoAnimal",
+            "column": "AnimalName",
+            "description": "物种"
+          },
+          {
+            "table": "InfoSampleType",
+            "column": "SampleName",
+            "description": "采样类型"
+          },
+          {
+            "table": "VwDiagnosisDetail",
+            "column": "TestName",
+            "description": "项目"
+          },
+          {
+            "table": "VwDiagnosisDetail",
+            "column": "Amount",
+            "description": "金额"
+          }
+        ],
+        "diagnosticNames": null,
+        "today": "2026-11-08",
+        "url": "https://petlis.invalid/Project/View/Detail.aspx?CID=TEST-7"
+      },
+      "output": "2025-01-02|"
+    },
+    {
+      "input": {
+        "body": "{日期}|{诊断项名称}",
+        "type": 2,
+        "rows": {
+          "ListDiagnosisProject": {
+            "InfoHospitalId": 1,
+            "DictSexId": 1,
+            "InfoAnimalId": 1,
+            "InfoSampleTypeId": 1,
+            "AnimalName": "{医院名}",
+            "When": "2025-01-02 03:04:60",
+            "Zero": "0",
+            "Nullable": null,
+            "True": true,
+            "False": false
+          },
+          "InfoHospital": {
+            "HospitalName": "测试医院"
+          },
+          "DictSex": {
+            "SexName": "雄"
+          },
+          "InfoAnimal": {
+            "AnimalName": "猫"
+          },
+          "InfoSampleType": {
+            "SampleName": "血样"
+          },
+          "VwDiagnosisDetail": {
+            "TestName": "PCR",
+            "Amount": "125.50"
+          }
+        },
+        "bindings": [
+          {
+            "table": "ListDiagnosisProject",
+            "column": "AnimalName",
+            "description": "宠物"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "When",
+            "description": "日期"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "Nullable",
+            "description": "空值"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "Zero",
+            "description": "零"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "True",
+            "description": "真"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "False",
+            "description": "假"
+          },
+          {
+            "table": "InfoHospital",
+            "column": "HospitalName",
+            "description": "医院名"
+          },
+          {
+            "table": "DictSex",
+            "column": "SexName",
+            "description": "性别"
+          },
+          {
+            "table": "InfoAnimal",
+            "column": "AnimalName",
+            "description": "物种"
+          },
+          {
+            "table": "InfoSampleType",
+            "column": "SampleName",
+            "description": "采样类型"
+          },
+          {
+            "table": "VwDiagnosisDetail",
+            "column": "TestName",
+            "description": "项目"
+          },
+          {
+            "table": "VwDiagnosisDetail",
+            "column": "Amount",
+            "description": "金额"
+          }
+        ],
+        "diagnosticNames": null,
+        "today": "2026-11-08",
+        "url": "https://petlis.invalid/Project/View/Detail.aspx?CID=TEST-7"
+      },
+      "output": "2025-01-02|"
+    },
+    {
+      "input": {
+        "body": "{日期}|{诊断项名称}",
+        "type": 2,
+        "rows": {
+          "ListDiagnosisProject": {
+            "InfoHospitalId": 1,
+            "DictSexId": 1,
+            "InfoAnimalId": 1,
+            "InfoSampleTypeId": 1,
+            "AnimalName": "{医院名}",
+            "When": "2025-01-02 25:00:00",
+            "Zero": "0",
+            "Nullable": null,
+            "True": true,
+            "False": false
+          },
+          "InfoHospital": {
+            "HospitalName": "测试医院"
+          },
+          "DictSex": {
+            "SexName": "雄"
+          },
+          "InfoAnimal": {
+            "AnimalName": "猫"
+          },
+          "InfoSampleType": {
+            "SampleName": "血样"
+          },
+          "VwDiagnosisDetail": {
+            "TestName": "PCR",
+            "Amount": "125.50"
+          }
+        },
+        "bindings": [
+          {
+            "table": "ListDiagnosisProject",
+            "column": "AnimalName",
+            "description": "宠物"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "When",
+            "description": "日期"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "Nullable",
+            "description": "空值"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "Zero",
+            "description": "零"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "True",
+            "description": "真"
+          },
+          {
+            "table": "ListDiagnosisProject",
+            "column": "False",
+            "description": "假"
+          },
+          {
+            "table": "InfoHospital",
+            "column": "HospitalName",
+            "description": "医院名"
+          },
+          {
+            "table": "DictSex",
+            "column": "SexName",
+            "description": "性别"
+          },
+          {
+            "table": "InfoAnimal",
+            "column": "AnimalName",
+            "description": "物种"
+          },
+          {
+            "table": "InfoSampleType",
+            "column": "SampleName",
+            "description": "采样类型"
+          },
+          {
+            "table": "VwDiagnosisDetail",
+            "column": "TestName",
+            "description": "项目"
+          },
+          {
+            "table": "VwDiagnosisDetail",
+            "column": "Amount",
+            "description": "金额"
+          }
+        ],
+        "diagnosticNames": null,
+        "today": "2026-11-08",
+        "url": "https://petlis.invalid/Project/View/Detail.aspx?CID=TEST-7"
+      },
+      "output": "2025-01-02 25:00:00|"
+    }
+  ],
+  "realEncryptionVerified": false,
+  "realDatabaseAggregationVerified": false,
+  "completionClaimed": false
+}

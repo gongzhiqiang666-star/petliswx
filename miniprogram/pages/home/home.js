@@ -63,8 +63,11 @@ Page({
   },
 
   onShow() {
+    this._visible = true
     this.waitForLoginAndLoad()
   },
+  onHide() { this._visible = false },
+  onUnload() { this._visible = false },
 
   async waitForLoginAndLoad() {
     const maxWaitTime = 10000
@@ -207,18 +210,26 @@ Page({
   },
 
   async checkArticlePopup() {
-    if (this._popupInFlight) return
+    const userId = Number((app.globalData.userInfo || {}).userId || (app.globalData.userInfo || {}).id)
+    if (this._popupInFlight || this._visible === false || !Number.isSafeInteger(userId) || userId <= 0) return
     this._popupInFlight = true
     try {
       const article = await request.get('/articles/popup')
-      if (!article.id || wx.getStorageSync('article-popup-' + article.id)) return
-      wx.setStorageSync('article-popup-' + article.id, true)
+      if (this._visible === false || Number((app.globalData.userInfo || {}).userId || (app.globalData.userInfo || {}).id) !== userId) return
+      const seenKey = 'article-popup:' + userId + ':' + article.id
+      const lastKey = 'article-popup-last:' + userId
+      const now = Date.now(), last = Number(wx.getStorageSync(lastKey))
+      const configured = Number(article.minimumIntervalHours)
+      const hours = Number.isInteger(configured) && configured >= 1 && configured <= 720 ? configured : 24
+      if (!article.id || wx.getStorageSync(seenKey) || (last > 0 && last <= now && now - last < hours * 3600000)) return
       const answer = await wx.showModal({
         title: article.title,
         content: article.summary || '有新的资讯发布',
         confirmText: '查看详情',
         cancelText: '稍后查看'
       })
+      if (!answer || this._visible === false || Number((app.globalData.userInfo || {}).userId || (app.globalData.userInfo || {}).id) !== userId) return
+      try { wx.setStorageSync(seenKey, true); wx.setStorageSync(lastKey, Date.now()) } catch (error) {}
       if (answer.confirm) wx.navigateTo({ url: '/pages/article-detail/article-detail?id=' + article.id })
     } catch (error) {
     } finally {

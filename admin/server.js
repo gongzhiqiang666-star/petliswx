@@ -55,7 +55,7 @@ export function createStaticServer({ root = path.dirname(fileURLToPath(import.me
         'Content-Length': info.size,
         'X-Content-Type-Options': 'nosniff',
         'Referrer-Policy': 'same-origin',
-        'Content-Security-Policy': "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'"
+        'Content-Security-Policy': "default-src 'self'; script-src 'self'; style-src 'self'; style-src-attr 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'"
       });
       if (request.method === 'HEAD') response.end(); else createReadStream(file).pipe(response);
     } catch {

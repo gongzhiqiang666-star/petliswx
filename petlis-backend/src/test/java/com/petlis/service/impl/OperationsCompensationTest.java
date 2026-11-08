@@ -54,19 +54,30 @@ class OperationsCompensationTest {
 
     @Test void pointsAdjustmentLocksUserAndRepeatsByRequestKey() {
         OperationalService service = new OperationalService(store, permission);
-        when(jdbc.queryForList(contains("POINTS_ADJUSTMENT"), eq("points-key-1"))).thenReturn(List.of(Map.of("id", 1L)));
+        when(jdbc.queryForList(contains("POINTS_ADJUSTMENT"), eq("points-key-1"),eq(5))).thenReturn(List.of(Map.of("id", 1L,"actor_user_id",5,"resource_id","5","reason","补偿","delta",20)));
         service.adjustPoints(5, 20, "补偿", "points-key-1");
-        verify(store, never()).one(anyString(), any());
+        verify(store).one(contains("SELECT id FROM lin_user"),eq(5));
+        verify(store, never()).one(contains("SELECT score"),any());
+        verify(jdbc).queryForList(contains("actor_user_id=? FOR UPDATE"),eq("points-key-1"),eq(5));
         verify(jdbc, never()).update(contains("lin_user SET score"), any(), any());
     }
 
     @Test void pointsAdjustmentRechecksRequestKeyAfterUserLock() {
         OperationalService service = new OperationalService(store, permission);
-        when(jdbc.queryForList(contains("POINTS_ADJUSTMENT"), eq("points-key-1"))).thenReturn(List.of(), List.of(Map.of("id", 1L)));
+        when(jdbc.queryForList(contains("POINTS_ADJUSTMENT"), eq("points-key-1"),eq(5))).thenReturn(List.of(), List.of(Map.of("id", 1L,"actor_user_id",5,"resource_id","5","reason","补偿","delta",20)));
         when(store.one(contains("lin_user"), eq(5))).thenReturn(Map.of("score", 60));
         service.adjustPoints(5, 20, "补偿", "points-key-1");
-        verify(jdbc, times(2)).queryForList(contains("POINTS_ADJUSTMENT"), eq("points-key-1"));
+        verify(jdbc, times(2)).queryForList(contains("POINTS_ADJUSTMENT"), eq("points-key-1"),eq(5));
         verify(jdbc, never()).update(contains("lin_user SET score"), any(), any());
+    }
+
+    @Test void pointsReplayRejectsDifferentAmountUserOrReason() {
+        OperationalService service = new OperationalService(store, permission);
+        when(jdbc.queryForList(contains("POINTS_ADJUSTMENT"), eq("points-key-1"),eq(5))).thenReturn(List.of(Map.of("id",1L,"actor_user_id",5,"resource_id","5","reason","补偿","delta",20)));
+        assertThrows(BusinessException.class, () -> service.adjustPoints(5,99,"补偿","points-key-1"));
+        assertThrows(BusinessException.class, () -> service.adjustPoints(6,20,"补偿","points-key-1"));
+        assertThrows(BusinessException.class, () -> service.adjustPoints(5,20,"其他","points-key-1"));
+        verify(jdbc, never()).update(anyString(),any(Object[].class));
     }
 
     @Test void pointsRuleUsesVersionedOperationalConfigAndAudit() {
@@ -74,6 +85,6 @@ class OperationsCompensationTest {
         when(store.one(contains("lin_operational_config"), eq("points-rule"))).thenReturn(Map.of("version", 2, "config_value", "{\"register\":10}"));
         when(jdbc.update(contains("version=version+1"), any(Object[].class))).thenReturn(1);
         service.saveConfig("points-rule", Map.of("register", 20), 2, "规则调整");
-        verify(jdbc).update(contains("lin_audit_record"), eq(5), eq("OPERATIONAL_CONFIG_UPDATED"), eq("OPERATIONAL_CONFIG"), eq("points-rule"), eq("规则调整"));
+        verify(jdbc).update(contains("lin_audit_record"), eq(5), eq("OPERATIONAL_CONFIG_UPDATED"), eq("OPERATIONAL_CONFIG"), eq("points-rule"), contains("\"register\":10"), contains("\"register\":20"), eq("规则调整"));
     }
 }

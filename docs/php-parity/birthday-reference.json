@@ -1,0 +1,43 @@
+{
+  "referenceDate": "2026-11-08",
+  "cases": [
+    {
+      "input": "0岁0个月",
+      "birthday": "2026-11-08"
+    },
+    {
+      "input": "3岁7个月",
+      "birthday": "2023-04-08"
+    },
+    {
+      "input": "0岁5个月",
+      "birthday": "2026-06-08"
+    },
+    {
+      "input": "3岁",
+      "birthday": "2023-11-08"
+    },
+    {
+      "input": "3Y7M",
+      "birthday": "2023-11-08"
+    },
+    {
+      "input": "5M",
+      "birthday": "2021-11-08"
+    },
+    {
+      "input": "",
+      "birthday": "2026-11-08"
+    },
+    {
+      "input": "1岁12个月",
+      "birthday": "2024-11-08"
+    }
+  ],
+  "source": "application/index/common.php:GetBirthdayByAge",
+  "sourceSha256": "bf389f1d098c5f35f8a9d2af6ef22ccb5b863cde402dadc5f7c0399ce05d5b2e",
+  "timezone": "PRC",
+  "method": "Original helper body copied into stdin without changes; only PHP date builtins; no bootstrap or DB",
+  "runtime": "existing local PHP 7.4 CLI",
+  "status": "reference_results_captured_java_not_yet_implemented"
+}

@@ -1,0 +1,970 @@
+{
+  "sourceBase": "application/admin/controller/Base.php",
+  "baseSha256": "0d330c8606fb1cb5072a104305091615d2c7fb1251d6656ebd5a33acef36092c",
+  "sourceCommon": "application/common.php",
+  "commonSha256": "938bac0c43a307e4939e2d9d6a377d5a909578c7edd2505ddc6bbc1e6e16a19c",
+  "runtime": {
+    "runtime": "7.4.33",
+    "bcmath": true
+  },
+  "referenceContainer": "disposable petlis-php-pricing-reference --rm; no mounts/ports; source image unchanged",
+  "rows": [
+    {
+      "kind": "quote",
+      "input": {
+        "price": "100.00",
+        "discount": "原价",
+        "testtype": "1"
+      },
+      "output": "100.00"
+    },
+    {
+      "kind": "quote",
+      "input": {
+        "price": "100.00",
+        "discount": "其他折扣",
+        "testtype": "1"
+      },
+      "output": "100.00"
+    },
+    {
+      "kind": "quote",
+      "input": {
+        "price": "100.00",
+        "discount": "10",
+        "testtype": "1"
+      },
+      "output": "100.00"
+    },
+    {
+      "kind": "quote",
+      "input": {
+        "price": "100.00",
+        "discount": "10.00",
+        "testtype": "1"
+      },
+      "output": "100.00"
+    },
+    {
+      "kind": "quote",
+      "input": {
+        "price": "100.00",
+        "discount": "9",
+        "testtype": "1"
+      },
+      "output": "90.00"
+    },
+    {
+      "kind": "quote",
+      "input": {
+        "price": "100.00",
+        "discount": "7.55",
+        "testtype": "1"
+      },
+      "output": "75.00"
+    },
+    {
+      "kind": "quote",
+      "input": {
+        "price": "100.00",
+        "discount": "1",
+        "testtype": "1"
+      },
+      "output": "10.00"
+    },
+    {
+      "kind": "quote",
+      "input": {
+        "price": "100.00",
+        "discount": "0",
+        "testtype": "1"
+      },
+      "output": "0.00"
+    },
+    {
+      "kind": "quote",
+      "input": {
+        "price": "100.00",
+        "discount": "-1",
+        "testtype": "1"
+      },
+      "output": "-10.00"
+    },
+    {
+      "kind": "quote",
+      "input": {
+        "price": "100.00",
+        "discount": "0.09",
+        "testtype": "1"
+      },
+      "output": "0.00"
+    },
+    {
+      "kind": "quote",
+      "input": {
+        "price": "125.50",
+        "discount": "原价",
+        "testtype": "1"
+      },
+      "output": "125.50"
+    },
+    {
+      "kind": "quote",
+      "input": {
+        "price": "125.50",
+        "discount": "其他折扣",
+        "testtype": "1"
+      },
+      "output": "125.50"
+    },
+    {
+      "kind": "quote",
+      "input": {
+        "price": "125.50",
+        "discount": "10",
+        "testtype": "1"
+      },
+      "output": "125.50"
+    },
+    {
+      "kind": "quote",
+      "input": {
+        "price": "125.50",
+        "discount": "10.00",
+        "testtype": "1"
+      },
+      "output": "125.50"
+    },
+    {
+      "kind": "quote",
+      "input": {
+        "price": "125.50",
+        "discount": "9",
+        "testtype": "1"
+      },
+      "output": "112.95"
+    },
+    {
+      "kind": "quote",
+      "input": {
+        "price": "125.50",
+        "discount": "7.55",
+        "testtype": "1"
+      },
+      "output": "94.12"
+    },
+    {
+      "kind": "quote",
+      "input": {
+        "price": "125.50",
+        "discount": "1",
+        "testtype": "1"
+      },
+      "output": "12.55"
+    },
+    {
+      "kind": "quote",
+      "input": {
+        "price": "125.50",
+        "discount": "0",
+        "testtype": "1"
+      },
+      "output": "0.00"
+    },
+    {
+      "kind": "quote",
+      "input": {
+        "price": "125.50",
+        "discount": "-1",
+        "testtype": "1"
+      },
+      "output": "-12.55"
+    },
+    {
+      "kind": "quote",
+      "input": {
+        "price": "125.50",
+        "discount": "0.09",
+        "testtype": "1"
+      },
+      "output": "0.00"
+    },
+    {
+      "kind": "quote",
+      "input": {
+        "price": "12.59",
+        "discount": "原价",
+        "testtype": "1"
+      },
+      "output": "12.59"
+    },
+    {
+      "kind": "quote",
+      "input": {
+        "price": "12.59",
+        "discount": "其他折扣",
+        "testtype": "1"
+      },
+      "output": "12.59"
+    },
+    {
+      "kind": "quote",
+      "input": {
+        "price": "12.59",
+        "discount": "10",
+        "testtype": "1"
+      },
+      "output": "12.59"
+    },
+    {
+      "kind": "quote",
+      "input": {
+        "price": "12.59",
+        "discount": "10.00",
+        "testtype": "1"
+      },
+      "output": "12.59"
+    },
+    {
+      "kind": "quote",
+      "input": {
+        "price": "12.59",
+        "discount": "9",
+        "testtype": "1"
+      },
+      "output": "11.33"
+    },
+    {
+      "kind": "quote",
+      "input": {
+        "price": "12.59",
+        "discount": "7.55",
+        "testtype": "1"
+      },
+      "output": "9.44"
+    },
+    {
+      "kind": "quote",
+      "input": {
+        "price": "12.59",
+        "discount": "1",
+        "testtype": "1"
+      },
+      "output": "1.25"
+    },
+    {
+      "kind": "quote",
+      "input": {
+        "price": "12.59",
+        "discount": "0",
+        "testtype": "1"
+      },
+      "output": "0.00"
+    },
+    {
+      "kind": "quote",
+      "input": {
+        "price": "12.59",
+        "discount": "-1",
+        "testtype": "1"
+      },
+      "output": "-1.25"
+    },
+    {
+      "kind": "quote",
+      "input": {
+        "price": "12.59",
+        "discount": "0.09",
+        "testtype": "1"
+      },
+      "output": "0.00"
+    },
+    {
+      "kind": "quote",
+      "input": {
+        "price": "1.005",
+        "discount": "原价",
+        "testtype": "1"
+      },
+      "output": "1.00"
+    },
+    {
+      "kind": "quote",
+      "input": {
+        "price": "1.005",
+        "discount": "其他折扣",
+        "testtype": "1"
+      },
+      "output": "1.00"
+    },
+    {
+      "kind": "quote",
+      "input": {
+        "price": "1.005",
+        "discount": "10",
+        "testtype": "1"
+      },
+      "output": "1.00"
+    },
+    {
+      "kind": "quote",
+      "input": {
+        "price": "1.005",
+        "discount": "10.00",
+        "testtype": "1"
+      },
+      "output": "1.00"
+    },
+    {
+      "kind": "quote",
+      "input": {
+        "price": "1.005",
+        "discount": "9",
+        "testtype": "1"
+      },
+      "output": "0.90"
+    },
+    {
+      "kind": "quote",
+      "input": {
+        "price": "1.005",
+        "discount": "7.55",
+        "testtype": "1"
+      },
+      "output": "0.75"
+    },
+    {
+      "kind": "quote",
+      "input": {
+        "price": "1.005",
+        "discount": "1",
+        "testtype": "1"
+      },
+      "output": "0.10"
+    },
+    {
+      "kind": "quote",
+      "input": {
+        "price": "1.005",
+        "discount": "0",
+        "testtype": "1"
+      },
+      "output": "0.00"
+    },
+    {
+      "kind": "quote",
+      "input": {
+        "price": "1.005",
+        "discount": "-1",
+        "testtype": "1"
+      },
+      "output": "-0.10"
+    },
+    {
+      "kind": "quote",
+      "input": {
+        "price": "1.005",
+        "discount": "0.09",
+        "testtype": "1"
+      },
+      "output": "0.00"
+    },
+    {
+      "kind": "quote",
+      "input": {
+        "price": "2.675",
+        "discount": "原价",
+        "testtype": "1"
+      },
+      "output": "2.67"
+    },
+    {
+      "kind": "quote",
+      "input": {
+        "price": "2.675",
+        "discount": "其他折扣",
+        "testtype": "1"
+      },
+      "output": "2.67"
+    },
+    {
+      "kind": "quote",
+      "input": {
+        "price": "2.675",
+        "discount": "10",
+        "testtype": "1"
+      },
+      "output": "2.67"
+    },
+    {
+      "kind": "quote",
+      "input": {
+        "price": "2.675",
+        "discount": "10.00",
+        "testtype": "1"
+      },
+      "output": "2.67"
+    },
+    {
+      "kind": "quote",
+      "input": {
+        "price": "2.675",
+        "discount": "9",
+        "testtype": "1"
+      },
+      "output": "2.40"
+    },
+    {
+      "kind": "quote",
+      "input": {
+        "price": "2.675",
+        "discount": "7.55",
+        "testtype": "1"
+      },
+      "output": "2.00"
+    },
+    {
+      "kind": "quote",
+      "input": {
+        "price": "2.675",
+        "discount": "1",
+        "testtype": "1"
+      },
+      "output": "0.26"
+    },
+    {
+      "kind": "quote",
+      "input": {
+        "price": "2.675",
+        "discount": "0",
+        "testtype": "1"
+      },
+      "output": "0.00"
+    },
+    {
+      "kind": "quote",
+      "input": {
+        "price": "2.675",
+        "discount": "-1",
+        "testtype": "1"
+      },
+      "output": "-0.26"
+    },
+    {
+      "kind": "quote",
+      "input": {
+        "price": "2.675",
+        "discount": "0.09",
+        "testtype": "1"
+      },
+      "output": "0.00"
+    },
+    {
+      "kind": "quote",
+      "input": {
+        "price": "-0.005",
+        "discount": "原价",
+        "testtype": "1"
+      },
+      "output": "-0.01"
+    },
+    {
+      "kind": "quote",
+      "input": {
+        "price": "-0.005",
+        "discount": "其他折扣",
+        "testtype": "1"
+      },
+      "output": "-0.01"
+    },
+    {
+      "kind": "quote",
+      "input": {
+        "price": "-0.005",
+        "discount": "10",
+        "testtype": "1"
+      },
+      "output": "-0.01"
+    },
+    {
+      "kind": "quote",
+      "input": {
+        "price": "-0.005",
+        "discount": "10.00",
+        "testtype": "1"
+      },
+      "output": "-0.01"
+    },
+    {
+      "kind": "quote",
+      "input": {
+        "price": "-0.005",
+        "discount": "9",
+        "testtype": "1"
+      },
+      "output": "0.00"
+    },
+    {
+      "kind": "quote",
+      "input": {
+        "price": "-0.005",
+        "discount": "7.55",
+        "testtype": "1"
+      },
+      "output": "0.00"
+    },
+    {
+      "kind": "quote",
+      "input": {
+        "price": "-0.005",
+        "discount": "1",
+        "testtype": "1"
+      },
+      "output": "0.00"
+    },
+    {
+      "kind": "quote",
+      "input": {
+        "price": "-0.005",
+        "discount": "0",
+        "testtype": "1"
+      },
+      "output": "0.00"
+    },
+    {
+      "kind": "quote",
+      "input": {
+        "price": "-0.005",
+        "discount": "-1",
+        "testtype": "1"
+      },
+      "output": "0.00"
+    },
+    {
+      "kind": "quote",
+      "input": {
+        "price": "-0.005",
+        "discount": "0.09",
+        "testtype": "1"
+      },
+      "output": "0.00"
+    },
+    {
+      "kind": "quote",
+      "input": {
+        "price": "0.00",
+        "discount": "原价",
+        "testtype": "1"
+      },
+      "output": "0.00"
+    },
+    {
+      "kind": "quote",
+      "input": {
+        "price": "0.00",
+        "discount": "其他折扣",
+        "testtype": "1"
+      },
+      "output": "0.00"
+    },
+    {
+      "kind": "quote",
+      "input": {
+        "price": "0.00",
+        "discount": "10",
+        "testtype": "1"
+      },
+      "output": "0.00"
+    },
+    {
+      "kind": "quote",
+      "input": {
+        "price": "0.00",
+        "discount": "10.00",
+        "testtype": "1"
+      },
+      "output": "0.00"
+    },
+    {
+      "kind": "quote",
+      "input": {
+        "price": "0.00",
+        "discount": "9",
+        "testtype": "1"
+      },
+      "output": "0.00"
+    },
+    {
+      "kind": "quote",
+      "input": {
+        "price": "0.00",
+        "discount": "7.55",
+        "testtype": "1"
+      },
+      "output": "0.00"
+    },
+    {
+      "kind": "quote",
+      "input": {
+        "price": "0.00",
+        "discount": "1",
+        "testtype": "1"
+      },
+      "output": "0.00"
+    },
+    {
+      "kind": "quote",
+      "input": {
+        "price": "0.00",
+        "discount": "0",
+        "testtype": "1"
+      },
+      "output": "0.00"
+    },
+    {
+      "kind": "quote",
+      "input": {
+        "price": "0.00",
+        "discount": "-1",
+        "testtype": "1"
+      },
+      "output": "0.00"
+    },
+    {
+      "kind": "quote",
+      "input": {
+        "price": "0.00",
+        "discount": "0.09",
+        "testtype": "1"
+      },
+      "output": "0.00"
+    },
+    {
+      "kind": "quote",
+      "input": {
+        "price": "-125.50",
+        "discount": "原价",
+        "testtype": "1"
+      },
+      "output": "-125.50"
+    },
+    {
+      "kind": "quote",
+      "input": {
+        "price": "-125.50",
+        "discount": "其他折扣",
+        "testtype": "1"
+      },
+      "output": "-125.50"
+    },
+    {
+      "kind": "quote",
+      "input": {
+        "price": "-125.50",
+        "discount": "10",
+        "testtype": "1"
+      },
+      "output": "-125.50"
+    },
+    {
+      "kind": "quote",
+      "input": {
+        "price": "-125.50",
+        "discount": "10.00",
+        "testtype": "1"
+      },
+      "output": "-125.50"
+    },
+    {
+      "kind": "quote",
+      "input": {
+        "price": "-125.50",
+        "discount": "9",
+        "testtype": "1"
+      },
+      "output": "-112.95"
+    },
+    {
+      "kind": "quote",
+      "input": {
+        "price": "-125.50",
+        "discount": "7.55",
+        "testtype": "1"
+      },
+      "output": "-94.12"
+    },
+    {
+      "kind": "quote",
+      "input": {
+        "price": "-125.50",
+        "discount": "1",
+        "testtype": "1"
+      },
+      "output": "-12.55"
+    },
+    {
+      "kind": "quote",
+      "input": {
+        "price": "-125.50",
+        "discount": "0",
+        "testtype": "1"
+      },
+      "output": "0.00"
+    },
+    {
+      "kind": "quote",
+      "input": {
+        "price": "-125.50",
+        "discount": "-1",
+        "testtype": "1"
+      },
+      "output": "12.55"
+    },
+    {
+      "kind": "quote",
+      "input": {
+        "price": "-125.50",
+        "discount": "0.09",
+        "testtype": "1"
+      },
+      "output": "0.00"
+    },
+    {
+      "kind": "quote",
+      "input": {
+        "price": "9999999999999999.99",
+        "discount": "原价",
+        "testtype": "1"
+      },
+      "output": "10000000000000000.00"
+    },
+    {
+      "kind": "quote",
+      "input": {
+        "price": "9999999999999999.99",
+        "discount": "其他折扣",
+        "testtype": "1"
+      },
+      "output": "10000000000000000.00"
+    },
+    {
+      "kind": "quote",
+      "input": {
+        "price": "9999999999999999.99",
+        "discount": "10",
+        "testtype": "1"
+      },
+      "output": "10000000000000000.00"
+    },
+    {
+      "kind": "quote",
+      "input": {
+        "price": "9999999999999999.99",
+        "discount": "10.00",
+        "testtype": "1"
+      },
+      "output": "10000000000000000.00"
+    },
+    {
+      "kind": "quote",
+      "input": {
+        "price": "9999999999999999.99",
+        "discount": "9",
+        "testtype": "1"
+      },
+      "output": "9000000000000000.00"
+    },
+    {
+      "kind": "quote",
+      "input": {
+        "price": "9999999999999999.99",
+        "discount": "7.55",
+        "testtype": "1"
+      },
+      "output": "7500000000000000.00"
+    },
+    {
+      "kind": "quote",
+      "input": {
+        "price": "9999999999999999.99",
+        "discount": "1",
+        "testtype": "1"
+      },
+      "output": "1000000000000000.00"
+    },
+    {
+      "kind": "quote",
+      "input": {
+        "price": "9999999999999999.99",
+        "discount": "0",
+        "testtype": "1"
+      },
+      "output": "0.00"
+    },
+    {
+      "kind": "quote",
+      "input": {
+        "price": "9999999999999999.99",
+        "discount": "-1",
+        "testtype": "1"
+      },
+      "output": "-1000000000000000.00"
+    },
+    {
+      "kind": "quote",
+      "input": {
+        "price": "9999999999999999.99",
+        "discount": "0.09",
+        "testtype": "1"
+      },
+      "output": "0.00"
+    },
+    {
+      "kind": "quote",
+      "input": {
+        "price": "90071992547409.91",
+        "discount": "原价",
+        "testtype": "1"
+      },
+      "output": "90071992547409.91"
+    },
+    {
+      "kind": "quote",
+      "input": {
+        "price": "90071992547409.91",
+        "discount": "其他折扣",
+        "testtype": "1"
+      },
+      "output": "90071992547409.91"
+    },
+    {
+      "kind": "quote",
+      "input": {
+        "price": "90071992547409.91",
+        "discount": "10",
+        "testtype": "1"
+      },
+      "output": "90071992547409.91"
+    },
+    {
+      "kind": "quote",
+      "input": {
+        "price": "90071992547409.91",
+        "discount": "10.00",
+        "testtype": "1"
+      },
+      "output": "90071992547409.91"
+    },
+    {
+      "kind": "quote",
+      "input": {
+        "price": "90071992547409.91",
+        "discount": "9",
+        "testtype": "1"
+      },
+      "output": "81064793292668.91"
+    },
+    {
+      "kind": "quote",
+      "input": {
+        "price": "90071992547409.91",
+        "discount": "7.55",
+        "testtype": "1"
+      },
+      "output": "67553994410557.43"
+    },
+    {
+      "kind": "quote",
+      "input": {
+        "price": "90071992547409.91",
+        "discount": "1",
+        "testtype": "1"
+      },
+      "output": "9007199254740.99"
+    },
+    {
+      "kind": "quote",
+      "input": {
+        "price": "90071992547409.91",
+        "discount": "0",
+        "testtype": "1"
+      },
+      "output": "0.00"
+    },
+    {
+      "kind": "quote",
+      "input": {
+        "price": "90071992547409.91",
+        "discount": "-1",
+        "testtype": "1"
+      },
+      "output": "-9007199254740.99"
+    },
+    {
+      "kind": "quote",
+      "input": {
+        "price": "90071992547409.91",
+        "discount": "0.09",
+        "testtype": "1"
+      },
+      "output": "0.00"
+    },
+    {
+      "kind": "hospital-bcadd",
+      "input": [
+        "10.00",
+        "2.50"
+      ],
+      "output": "12.50"
+    },
+    {
+      "kind": "hospital-bcadd",
+      "input": [
+        "10.00",
+        "-10.00"
+      ],
+      "output": "0.00"
+    },
+    {
+      "kind": "hospital-bcadd",
+      "input": [
+        "10.00",
+        "-10.01"
+      ],
+      "output": "-0.01"
+    },
+    {
+      "kind": "hospital-bcadd",
+      "input": [
+        "10.00",
+        "0.009"
+      ],
+      "output": "10.00"
+    },
+    {
+      "kind": "hospital-bcadd",
+      "input": [
+        "0.00",
+        "-0.009"
+      ],
+      "output": "0.00"
+    },
+    {
+      "kind": "hospital-bcadd",
+      "input": [
+        "1.009",
+        "0.009"
+      ],
+      "output": "1.01"
+    },
+    {
+      "kind": "hospital-bcadd",
+      "input": [
+        "-2.00",
+        "0.01"
+      ],
+      "output": "-1.99"
+    }
+  ],
+  "completionClaimed": false
+}

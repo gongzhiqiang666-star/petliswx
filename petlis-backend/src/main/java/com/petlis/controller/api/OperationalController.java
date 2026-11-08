@@ -17,8 +17,11 @@ public class OperationalController {
     @GetMapping("/configs") public Result<Map<String, Object>> configs(@RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "20") int size) { return Result.success(service.configs(page, size)); }
     @PostMapping("/configs") public Result<Long> create(@RequestBody ConfigCreate command) { return Result.success(service.createConfig(command.key(), command.value(), command.description())); }
     @PutMapping("/configs/{key}") public Result<Void> update(@PathVariable String key, @RequestBody ConfigUpdate command) { service.saveConfig(key, command.value(), command.version(), command.reason()); return Result.success(); }
+    @GetMapping("/configs/{key}/history") public Result<Map<String,Object>> history(@PathVariable String key,@RequestParam(defaultValue="0") int page,@RequestParam(defaultValue="20") int size) { return Result.success(service.configHistory(key,page,size)); }
+    @PostMapping("/configs/{key}/restore") public Result<Void> restore(@PathVariable String key,@RequestBody ConfigRestore command) { service.restoreConfig(key,command.auditId(),command.version(),command.reason(),command.snapshotSide()); return Result.success(); }
     @PostMapping("/points-adjustments") public Result<Void> points(@RequestBody PointsCommand command) { service.adjustPoints(command.userId(), command.delta(), command.reason(), command.requestKey()); return Result.success(); }
     public record ConfigCreate(String key, Map<String, Object> value, String description) { }
     public record ConfigUpdate(Map<String, Object> value, int version, String reason) { }
+    public record ConfigRestore(long auditId,int version,String reason,String snapshotSide) { }
     public record PointsCommand(Integer userId, Integer delta, String reason, String requestKey) { }
 }

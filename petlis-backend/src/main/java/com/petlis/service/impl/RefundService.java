@@ -21,17 +21,18 @@ public class RefundService {
     private final AccessService access;
     private final AuditService audits;
     private final WeChatPayConfig config;
+    private final BusinessNotifications notifications;
 
-    @Transactional
+    @Transactional(isolation=org.springframework.transaction.annotation.Isolation.READ_COMMITTED)
     public Map<String, Object> refund(int orderId, String reason, String requestKey) {
         if (reason == null || reason.isBlank() || reason.length() > 500 || requestKey == null || !requestKey.matches("[A-Za-z0-9_-]{8,100}")) throw new BusinessException("退款原因或请求编号无效");
-        Map<String, Object> ownership = store.one("SELECT o.ListDiagnosisProjectId AS order_id,o.InfoHospitalId AS hospital_id,e.laboratory_id,1 AS ownership FROM lin_lb_listdiagnosisproject o LEFT JOIN lin_order_extension e ON e.order_id=o.ListDiagnosisProjectId WHERE o.ListDiagnosisProjectId=?", orderId);
+        Map<String, Object> ownership = store.one("SELECT o.ListDiagnosisProjectId AS order_id,o.InfoHospitalId AS hospital_id,e.laboratory_id,1 AS ownership FROM lin_lb_listdiagnosisproject o LEFT JOIN lin_order_extension e ON e.order_id=o.ListDiagnosisProjectId WHERE o.ListDiagnosisProjectId=? FOR UPDATE", orderId);
         authorize(ownership);
-        var existing = store.jdbc().queryForList("SELECT id,resource_id,action,after_json FROM lin_audit_record WHERE resource_type='MOCK_REFUND' AND resource_id=? ORDER BY id DESC", String.valueOf(orderId));
+        var existing = store.jdbc().queryForList("SELECT id,resource_id,action,after_json FROM lin_audit_record WHERE resource_type='MOCK_REFUND' AND resource_id=? ORDER BY id DESC FOR UPDATE", String.valueOf(orderId));
         if (!existing.isEmpty()) return Map.of("orderId", orderId, "status", "REFUNDED", "mock", true, "auditId", ((Number) existing.get(0).get("id")).longValue());
         if (!Boolean.TRUE.equals(config.getMockEnabled())) throw new BusinessException("真实支付退款已禁用，仅允许 mock 退款");
-        Map<String, Object> order = store.one("SELECT o.ListDiagnosisProjectId AS order_id,o.InfoHospitalId AS hospital_id,o.SampleStatus,e.laboratory_id,e.settlement_mode,p.payment_no,p.amount,p.status FROM lin_lb_listdiagnosisproject o JOIN lin_order_extension e ON e.order_id=o.ListDiagnosisProjectId JOIN lin_wechat_payment p ON p.order_id=o.ListDiagnosisProjectId AND p.status=1 WHERE o.ListDiagnosisProjectId=? FOR UPDATE", orderId);
-        existing = store.jdbc().queryForList("SELECT id,resource_id,action,after_json FROM lin_audit_record WHERE resource_type='MOCK_REFUND' AND resource_id=? ORDER BY id DESC", String.valueOf(orderId));
+        Map<String, Object> order = store.one("SELECT o.ListDiagnosisProjectId AS order_id,o.InfoHospitalId AS hospital_id,o.SampleStatus,o.CreateSampleId,e.laboratory_id,e.settlement_mode,p.payment_no,p.amount,p.status FROM lin_lb_listdiagnosisproject o JOIN lin_order_extension e ON e.order_id=o.ListDiagnosisProjectId JOIN lin_wechat_payment p ON p.order_id=o.ListDiagnosisProjectId AND p.status=1 WHERE o.ListDiagnosisProjectId=? FOR UPDATE", orderId);
+        existing = store.jdbc().queryForList("SELECT id,resource_id,action,after_json FROM lin_audit_record WHERE resource_type='MOCK_REFUND' AND resource_id=? ORDER BY id DESC FOR UPDATE", String.valueOf(orderId));
         if (!existing.isEmpty()) return Map.of("orderId", orderId, "status", "REFUNDED", "mock", true, "auditId", ((Number) existing.get(0).get("id")).longValue());
         authorize(order);
         if (!"cash".equals(order.get("settlement_mode")) || !Set.of(2, 3).contains(((Number) order.get("SampleStatus")).intValue())) throw new BusinessException("仅已支付的现结待报告或已完成订单可退款");
@@ -43,6 +44,9 @@ public class RefundService {
         store.jdbc().update("UPDATE lin_lb_listdiagnosisproject SET IsPayMoney=0 WHERE ListDiagnosisProjectId=? AND IsPayMoney=1", orderId);
         audits.record("MOCK_REFUND_COMPLETED", "MOCK_REFUND", orderId, order,
                 Map.of("orderId", orderId, "amount", order.get("amount"), "requestKey", requestKey, "mock", true), reason);
+        Integer doctor=order.get("CreateSampleId") instanceof Number value?value.intValue():null;
+        String message="送检单 #"+orderId+" 已完成开发模拟退款 ¥"+order.get("amount")+"。原因："+reason;
+        notifications.emitForOrder(orderId,doctor,"wallet","refund:"+orderId,"送检退款已记录",message,"pages/order-detail/order-detail?id="+orderId);
         return Map.of("orderId", orderId, "status", "REFUNDED", "amount", order.get("amount"), "mock", true);
     }
 

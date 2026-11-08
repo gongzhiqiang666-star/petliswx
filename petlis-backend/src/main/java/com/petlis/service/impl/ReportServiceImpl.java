@@ -336,7 +336,7 @@ public class ReportServiceImpl implements ReportService {
         ListDiagnosisProject project = listDiagnosisProjectRepository.findById(detail.getListDiagnosisProjectId())
                 .orElseThrow(() -> new BusinessException("报告关联订单不存在"));
         if (!project.getInfoHospitalId().equals(getCurrentHospitalId())) {
-            throw new BusinessException("无权访问此报告");
+            throw new BusinessException(403,"无权访问此报告");
         }
         return project;
     }

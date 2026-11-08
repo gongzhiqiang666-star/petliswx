@@ -1,20 +1,22 @@
 import { formData } from './shared.js';
-import { cell, moneyYuan, pageItems, saveBlob } from '../utils.js';
+import { cell, moneyYuan, pageItems, saveBlob, dateInputValue, nextCalendarDate } from '../utils.js';
 import { field, pageHeader, renderState, renderTable } from '../components/ui.js';
 
 export async function render(container, { api, toast }) {
   const today = new Date();
   const first = new Date(today.getFullYear(), today.getMonth(), 1);
-  const tomorrow = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1);
-  const iso = (date) => date.toISOString().slice(0, 10);
-  let filters = { from: iso(first), to: iso(tomorrow) };
+  let filters = { from: dateInputValue(first), to: dateInputValue(today) };
+  const queryRange = () => ({ from: filters.from, to: nextCalendarDate(filters.to) });
   container.innerHTML = `${pageHeader('数据看板', '真实订单、现结收入、已结算月结与项目聚合')}
-    <section class="panel"><form id="dashboard-filter" class="toolbar">${field({ name: 'from', label: '开始日期', type: 'date', value: filters.from, required: true })}${field({ name: 'to', label: '结束日期', type: 'date', value: filters.to, required: true })}<button class="button secondary">查询</button><button class="button text" id="orders-export" type="button">导出订单 CSV</button></form><div id="dashboard-content">${renderState('loading')}</div></section>`;
+    <section class="panel"><form id="dashboard-filter" class="toolbar">${field({ name: 'from', label: '开始日期', type: 'date', value: filters.from, required: true })}${field({ name: 'to', label: '结束日期（含当天）', type: 'date', value: filters.to, required: true })}<button class="button secondary">查询</button><button class="button text" id="orders-export" type="button">导出订单 CSV</button></form><div id="dashboard-content">${renderState('loading')}</div></section><section class="panel"><h2>注册申请审核</h2><p>按上方日期范围内提交的申请统计当前审核状态，非历史审核操作次数；全部待审不限提交日期。</p><div id="registration-summary"></div></section><section class="panel"><div class="panel-title"><h2>小程序操作事件</h2><select id="event-days" aria-label="事件统计范围"><option value="7">近7天</option><option value="30">近30天</option></select></div><p>按接收时间统计匿名事件次数，非独立用户数或实际支付成交数；未登录事件在登录后补传，开发环境与正式环境分别展示。</p><div id="event-summary"></div></section>`;
   const content = container.querySelector('#dashboard-content');
+  let dashboardSequence = 0;
   async function load() {
+    const sequence = ++dashboardSequence;
     content.innerHTML = renderState('loading');
     try {
-      const data = await api.request('/admin/dashboard', { query: filters });
+      const data = await api.request('/admin/dashboard', { query: queryRange() });
+      if (sequence !== dashboardSequence) return;
       const hospitals = pageItems(data.hospitalRanking);
       const projects = pageItems(data.projectRanking);
       content.innerHTML = `<section class="metric-grid">
@@ -27,12 +29,43 @@ export async function render(container, { api, toast }) {
         ], rows: hospitals, emptyText: '暂无医院数据' })}</section><section class="panel"><div class="panel-title"><h2>项目统计</h2></div>${renderTable({ columns: [
           { label: '项目', render: (row) => cell(row, 'testName') }, { label: '数量', render: (row) => cell(row, 'quantity') }
         ], rows: projects, emptyText: '暂无项目数据' })}</section></div>`;
-    } catch (error) { content.innerHTML = renderState(error.status === 403 ? 'forbidden' : 'error', error); }
+    } catch (error) { if (sequence !== dashboardSequence) return; content.innerHTML = renderState(error.status === 403 ? 'forbidden' : 'error', error); }
   }
-  container.querySelector('#dashboard-filter').addEventListener('submit', (event) => { event.preventDefault(); filters = formData(event.currentTarget); load(); });
+  container.querySelector('#dashboard-filter').addEventListener('submit', (event) => { event.preventDefault(); filters = formData(event.currentTarget); load(); loadRegistrations(); });
   container.querySelector('#orders-export').addEventListener('click', async () => {
-    try { const query = new URLSearchParams(filters).toString(); const file = await api.download(`/admin/export/orders.csv?${query}`); saveBlob(file.blob, file.filename); }
+    try { const query = new URLSearchParams(queryRange()).toString(); const file = await api.download(`/admin/export/orders.csv?${query}`); saveBlob(file.blob, file.filename); }
     catch (error) { toast(error.message, 'error'); }
   });
-  await load();
+  let registrationSequence = 0;
+  async function loadRegistrations() {
+    const sequence = ++registrationSequence;
+    const target = container.querySelector('#registration-summary');
+    target.innerHTML = renderState('loading');
+    try {
+      const data = await api.request('/admin/dashboard/registrations', { query: queryRange() });
+      if (sequence !== registrationSequence) return;
+      target.innerHTML = `<div class="metric-grid">${[['所选期间提交','submittedCount'],['其中待审','pendingCount'],['其中已通过','approvedCount'],['其中已驳回','rejectedCount'],['全部待审','totalPending']].map(([label,key])=>`<article class="metric-card"><span>${label}</span><strong>${Number(data[key] || 0)}</strong></article>`).join('')}</div>`;
+    } catch(error) { if (sequence !== registrationSequence) return; target.innerHTML = renderState(error.status===403?'forbidden':'error',error); }
+  }
+  let eventSequence = 0;
+  async function loadEvents() {
+    const sequence = ++eventSequence;
+    const target = container.querySelector('#event-summary');
+    target.innerHTML = renderState('loading');
+    try {
+      const rows = await api.request('/admin/client-events/summary', { query: { days: Number(container.querySelector('#event-days').value || 7) } });
+      if (sequence !== eventSequence) return;
+      const names = { order_step:'送检步骤', order_submit:'提交送检', payment_result:'支付结果', report_open:'打开报告', registration_submit:'注册提交', auth_result:'登录结果' };
+      const steps = { pet:'选择宠物', tests:'选择项目', sample:'填写采样', confirm:'确认送检', checkout:'支付', report:'报告', registration:'注册', login:'登录' };
+      const outcomes = { view:'进入', success:'成功', failure:'失败', cancelled:'取消', pending:'待确认' };
+      target.innerHTML = renderTable({ rows, emptyText:'暂无操作事件', columns:[
+        { label:'接收日期', key:'day' }, { label:'事件', render:row=>cell({name:names[row.event] || row.event},'name') },
+        { label:'步骤', render:row=>cell({name:steps[row.step] || row.step},'name') },
+        { label:'结果', render:row=>cell({name:outcomes[row.outcome] || row.outcome},'name') },
+        { label:'环境', key:'environment' }, { label:'次数', key:'count' }
+      ] });
+    } catch(error) { if (sequence !== eventSequence) return; target.innerHTML = renderState(error.status===403?'forbidden':'error',error); }
+  }
+  container.querySelector('#event-days').addEventListener('change',loadEvents);
+  await Promise.all([load(), loadEvents(), loadRegistrations()]);
 }

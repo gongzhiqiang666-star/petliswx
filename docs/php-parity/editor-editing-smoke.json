@@ -1,0 +1,21 @@
+{
+  "liveColumnGroupsRetained": true,
+  "noGeneratedLiveColumns": true,
+  "spacerRowStableDuringTyping": true,
+  "emptyTableStableDuringTyping": true,
+  "ordinaryRowAddUndo": true,
+  "emptyTableSelectDeleteUndo": true,
+  "emptyRowSelectDeleteUndo": true,
+  "scope": "synthetic only; nested inline and legacy table editing",
+  "nativeTyping": true,
+  "nativeUndo": true,
+  "nativeRedo": true,
+  "nativeBackspace": true,
+  "crossWrapperSelectionReplacement": true,
+  "wrappersRetained": true,
+  "htmlRestoredExactly": true,
+  "pageErrors": 0,
+  "fullEditingApproved": false,
+  "browserVersion": "156.0.8078.80",
+  "blockedRequests": 0
+}

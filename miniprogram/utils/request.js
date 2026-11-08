@@ -215,7 +215,7 @@ class Request {
    * @param {String} name 文件字段名
    * @param {Object} formData 额外的表单数据
    */
-  uploadFile(url, filePath, name = 'file', formData = {}) {
+  uploadFile(url, filePath, name = 'file', formData = {}, needAuth = true) {
     return new Promise((resolve, reject) => {
       const fullURL = /^https?:\/\//.test(url) ? url : `${this.baseURL}${url}`
 
@@ -226,7 +226,7 @@ class Request {
         filePath: filePath,
         name: name,
         formData: formData,
-        header: Object.fromEntries(Object.entries(this.getHeaders(true)).filter(([key]) => key !== 'Content-Type')),
+        header: Object.fromEntries(Object.entries(this.getHeaders(needAuth)).filter(([key]) => key !== 'Content-Type')),
         success: (res) => {
           try {
             const data = JSON.parse(res.data)
@@ -256,18 +256,18 @@ class Request {
     return new Promise((resolve, reject) => {
       const fullURL = /^https?:\/\//.test(url) ? url : `${this.baseURL}${url}`
 
-      console.log(`[Download] ${fullURL}`)
-
       wx.downloadFile({
         url: fullURL,
-        header: this.getHeaders(true),
+        header: this.getHeaders(Boolean(this.downloadOrigin(fullURL)) && this.downloadOrigin(fullURL)===this.downloadOrigin(this.baseURL)),
         success: (res) => {
-          if(res.statusCode===401){this.unauthorized();reject(new Error('登录已过期，请重新登录'));return}
-          if (res.statusCode === 200) {
-            console.log(`[Download Success]`, res.tempFilePath)
+          try {
+            if(res.statusCode===401){this.unauthorized();throw new Error('登录已过期，请重新登录')}
+            if(res.statusCode!==200)throw new Error(res.statusCode===403?'没有权限下载该文件':`下载失败，状态码：${res.statusCode}`)
+            this.validateDownloadedFile(res.tempFilePath)
             resolve(res.tempFilePath)
-          } else {
-            reject(new Error(`下载失败，状态码：${res.statusCode}`))
+          }catch(error){
+            if(res.tempFilePath)try{wx.getFileSystemManager().unlinkSync(res.tempFilePath)}catch(e){}
+            reject(error)
           }
         },
         fail: (err) => {
@@ -279,6 +279,28 @@ class Request {
         }
       })
     })
+  }
+
+  downloadOrigin(value) {
+    const match=String(value).match(/^(https?):\/\/([^/?#]+)/i)
+    if(!match || match[2].includes('@'))return null
+    const scheme=match[1].toLowerCase(),host=match[2].toLowerCase().replace(scheme==='https'?/:443$/:/:80$/,'')
+    return scheme+'://'+host
+  }
+
+  validateDownloadedFile(filePath) {
+    if(!filePath)throw new Error('下载文件不存在，请重试')
+    const fs=wx.getFileSystemManager();let size,head
+    try{size=Number(fs.statSync(filePath).size);if(!Number.isSafeInteger(size)||size<=0)throw new Error();head=new Uint8Array(fs.readFileSync(filePath,undefined,0,Math.min(size,512)))}catch(e){throw new Error('下载文件为空或无法读取，请重试')}
+    let position=head[0]===239&&head[1]===187&&head[2]===191?3:0
+    while([9,10,13,32].includes(head[position]))position++
+    if(head[position]!==123&&head[position]!==91)return
+    if(size>65536)throw new Error('下载响应不是有效文件，请重试')
+    let body;try{body=JSON.parse(fs.readFileSync(filePath,'utf8',0,size).replace(/^\uFEFF/,''))}catch(e){throw new Error('下载响应无效，请重试')}
+    if(body && !Array.isArray(body) && Object.prototype.hasOwnProperty.call(body,'code')){
+      this.handleResponse({statusCode:200,data:body})
+      throw new Error('服务器未返回可下载的文件，请稍后重试')
+    }
   }
 }
 

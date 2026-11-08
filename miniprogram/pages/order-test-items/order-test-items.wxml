@@ -1,15 +1,15 @@
 <view class="page" role="main" aria-label="选择检测项目">
   <view class="page-header">
     <view class="flow-header">
-      <view class="flow-steps" aria-label="送检进度：第 2 步，共 3 步">
-        <view class="flow-step">
+      <view class="flow-steps" aria-label="送检进度：第 {{projectFirst?1:2}} 步，共 3 步">
+        <view class="flow-step {{projectFirst?'active':''}}">
           <view class="flow-step-dot">1</view>
-          <text class="flow-step-label">填写资料</text>
+          <text class="flow-step-label">{{projectFirst?'选择项目':'填写资料'}}</text>
         </view>
         <view class="flow-connector"></view>
-        <view class="flow-step active">
+        <view class="flow-step {{projectFirst?'':'active'}}">
           <view class="flow-step-dot">2</view>
-          <text class="flow-step-label">选择项目</text>
+          <text class="flow-step-label">{{projectFirst?'采样资料':'选择项目'}}</text>
         </view>
         <view class="flow-connector"></view>
         <view class="flow-step">

@@ -1630,3 +1630,16 @@
 | 名称 | 表 | 时机 | 事件 |
 |---|---|---|---|
 | `trg_order_status_change` | `lin_lb_listdiagnosisproject` | AFTER | UPDATE |
+
+
+## 顺丰扩展表（2026-11-07 本机批准新增）
+
+`lin_sf_request` 保存 order_id、operation、request_key、external_order_no、payload_hash、state、tracking_no、白名单 result_json、平台/业务码及操作人、版本与时间。唯一键 `(order_id, operation)` 和 `request_key` 用于跨进程幂等；未知结果不能重新下单。
+
+`lin_sf_route_event` 保存 shipment_id、event_key、承运商路由码、业务发生/接收时间、映射状态、说明与应用时间。event_key 唯一去重，按业务时间及状态顺序推进；快递妥投不等于实验室核样。
+
+精确 DDL 见 [005-sf-express-integration.sql](database/pending/005-sf-express-integration.sql)。用户已批准且仅在本机 13306 开发副本执行，不改旧表/视图/触发器，不自动重放。请求日志不保存第三方密钥、签名或完整寄收件资料。
+
+## 2026-11-08已批准的006增量
+
+上方88表/字段为历史基线，本机当前90表、7视图、1触发器。用户批准仅调整项目新增lin_shipment与lin_sf_request：前者新增attempt_no、is_current及次数/当前运单唯一约束，后者新增attempt_no并按订单/次数/操作唯一。原PHP表不改，原70条运单/12条请求原字段摘要不变。详见SF-ATTEMPTS-006-EXECUTION.md和批准SQL006；禁止重放，后续寄件业务尚未启用。

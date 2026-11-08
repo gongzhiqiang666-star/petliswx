@@ -236,7 +236,7 @@ Page({
       logistics: this.data.logisticsByOrder[order.orderId] || null,
       collectDt: this.formatDate(order.collectDt),
       createDtText: this.formatDateTime(order.createDt),
-      statusLabel: this.getStatusLabel(order.sampleStatus)
+      statusLabel: this.getStatusLabel(order.sampleStatus)+(order.refunded?' · 已退款':'')
     }))
 
     // 只设置必要的数据

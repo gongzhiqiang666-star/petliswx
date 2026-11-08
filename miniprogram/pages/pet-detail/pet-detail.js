@@ -312,7 +312,7 @@ Page({
   onBookTest() {
     // 直接跳转到预约信息填写页面，并传递宠物ID
     wx.navigateTo({
-      url: `/pages/order-add-pet/order-add-pet?petId=${this.data.petData.id}&mode=book`
+      url: `/pages/order-test-items/order-test-items?petId=${this.data.petData.id}&mode=book`
     });
   },
 

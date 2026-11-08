@@ -1,0 +1,178 @@
+{
+  "scope": "synthetic structural fixture; not production HTML",
+  "input": [
+    {
+      "tag": "div",
+      "attrs": {
+        "style": "page-break-after:always"
+      }
+    },
+    {
+      "tag": "table",
+      "attrs": {
+        "width": "640",
+        "cellpadding": "3",
+        "cellspacing": "0",
+        "style": "border-collapse:collapse"
+      }
+    },
+    {
+      "tag": "colgroup",
+      "attrs": {}
+    },
+    {
+      "tag": "col",
+      "attrs": {
+        "width": "120"
+      }
+    },
+    {
+      "tag": "col",
+      "attrs": {
+        "width": "520"
+      }
+    },
+    {
+      "tag": "tbody",
+      "attrs": {}
+    },
+    {
+      "tag": "tr",
+      "attrs": {
+        "height": "40"
+      }
+    },
+    {
+      "tag": "td",
+      "attrs": {
+        "rowspan": "2",
+        "width": "120",
+        "valign": "top",
+        "style": "height:40px;line-height:24px;border-bottom:1px solid #000"
+      }
+    },
+    {
+      "tag": "td",
+      "attrs": {
+        "colspan": "2"
+      }
+    },
+    {
+      "tag": "p",
+      "attrs": {
+        "style": "margin:0;text-indent:2em;letter-spacing:1px"
+      }
+    },
+    {
+      "tag": "font",
+      "attrs": {
+        "face": "宋体",
+        "color": "#123456"
+      }
+    },
+    {
+      "tag": "tr",
+      "attrs": {}
+    },
+    {
+      "tag": "td",
+      "attrs": {}
+    },
+    {
+      "tag": "span",
+      "attrs": {
+        "style": "font-size:14px;color:#ff0000"
+      }
+    },
+    {
+      "tag": "p",
+      "attrs": {}
+    }
+  ],
+  "output": [
+    {
+      "tag": "table",
+      "attrs": {
+        "style": "min-width: 665px;"
+      }
+    },
+    {
+      "tag": "colgroup",
+      "attrs": {}
+    },
+    {
+      "tag": "col",
+      "attrs": {
+        "style": "width: 120px;"
+      }
+    },
+    {
+      "tag": "col",
+      "attrs": {
+        "style": "width: 520px;"
+      }
+    },
+    {
+      "tag": "col",
+      "attrs": {
+        "style": "min-width: 25px;"
+      }
+    },
+    {
+      "tag": "tbody",
+      "attrs": {}
+    },
+    {
+      "tag": "tr",
+      "attrs": {}
+    },
+    {
+      "tag": "td",
+      "attrs": {
+        "rowspan": "2",
+        "colwidth": "120"
+      }
+    },
+    {
+      "tag": "p",
+      "attrs": {}
+    },
+    {
+      "tag": "td",
+      "attrs": {
+        "colspan": "2",
+        "colwidth": "520"
+      }
+    },
+    {
+      "tag": "p",
+      "attrs": {}
+    },
+    {
+      "tag": "tr",
+      "attrs": {}
+    },
+    {
+      "tag": "td",
+      "attrs": {
+        "colwidth": "120"
+      }
+    },
+    {
+      "tag": "p",
+      "attrs": {}
+    },
+    {
+      "tag": "span",
+      "attrs": {
+        "style": "color: rgb(255, 0, 0); font-size: 14px;"
+      }
+    },
+    {
+      "tag": "p",
+      "attrs": {}
+    }
+  ],
+  "textRetained": true,
+  "pageMarkerRetained": true
+}

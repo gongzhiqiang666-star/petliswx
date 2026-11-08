@@ -33,7 +33,7 @@ class CouponAdminOperationsTest {
     @AfterEach void clear() { SecurityContextHolder.clearContext(); }
 
     @Test void grantLocksTemplateStockAndWritesAudit() {
-        when(jdbc.queryForList(contains("COUPON_GRANT"), eq("grant-key-1"))).thenReturn(List.of());
+        when(jdbc.queryForList(contains("COUPON_GRANT"), eq(5), eq("grant-key-1"))).thenReturn(List.of());
         when(store.one(contains("lin_user"), eq(5))).thenReturn(Map.of("id", 5));
         when(store.one(contains("lin_coupon"), eq(9L))).thenReturn(Map.of("id", 9L));
         when(store.one(contains("lin_operational_config"), eq("coupon-stock:9"))).thenReturn(new java.util.HashMap<>(Map.of("config_value", "{\"total\":2,\"issued\":1}")));
@@ -46,7 +46,7 @@ class CouponAdminOperationsTest {
     }
 
     @Test void exhaustedStockRejectsConcurrentGrantAfterLockedRead() {
-        when(jdbc.queryForList(contains("COUPON_GRANT"), eq("grant-key-1"))).thenReturn(List.of());
+        when(jdbc.queryForList(contains("COUPON_GRANT"), eq(5), eq("grant-key-1"))).thenReturn(List.of());
         when(store.one(contains("lin_user"), eq(5))).thenReturn(Map.of("id", 5));
         when(store.one(contains("lin_coupon"), eq(9L))).thenReturn(Map.of("id", 9L));
         when(store.one(contains("lin_operational_config"), eq("coupon-stock:9"))).thenReturn(new java.util.HashMap<>(Map.of("config_value", "{\"total\":1,\"issued\":1}")));
@@ -55,19 +55,37 @@ class CouponAdminOperationsTest {
     }
 
     @Test void repeatedGrantDoesNotConsumeStockAgain() {
-        when(jdbc.queryForList(contains("COUPON_GRANT"), eq("grant-key-1"))).thenReturn(List.of(Map.of("resource_id", "31")));
+        when(jdbc.queryForList(contains("COUPON_GRANT"), eq(5), eq("grant-key-1"))).thenReturn(List.of(Map.of("resource_id", "31", "user_id",5,"coupon_id",9L)));
         assertEquals(31, service.grant(9, 5, "grant-key-1"));
         verify(store, never()).insert(anyString(), any(Object[].class));
     }
 
-    @Test void grantRechecksRequestKeyAfterUserLock() {
-        when(jdbc.queryForList(contains("COUPON_GRANT"), eq("grant-key-1"))).thenReturn(List.of(), List.of(Map.of("resource_id", "31")));
+    @Test void grantLooksUpRequestOnlyAfterOperatorLock() {
+        when(jdbc.queryForList(contains("COUPON_GRANT"), eq(5), eq("grant-key-1"))).thenReturn(List.of(Map.of("resource_id", "31", "user_id",5,"coupon_id",9L)));
         when(store.one(contains("lin_user"), eq(5))).thenReturn(Map.of("id", 5));
         assertEquals(31, service.grant(9, 5, "grant-key-1"));
         verify(store, never()).insert(anyString(), any(Object[].class));
         verify(store, never()).one(contains("lin_coupon"), any());
     }
 
+    @Test void repeatedRequestCannotChangeRecipientOrCoupon() {
+        when(jdbc.queryForList(contains("COUPON_GRANT"), eq(5), eq("grant-key-1"))).thenReturn(List.of(Map.of("resource_id","31","user_id",5,"coupon_id",9L)));
+        assertEquals(409,assertThrows(BusinessException.class,()->service.grant(9,6,"grant-key-1")).getCode());
+        assertEquals(409,assertThrows(BusinessException.class,()->service.grant(10,5,"grant-key-1")).getCode());
+        verify(store,never()).insert(anyString(),any(Object[].class));
+    }
+    @Test void historicalAmbiguousDuplicateRequestIsNeverReissued() {
+        var row=Map.<String,Object>of("resource_id","31","user_id",5,"coupon_id",9L);
+        when(jdbc.queryForList(contains("COUPON_GRANT"), eq(5), eq("grant-key-1"))).thenReturn(List.of(row,row));
+        assertEquals(409,assertThrows(BusinessException.class,()->service.grant(9,5,"grant-key-1")).getCode());
+        verify(store,never()).insert(anyString(),any(Object[].class));
+    }
+    @Test void replayReadIsScopedAndOccursAfterOperatorLock() {
+        when(jdbc.queryForList(contains("COUPON_GRANT"), eq(5), eq("grant-key-1"))).thenReturn(List.of(Map.of("resource_id","31","user_id",5,"coupon_id",9L)));
+        service.grant(9,5,"grant-key-1");
+        var order=inOrder(store,jdbc);order.verify(store).one(contains("FOR UPDATE"),eq(5));
+        order.verify(jdbc).queryForList(contains("a.actor_user_id=?"),eq(5),eq("grant-key-1"));
+    }
     @Test void stockUpdateNeverResetsIssuedQuantity() {
         CouponService.Coupon coupon = new CouponService.Coupon("复查券", new BigDecimal("10.00"), BigDecimal.ZERO, null,
                 LocalDateTime.now(), LocalDateTime.now().plusDays(1));

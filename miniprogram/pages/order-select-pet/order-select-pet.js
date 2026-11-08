@@ -1,3 +1,4 @@
+const analytics = require('../../utils/analytics')
 // pages/order-select-pet/order-select-pet.js
 const api = require('../../api/index.js');
 const ageCalculator = require('../../utils/age-calculator.js');
@@ -14,6 +15,7 @@ Page({
   },
 
   onLoad(options) {
+    analytics.track('order_step', 'pet', 'view')
     // Check if there's a newPetId parameter (from newly created pet)
     if (options.newPetId) {
       this.setData({
@@ -196,7 +198,7 @@ Page({
 
     // 跳转到预约信息填写页面
     wx.navigateTo({
-      url: `/pages/order-add-pet/order-add-pet?petId=${petId}`
+      url: `/pages/order-test-items/order-test-items?petId=${petId}`
     });
   }
 });

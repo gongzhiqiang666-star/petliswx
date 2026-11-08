@@ -24,6 +24,7 @@ import static org.mockito.Mockito.*;
 class RechargeLocalDatabaseTest {
     @Autowired RechargeService recharges;
     @Autowired FeatureStore store;
+    @Autowired AccountService accounts;
     @MockBean WeChatPaymentGateway gateway;
     int userId;
     @BeforeEach void fixture(){
@@ -42,4 +43,27 @@ class RechargeLocalDatabaseTest {
     @Test void mismatchedAmountCannotCredit(){String payment=create();assertThrows(BusinessException.class,()->recharges.verifiedCallback(payment,1,"fixture-"+UUID.randomUUID()));assertEquals(new BigDecimal("10.50"),balance());}
     @Test void requestReplayDoesNotCreateAnotherProviderOrder(){String payment=create();assertEquals(payment,create());verify(gateway,times(1)).create(anyString(),any(),nullable(String.class),anyString());assertEquals(1,store.jdbc().queryForObject("SELECT COUNT(*) FROM lin_recharge_order WHERE user_id=?",Integer.class,userId));}
     @Test void closedRechargeCannotBeCredited(){String payment=create();recharges.close(payment);assertThrows(BusinessException.class,()->recharges.verifiedCallback(payment,2000,"fixture-"+UUID.randomUUID()));assertEquals(new BigDecimal("10.50"),balance());}
+    @Test void rechargeStatusLedgerAndExportAreIsolatedBetweenDoctors() {
+        String payment=create();
+        recharges.verifiedCallback(payment,2000,"fixture-"+UUID.randomUUID());
+        assertEquals(new BigDecimal("30.50"),accounts.summary().get("balance"));
+        var income=accounts.transactions(false,0,1,"income");
+        assertEquals(1L,((Number)income.get("total")).longValue());
+        @SuppressWarnings("unchecked") var rows=(List<Map<String,Object>>)income.get("items");
+        assertEquals(new BigDecimal("20.00"),rows.get(0).get("amount"));
+        assertEquals(new BigDecimal("10.50"),rows.get(0).get("balanceBefore"));
+        assertEquals(new BigDecimal("30.50"),rows.get(0).get("balanceAfter"));
+        assertTrue(accounts.exportTransactions(false,"income").contains(payment));
+        assertEquals(0L,((Number)accounts.transactions(false,0,20,"expense").get("total")).longValue());
+        String otherName="it_recharge_"+UUID.randomUUID().toString().replace("-","").substring(0,12);
+        int other=(int)store.insert("INSERT INTO lin_user(group_id,username,nickname,password,salt,money,score,level,gender,successions,maxsuccessions,loginfailure,status,createtime,updatetime,jointime) VALUES(0,?,'充值隔离测试','','',7.25,0,0,0,0,0,0,'normal',UNIX_TIMESTAMP(),UNIX_TIMESTAMP(),UNIX_TIMESTAMP())",otherName);
+        SecurityContextHolder.getContext().setAuthentication(new UsernamePasswordAuthenticationToken(new UserPrincipal(other,"fixture-other",1,1),null,List.of()));
+        assertEquals(new BigDecimal("7.25"),accounts.summary().get("balance"));
+        assertEquals(0L,((Number)accounts.transactions(false,0,20,"all").get("total")).longValue());
+        assertFalse(accounts.exportTransactions(false,"all").contains(payment));
+        assertEquals(0L,((Number)recharges.list(0,20).get("total")).longValue());
+        assertThrows(BusinessException.class,()->recharges.status(payment));
+        assertThrows(BusinessException.class,()->recharges.resume(payment));
+        assertThrows(BusinessException.class,()->recharges.close(payment));
+    }
 }

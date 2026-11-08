@@ -600,3 +600,9 @@ page {
 
 .logistics-brief { display: flex; flex-direction: column; gap: 8rpx; padding: 20rpx 0; border-top: 1rpx solid #E7EEEA; color: #66766f; font-size: 24rpx; }
 .logistics-brief-error { color: #C96F45; }
+
+/* Search/actions first, status filter on a separate line for narrow screens. */
+.filter-main-row{display:flex;flex-wrap:wrap;gap:16rpx}
+.filter-main-row .search-bar{order:0;flex:1;min-width:0;width:auto}
+.filter-main-row .filter-toggle{order:1;flex-shrink:0;min-height:88rpx}
+.filter-main-row .tabs-scroll{order:2;flex:0 0 100%;width:100%;min-width:0}

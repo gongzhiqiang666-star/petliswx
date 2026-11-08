@@ -6,7 +6,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.annotation.Propagation;
 import java.net.URI;
 import java.net.http.*;
 import java.nio.charset.StandardCharsets;
@@ -18,6 +17,7 @@ import java.util.*;
 public class SmsVerificationService {
  private final FeatureStore store;
  private final ObjectMapper json;
+ private final SmsAttemptService attempts;
  @Value("${app.sms.api-url:}") private String apiUrl;
  @Value("${app.sms.api-token:}") private String apiToken;
  private static final SecureRandom RANDOM=new SecureRandom();
@@ -37,14 +37,14 @@ public class SmsVerificationService {
   }catch(BusinessException e){throw e;}catch(Exception e){if(e instanceof InterruptedException)Thread.currentThread().interrupt();throw new BusinessException("短信服务暂不可用");}
   store.jdbc().update("INSERT INTO lin_sms(event,mobile,code,times,ip,createtime) VALUES(?,?,?,0,?,UNIX_TIMESTAMP())","petlis_"+scene,mobile,code,ip);
  }
- @Transactional(propagation=Propagation.REQUIRES_NEW,noRollbackFor=BusinessException.class)
+ @Transactional
  public void consume(String mobile,String scene,String code){
   validate(mobile,scene);
+  long verified=attempts.verify(mobile,scene,code);
+  // Recheck under the caller's transaction: only a committed business operation consumes a valid code.
   var rows=store.jdbc().queryForList("SELECT id,code,times FROM lin_sms WHERE mobile=? AND event=? AND createtime>UNIX_TIMESTAMP()-300 ORDER BY id DESC LIMIT 1 FOR UPDATE",mobile,"petlis_"+scene);
-  if(rows.isEmpty() || code==null || !code.matches("[0-9]{6}"))throw new BusinessException("验证码无效或已过期");
-  var record=rows.get(0);if(((Number)record.get("times")).intValue()>=5)throw new BusinessException("验证码尝试次数过多，请重新获取");
-  if(!MessageDigest.isEqual(String.valueOf(record.get("code")).getBytes(StandardCharsets.US_ASCII),code.getBytes(StandardCharsets.US_ASCII))){store.jdbc().update("UPDATE lin_sms SET times=times+1 WHERE id=?",record.get("id"));throw new BusinessException("验证码不正确");}
-  store.jdbc().update("DELETE FROM lin_sms WHERE mobile=? AND event=?",mobile,"petlis_"+scene);
+  if(rows.isEmpty() || ((Number)rows.get(0).get("id")).longValue()!=verified || ((Number)rows.get(0).get("times")).intValue()>=5 || !SmsAttemptService.matches(rows.get(0).get("code"),code))throw new BusinessException("验证码无效或已过期");
+  store.jdbc().update("DELETE FROM lin_sms WHERE id=?",verified);
  }
  private void validate(String mobile,String scene){if(mobile==null || !mobile.matches("1[0-9]{10}") || scene==null || !Set.of("register","bind","reset").contains(scene))throw new BusinessException("手机号或验证场景无效");}
 }

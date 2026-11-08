@@ -75,13 +75,22 @@ class MonthlyBillReviewTest {
     @Test void reconciledOrOverdueBillCannotMoveBackwardThroughReconciliation() {
         for (String status : List.of("RECONCILED", "OVERDUE", "SETTLED")) {
             when(store.one(contains("FROM lin_monthly_bill b"), eq(21L))).thenReturn(Map.of(
-                    "id", 21L, "hospital_id", 7, "laboratory_id", 2, "status", status));
+                    "id", 21L, "hospital_id", 7, "laboratory_id", 2, "status", status,"reconciled_at",java.sql.Timestamp.valueOf("2026-01-01 00:00:00")));
             assertThrows(BusinessException.class, () -> service.reconcile(21, "DISPUTE", "异议"));
             assertThrows(BusinessException.class, () -> service.reconcile(21, "CONFIRM", ""));
         }
         verify(jdbc, never()).update(contains("hospital_reconciled_by"), any(Object[].class));
         verify(jdbc, never()).update(contains("status='DISPUTED'"), any(Object[].class));
         verifyNoInteractions(audits);
+    }
+
+    @Test void overdueUnconfirmedBillCanContinueReconciliationWithoutLosingOverdueStatus() {
+        var bill=Map.<String,Object>of("id",21L,"hospital_id",7,"laboratory_id",2,"status","OVERDUE");
+        when(store.one(contains("FROM lin_monthly_bill b"),eq(21L))).thenReturn(bill);
+        when(jdbc.queryForList(contains("FROM lin_monthly_bill b"),eq(21L))).thenReturn(List.of(bill));
+        assertEquals("OVERDUE",service.reconcile(21,"CONFIRM","实验室核对").get("status"));
+        verify(jdbc).update(contains("due_date<CURDATE()"),eq(21L));
+        verify(jdbc).update(contains("laboratory_reconciled_by=?"),eq(5),eq(21L));
     }
 
     private void existingBill(String status) {

@@ -1,3 +1,4 @@
+const analytics = require('../../utils/analytics')
 const request = require('../../utils/request')
 const config = require('../../config/config')
 Page({
@@ -12,9 +13,9 @@ Page({
  this.setData({busy:true,error:''})
  try{const result=await request.post('/auth/password/login',{account:this.data.account.trim(),password:this.data.password},false)
  if(this.data.remember)wx.setStorageSync('rememberedAccount',this.data.account.trim());else wx.removeStorageSync('rememberedAccount')
- this.setData({password:''});getApp().acceptSession(result,this.data.remember)
- }catch(e){this.setData({error:e.message || '登录失败，请重试'})}finally{this.setData({busy:false})}},
+ this.setData({password:''});getApp().acceptSession(result,this.data.remember);analytics.track('auth_result','login','success')
+ }catch(e){analytics.track('auth_result','login','failure');this.setData({error:e.message || '登录失败，请重试'})}finally{this.setData({busy:false})}},
  forgot(){wx.navigateTo({url:'/pages/security/security?reset=1'})},
  register(){wx.navigateTo({url:'/pages/register/register'})},
- async wechat(){if(this.data.busy)return;this.setData({busy:true,error:''});try{const {code}=await wx.login();getApp().acceptSession(await request.post('/auth/wechat/login',{code},false),this.data.remember)}catch(e){this.setData({error:e.message || '微信登录失败'})}finally{this.setData({busy:false})}}
+ async wechat(){if(this.data.busy)return;this.setData({busy:true,error:''});try{const {code}=await wx.login();getApp().acceptSession(await request.post('/auth/wechat/login',{code},false),this.data.remember);analytics.track('auth_result','login','success')}catch(e){analytics.track('auth_result','login','failure');this.setData({error:e.message || '微信登录失败'})}finally{this.setData({busy:false})}}
 })

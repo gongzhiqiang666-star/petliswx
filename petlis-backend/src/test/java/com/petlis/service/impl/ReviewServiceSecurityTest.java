@@ -64,7 +64,7 @@ class ReviewServiceSecurityTest {
     void orderReviewUsesCashSnapshotInsteadOfCurrentMonthlyHospital() {
         login(42);
         when(store.one(contains("lin_order_pricing_snapshot"), eq(8))).thenReturn(Map.of(
-                "SampleStatus", 0, "TestFee", 75.0, "CreateSampleId", 7, "PayType", 1, "settlement_type", "CASH"));
+                "managed_order_id", 8, "SampleStatus", 0, "TestFee", 75.0, "CreateSampleId", 7, "PayType", 1, "settlement_type", "CASH"));
 
         service.order(8, new ReviewService.Decision(true, "现结合同"));
 
@@ -75,7 +75,7 @@ class ReviewServiceSecurityTest {
     void orderReviewUsesMonthlySnapshotInsteadOfCurrentCashHospital() {
         login(42);
         when(store.one(contains("lin_order_pricing_snapshot"), eq(8))).thenReturn(Map.of(
-                "SampleStatus", 0, "TestFee", 75.0, "CreateSampleId", 7, "PayType", 0, "settlement_type", "MONTHLY"));
+                "managed_order_id", 8, "SampleStatus", 0, "TestFee", 75.0, "CreateSampleId", 7, "PayType", 0, "settlement_type", "MONTHLY"));
 
         service.order(8, new ReviewService.Decision(true, "月结合同"));
 
@@ -86,11 +86,21 @@ class ReviewServiceSecurityTest {
     void orderReviewWithoutSnapshotKeepsLegacyHospitalRule() {
         login(42);
         when(store.one(contains("lin_order_pricing_snapshot"), eq(8))).thenReturn(new java.util.HashMap<>(Map.of(
-                "SampleStatus", 0, "TestFee", 75.0, "CreateSampleId", 7, "PayType", 1)));
+                "managed_order_id", 8, "SampleStatus", 0, "TestFee", 75.0, "CreateSampleId", 7, "PayType", 1)));
 
         service.order(8, new ReviewService.Decision(true, "旧订单"));
 
         verify(serviceOrders()).updateOrderStatus(8, 2);
+    }
+
+    @Test
+    void unadoptedLegacyOrderCannotBePartiallyReviewed() {
+        login(42);
+        when(store.one(contains("lin_order_pricing_snapshot"), eq(8))).thenReturn(Map.of(
+                "SampleStatus", 0, "TestFee", 75.0, "CreateSampleId", 7, "PayType", 1));
+        assertThrows(BusinessException.class, () -> service.order(8, new ReviewService.Decision(true, "旧单")));
+        verify(serviceOrders(), never()).updateOrderStatus(anyInt(), anyInt());
+        verify(jdbc, never()).update(anyString(), any(Object[].class));
     }
 
     private OrderService serviceOrders() {

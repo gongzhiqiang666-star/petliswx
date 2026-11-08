@@ -16,11 +16,12 @@ class NullCreatorWorkflowTest {
     @Test
     void logisticsCreationWithNullCreatorFallsBackWithoutNpe() {
         FeatureStore store = mock(FeatureStore.class);
+        when(store.jdbc()).thenReturn(mock(JdbcTemplate.class));
         AccessService access = mock(AccessService.class);
         BusinessNotifications notifications = mock(BusinessNotifications.class);
         when(access.current()).thenReturn(new CurrentActor(9, Set.of(PlatformRole.ADMIN), Set.of(), Set.of(), new DataScope(true, Set.of(), Set.of(), null)));
         Map<String, Object> order = new HashMap<>();
-        order.put("order_id", 8); order.put("hospital_id", 1); order.put("laboratory_id", 2); order.put("doctor_user_id", null); order.put("review_status", "approved");
+        order.put("order_id", 8); order.put("hospital_id", 1); order.put("laboratory_id", 2); order.put("doctor_user_id", null); order.put("review_status", "approved"); order.put("order_status", 2);
         when(store.one(contains("lin_lb_listdiagnosisproject"), eq(8))).thenReturn(order);
         when(store.insert(contains("lin_shipment"), any(Object[].class))).thenReturn(11L);
         var service = new ShipmentWorkflowService(store, access, notifications);

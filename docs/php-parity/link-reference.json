@@ -1,0 +1,75 @@
+{
+  "source": "application/common.php",
+  "sha256": "938bac0c43a307e4939e2d9d6a377d5a909578c7edd2505ddc6bbc1e6e16a19c",
+  "runtime": "PHP7.4 original algorithms; public test-key dependency adapter only",
+  "testPhrase": "petlis-public-test-key",
+  "rows": [
+    {
+      "input": "0",
+      "token": "BRyXCwiWn7w-",
+      "decoded": "0"
+    },
+    {
+      "input": "1",
+      "token": "6!mQ/1/zLG8-",
+      "decoded": "1"
+    },
+    {
+      "input": "7",
+      "token": "JCwDn9VzxaE-",
+      "decoded": "7"
+    },
+    {
+      "input": "1225",
+      "token": "uLkYurtdwrA-",
+      "decoded": "1225"
+    },
+    {
+      "input": "2147483647",
+      "token": "6UE0ZjV7SS9JVTHZegvN0w--",
+      "decoded": "2147483647"
+    },
+    {
+      "input": "4294967295",
+      "token": "AqDP!hQUh!xC5G7acRDXsQ--",
+      "decoded": "4294967295"
+    },
+    {
+      "input": "0007",
+      "token": "4D6LRJ4ax0w-",
+      "decoded": "0007"
+    },
+    {
+      "input": "AB-12_ Z",
+      "token": "XxHcEElFGW5lb7UGoibMPg--",
+      "decoded": "ab12_z"
+    },
+    {
+      "input": "中文",
+      "token": "PvqKX/Qmd9c-",
+      "decoded": ""
+    },
+    {
+      "input": "A猫B",
+      "token": "04Rev7ZHkAY-",
+      "decoded": "ab"
+    },
+    {
+      "input": "\\u4e2d",
+      "token": "zvJFK5WQfAA-",
+      "decoded": "ⵎ"
+    },
+    {
+      "input": "\\u00d8",
+      "token": "5ccCqNn/GFc-",
+      "decoded": ""
+    },
+    {
+      "input": "",
+      "token": "rWgx6F7JkRY-",
+      "decoded": ""
+    }
+  ],
+  "productionKeyIncluded": false,
+  "completionClaimed": false
+}

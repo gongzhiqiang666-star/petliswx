@@ -23,6 +23,9 @@ public class AdminController {
         return Result.success(service.users(status, role, hospitalId, page, size));
     }
 
+    @PostMapping("/staff")
+    public Result<Long> createStaff(@RequestBody AdminService.StaffCreate command) {return Result.success(service.createStaff(command));}
+
     @GetMapping("/users/{id}/roles")
     public Result<List<UserRoleAssignment>> roles(@PathVariable int id) { return Result.success(service.roles(id)); }
 

@@ -1,0 +1,35 @@
+{
+  "scope": "local legacy templates; offline roundtrip; no content or attribute values emitted",
+  "editor": "Tiptap 3.33.0 + experimental legacy attributes/font/div",
+  "adoptionApproved": false,
+  "documents": 706,
+  "passed": 0,
+  "rejected": 0,
+  "textChanged": 0,
+  "errors": 2,
+  "errorSummary": [
+    {
+      "documentIndex": 655,
+      "stage": "roundtrip",
+      "name": "TypeError",
+      "dependencyFrames": [
+        "node_modules/jsdom/lib/jsdom/living/css/helpers/shorthand-properties.js:220:29)",
+        "node_modules/jsdom/lib/jsdom/living/css/helpers/shorthand-properties.js:1419:42)",
+        "node_modules/jsdom/lib/jsdom/living/css/CSSStyleDeclaration-impl.js:145:32)"
+      ],
+      "category": "unclassified"
+    },
+    {
+      "documentIndex": 662,
+      "stage": "roundtrip",
+      "name": "TypeError",
+      "dependencyFrames": [
+        "node_modules/jsdom/lib/jsdom/living/css/helpers/shorthand-properties.js:220:29)",
+        "node_modules/jsdom/lib/jsdom/living/css/helpers/shorthand-properties.js:1419:42)",
+        "node_modules/jsdom/lib/jsdom/living/css/CSSStyleDeclaration-impl.js:145:32)"
+      ],
+      "category": "unclassified"
+    }
+  ],
+  "missing": {}
+}

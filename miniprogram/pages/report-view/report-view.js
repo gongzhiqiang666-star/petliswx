@@ -1,3 +1,4 @@
+const analytics = require('../../utils/analytics')
 // pages/report-view/report-view.js
 const api = require('../../api/index.js');
 
@@ -34,6 +35,7 @@ Page({
       });
 
       const report = await api.reports.getDetail(reportId);
+      analytics.track('report_open', 'report', 'success')
 
       const formatDate = value => {
         if (!value) return '';
@@ -72,6 +74,7 @@ Page({
 
       wx.hideLoading();
     } catch (err) {
+      analytics.track('report_open', 'report', 'failure')
       console.error('[ReportView] 加载报告失败:', err);
       this.setData({
         loading: false,

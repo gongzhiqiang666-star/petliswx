@@ -1,0 +1,9 @@
+package com.petlis.service.impl;
+import com.petlis.common.exception.BusinessException;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
+class LegacyReportLinksTest {
+ @Test void missingConfigurationNeverProducesAPlaceholderOrProductionDefault(){assertEquals(409,assertThrows(BusinessException.class,()->new LegacyReportLinks("","").detail(7)).getCode());assertEquals(409,assertThrows(BusinessException.class,()->new LegacyReportLinks("https://petlis.invalid/","").detail(7)).getCode());}
+ @Test void configuredUrlUsesExactOriginalPathAndCipher(){var links=new LegacyReportLinks("https://petlis.invalid/","petlis-public-test-key");assertEquals("https://petlis.invalid/Project/View/Detail.aspx?CID="+LegacyLinkCodec.encrypt("7","petlis-public-test-key"),links.detail(7));assertTrue(links.detail(0).contains("?CID="));assertThrows(BusinessException.class,()->links.detail(-1));}
+ @Test void invalidBaseAndEmbeddedCredentialsAreRejected(){for(String base:new String[]{"javascript:alert(1)","https://user:pass@petlis.invalid/","https://petlis.invalid/?x=1","/relative/"})assertThrows(BusinessException.class,()->new LegacyReportLinks(base,"test-key").detail(7));}
+}

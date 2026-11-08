@@ -9,12 +9,13 @@ export function canRefund(user, order) {
 }
 export function canLogisticsAction(action, user) {
   if (['create', 'assign'].includes(action)) return has(user, 'ADMIN');
+  if (action === 'resolveException') return any(user, ['ADMIN', 'LAB_STAFF', 'COURIER']);
   if (action === 'receive') return has(user, 'LAB_STAFF');
   if (['pickup', 'transit', 'deliver', 'exception'].includes(action)) return has(user, 'COURIER');
   return false;
 }
 export function canLabAction(action, user) {
-  return ['assign', 'results', 'return', 'retest'].includes(action) && any(user, ['ADMIN', 'LAB_STAFF']);
+  return ['assign', 'reassign', 'results', 'return', 'retest'].includes(action) && any(user, ['ADMIN', 'LAB_STAFF']);
 }
 export function canReportAction(action, user) {
   if (['create', 'review', 'publish', 'template'].includes(action)) return any(user, ['ADMIN', 'LAB_STAFF']);

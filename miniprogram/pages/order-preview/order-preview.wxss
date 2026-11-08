@@ -788,3 +788,17 @@ page {
 .action-buttons .btn-primary:active {
   background: #0D6E6E;
 }
+
+.quote-recovery{display:flex;flex-wrap:wrap;gap:16rpx;margin-top:20rpx}.quote-recovery button{flex:1;min-width:220rpx;font-size:26rpx}
+
+.submission-result { padding: 64rpx 32rpx; }
+.submission-card { padding: 48rpx 32rpx; display: flex; flex-direction: column; align-items: center; }
+.submission-icon { width: 96rpx; height: 96rpx; padding: 20rpx; border-radius: 50%; background: var(--petlis-brand-soft, #edf5f1); }
+.submission-title { margin-top: 28rpx; color: var(--petlis-text, #193f39); font-size: 38rpx; font-weight: 600; }
+.submission-number { margin-top: 16rpx; color: var(--petlis-muted, #667c75); font-size: 28rpx; }
+.submission-next { width: 100%; box-sizing: border-box; padding: 28rpx; margin: 36rpx 0; background: #faf7f0; border: 1rpx solid #eee5d4; border-radius: 16rpx; font-size: 27rpx; line-height: 1.7; color: #665c4e; }
+.submission-next-title { display: block; margin-bottom: 12rpx; font-weight: 600; color: #514737; }
+.submission-card button { width: 100%; }
+.submission-home { margin-top: 20rpx; }
+
+.bottom-actions .quote-blocking-note { color: #A75530; font-size: 24rpx; line-height: 1.5; white-space: normal; }

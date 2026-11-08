@@ -18,13 +18,14 @@ _,r=call('/auth/password/login',{'account':'petlis_reviewer','password':pw});ass
 name='petlis_it_'+secrets.token_hex(5);phone='199'+str(secrets.randbelow(10**8)).zfill(8);password=secrets.token_hex(15)+'A7';code=str(secrets.randbelow(900000)+100000)
 settlement=1 if os.environ.get('PETLIS_TEST_SETTLEMENT')=='monthly' else 0
 hospital=int(sql(f'SELECT InfoHospitalId FROM lin_lb_infohospital WHERE IsActive=1 AND CityId>0 AND PayType={settlement} ORDER BY InfoHospitalId LIMIT 1;'))
-file_id=secrets.token_hex(16)+'.png';folder=Path(__file__).resolve().parents[2]/'petlis-backend/uploads/qualifications';folder.mkdir(parents=True,exist_ok=True);fixture=folder/file_id;fixture.write_bytes(base64.b64decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/l9sAAAAASUVORK5CYII='))
+from qualification_fixture import upload_qualification_fixture
+uploaded=upload_qualification_fixture();file_id=uploaded['url'].rsplit('/',1)[-1];fixture=Path(__file__).resolve().parents[2]/'petlis-backend/uploads/qualifications'/file_id
 user_id=None;gift=None;order_id=None;invoice_id=None;profile_id=None;fixture_lab=None;fixture_coupon=None
 try:
  # Test fixture only: exercise verification consumption without sending real SMS.
  assert sql("SELECT COUNT(*) FROM lin_user WHERE mobile='"+phone+"';")=='0'
  sql("INSERT INTO lin_sms(event,mobile,code,times,ip,createtime) VALUES('petlis_register','"+phone+"','"+code+"',0,'127.0.0.1',UNIX_TIMESTAMP());")
- _,r=call('/auth/register',{'username':name,'password':password,'mobile':phone,'code':code,'hospitalId':hospital,'nickname':'自动化测试医生','title':'测试资质','qualificationFiles':['/files/qualifications/'+file_id]});assert r['code']==200,r;user_id=r['data']
+ _,r=call('/auth/register',{'username':name,'password':password,'mobile':phone,'code':code,'hospitalId':hospital,'nickname':'自动化测试医生','title':'测试资质','qualificationFiles':[uploaded['url']],'qualificationTokens':{uploaded['url']:uploaded['uploadToken']}});assert r['code']==200,r;user_id=r['data']
  _,r=call('/auth/password/login',{'account':name,'password':password});assert r['code']==403,r
  _,r=call('/review/registrations/'+str(user_id),{'approved':True,'reason':'自动化测试'},reviewer);assert r['code']==200,r
  _,r=call('/auth/password/login',{'account':name,'password':password});assert r['code']==200,r;doctor=r['data']['token'];assert not r['data']['reviewer']

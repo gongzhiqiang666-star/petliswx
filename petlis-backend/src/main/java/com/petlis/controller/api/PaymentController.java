@@ -116,12 +116,13 @@ public class PaymentController {
         if (!Boolean.TRUE.equals(payConfig.getMockEnabled()) || environment.acceptsProfiles(org.springframework.core.env.Profiles.of("prod"))) {
             throw new com.petlis.common.exception.BusinessException(403, "模拟支付仅可用于开发环境");
         }
-        paymentService.getPaymentStatus(paymentNo); // 验证当前医生拥有此支付记录。
+        Integer ownedStatus=paymentService.getPaymentStatus(paymentNo); // 验证当前医生拥有此支付记录。
         log.info("模拟支付回调 - 支付订单号: {}, 支付结果: {}", paymentNo, success);
 
         if (success) {
-            // 模拟微信交易号
-            String transactionId = "MOCK_TXN_" + System.currentTimeMillis();
+            // A replay of an already-paid mock preserves historical transaction IDs too.
+            if (Integer.valueOf(1).equals(ownedStatus)) return Result.success("支付回调处理成功，订单已更新为已支付状态");
+            String transactionId = "MOCK_TXN_" + java.util.UUID.nameUUIDFromBytes(paymentNo.getBytes(java.nio.charset.StandardCharsets.UTF_8));
             boolean result = paymentService.handlePaymentCallback(paymentNo, transactionId);
 
             if (result) {
