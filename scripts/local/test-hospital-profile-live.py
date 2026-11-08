@@ -29,6 +29,7 @@ try:
  proof=json.loads(run.stdout)
  assert sql(f"SELECT CONCAT(HospitalName,'|',PayType,'|',amount,'|',LoginName,'|',LoginPwd,'|',IsActive) FROM lin_lb_infohospital WHERE InfoHospitalId={hospital}")==prefix+'_edited|1|37.21|historical-login|historical-secret|1'
  assert sql("SELECT COUNT(*) FROM lin_audit_record WHERE resource_type='LEGACY_HOSPITAL_PROFILE' AND CAST(resource_id AS UNSIGNED)="+str(hospital))=='1'
+ assert sql(f'SELECT CityId FROM lin_lb_infohospital WHERE InfoHospitalId={hospital}')==str(proof['selectedCity'])
  proof['persistedProfileAndProtectedFieldsVerified']=True
 
 finally:
