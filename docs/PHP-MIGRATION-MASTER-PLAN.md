@@ -40,7 +40,7 @@
 
 ## 实施进度（2026-11-08）
 
-M24已开始：[原网银源码契约及首批核价](php-parity/M24-BANK-PAYMENT-SOURCE-CONTRACT.md)记录只读选项与金额，Java/PC两种核价已实际验证；下单/查询/回调/退款未完成。M30已记录[原汇总回写及混合状态待决定项](php-parity/M30-RECONCILIATION-CONTRACT.md)，只读统计后已询问用户处理方式，尚未实现或执行回写。
+M24已开始：[原网银源码契约及首批核价](php-parity/M24-BANK-PAYMENT-SOURCE-CONTRACT.md)记录只读选项与金额，Java/PC两种核价已实际验证；现补[协议及本机通道](php-parity/M24-BANK-WIRE-CONTRACT.md)，四类方法封包/原文验签及OpenSSL互通等18项专项通过，默认关闭；下单持久化/查询回写/退款业务仍未完成。M30已记录[原汇总回写及混合状态待决定项](php-parity/M30-RECONCILIATION-CONTRACT.md)，只读统计后已询问用户处理方式，尚未实现或执行回写。
 
 M23 新增[交易流水日常维护子项](php-parity/M23-PAYMENT-LOGS.md)：Java/PC 原业务列查询、新增、修改、删除已接通，现已接通CSV/XLS/XLSX预览及整批导入，支持原注释与字段名、主键部分及顺序更新；新增勾选批量修改/删除，现补齐组合查询排序及全结果XLSX，流水26项、PC149项通过，真实页面维护、三种文件导入、批量及查询下载回读均验证，无资金/订单/历史流水副作用。通用查询和主键技术操作适用性、历史接续、对账联动及整模块两轮复核仍未完成；后续推进M24/M30支付与对账。
 
