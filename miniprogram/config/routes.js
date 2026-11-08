@@ -40,5 +40,6 @@ module.exports = [
   "pages/security/security",
   "pages/bills/bills",
   "pages/bill-detail/bill-detail",
-  "pages/bill-arrears/bill-arrears"
+  "pages/bill-arrears/bill-arrears",
+  "pages/hospital-history/hospital-history"
 ]

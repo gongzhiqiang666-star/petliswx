@@ -1,0 +1,23 @@
+<view class="history-page">
+  <view class="petlis-card history-filters">
+    <view class="history-title">{{hospitalName || '本院送检记录'}}</view>
+    <view class="history-hint">包含原系统记录，状态与逐项报告信息沿用原业务内容。</view>
+    <input class="petlis-input" placeholder="搜索样本编号" value="{{userNo}}" data-key="userNo" bindinput="input" bindconfirm="search" maxlength="100" />
+    <picker range="{{statuses}}" range-key="label" value="{{statusIndex}}" bindchange="statusChange"><view class="petlis-input">状态：{{statuses[statusIndex].label}}</view></picker>
+    <view class="history-dates"><picker mode="date" value="{{startDate}}" data-key="startDate" bindchange="input"><view class="petlis-input">{{startDate || '提交开始日期'}}</view></picker><text>至</text><picker mode="date" value="{{endDate}}" data-key="endDate" bindchange="input"><view class="petlis-input">{{endDate || '提交结束日期'}}</view></picker></view>
+    <view class="history-actions"><button class="petlis-btn petlis-btn-outline" bindtap="reset" disabled="{{loading}}">重置</button><button class="petlis-btn petlis-btn-primary" bindtap="search" loading="{{loading}}">查询</button></view>
+  </view>
+  <view wx:if="{{error}}" class="petlis-card history-error"><text>{{error}}</text><button class="petlis-btn petlis-btn-outline" bindtap="retry" disabled="{{loading}}">重试</button></view>
+  <view wx:if="{{enabled}}" class="history-summary">共 {{total}} 条送检记录</view>
+  <view class="petlis-card history-order" wx:for="{{items}}" wx:key="orderId" wx:for-item="order">
+    <view class="history-head"><text class="history-title">{{order.userNo || '未编样本号'}}</text><text class="history-status">{{order.statusLabel}}</text></view>
+    <view class="history-line">提交时间：{{order.submittedAt || '未记录'}}</view><view class="history-line">送检医生：{{order.doctorName || '未记录'}}</view>
+    <view class="history-line">主人：{{order.ownerName || '未记录'}} · 动物：{{order.animalName || '未记录'}}</view>
+    <view wx:if="{{order.rejectionReason}}" class="history-rejection">审核意见：{{order.rejectionReason}}</view>
+    <view class="history-test" wx:for="{{order.items}}" wx:key="detailId" wx:for-item="detail"><text>{{detail.testName}}</text><text class="history-report">{{detail.reportState}}</text></view>
+    <view wx:if="{{!order.items.length}}" class="history-hint">原记录未关联检测项目</view>
+  </view>
+  <view wx:if="{{enabled && !loading && !error && !items.length}}" class="petlis-empty">暂无符合条件的送检记录</view>
+  <button wx:if="{{hasMore}}" class="petlis-btn petlis-btn-outline history-more" bindtap="more" loading="{{loading}}" disabled="{{loading}}">加载更多</button>
+  <view wx:if="{{items.length && !hasMore}}" class="history-summary">已展示全部记录</view>
+</view>

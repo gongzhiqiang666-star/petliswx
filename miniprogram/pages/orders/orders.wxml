@@ -1,4 +1,5 @@
 <view class="page" role="main" aria-label="订单列表">
+  <button wx:if="{{legacyHistoryEnabled}}" class="petlis-btn petlis-btn-outline" bindtap="openHospitalHistory">医院送检历史 · 含原系统记录</button>
   <view class="filter-panel petlis-card filter-card">
     <view class="filter-main-row">
       <scroll-view class="tabs-scroll" scroll-x enhanced show-scrollbar="{{false}}">

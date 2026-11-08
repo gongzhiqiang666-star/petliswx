@@ -71,6 +71,7 @@ public class SecurityConfig {
                         .requestMatchers("/review/**").hasAnyRole("REVIEWER", "ADMIN")
                         .requestMatchers("/invoices/*/issue", "/invoices/*/reject", "/invoices/*/file").hasAnyRole("REVIEWER", "ADMIN")
                         .requestMatchers("/invoices/*/download").hasAnyRole("USER", "REVIEWER", "ADMIN")
+                        .requestMatchers("/orders/hospital-history", "/orders/hospital-history/**").hasAnyRole("USER", "HOSPITAL_ADMIN", "ADMIN")
                         .requestMatchers("/orders/**", "/pets/**", "/reports/**", "/billing/**", "/payment/**", "/pdf/**", "/invoices/**", "/drafts/**", "/account/**", "/wallet/**", "/notifications/**", "/inbox/**").hasRole("USER")
                         // 其他所有接口需要认证
                         .anyRequest().authenticated()
