@@ -21,12 +21,13 @@ import * as legacyTestCatalog from './pages/legacy-test-catalog.js';
 import * as legacyMailSettings from './pages/legacy-mail-settings.js';
 import * as legacyMonthlyReports from './pages/legacy-monthly-reports.js';
 import * as legacyFinance from './pages/legacy-finance.js';
+import * as legacyBankPayments from './pages/legacy-bank-payments.js';
 import * as legacyPaymentLogs from './pages/legacy-payment-logs.js';
 import * as legacyTemplateBindings from './pages/legacy-template-bindings.js';
 import * as legacyTemplates from './pages/legacy-templates.js';
 import * as legacyDictionaries from './pages/legacy-dictionaries.js';
 
-const pages = { legacyPaymentLogs, legacyMailSettings, legacyMonthlyReports, legacyFinance, legacyTemplateBindings, legacyTemplates, legacyTestCatalog, legacyDictionaries, dashboard, reviews, organizations, hospitalDocuments, orders, logistics, laboratory, reports, catalog, finance, operations, messages, system };
+const pages = { legacyBankPayments, legacyPaymentLogs, legacyMailSettings, legacyMonthlyReports, legacyFinance, legacyTemplateBindings, legacyTemplates, legacyTestCatalog, legacyDictionaries, dashboard, reviews, organizations, hospitalDocuments, orders, logistics, laboratory, reports, catalog, finance, operations, messages, system };
 const root = document.querySelector('#app');
 let api;
 const store = createStore({
@@ -68,7 +69,7 @@ async function renderShell() {
   const version = ++shellSequence, token = store.getState().token;
   let capabilities = {};
   if (user.roles?.includes('ADMIN')) {
-    const results = await Promise.allSettled([api.request('/admin/legacy/capabilities'),api.request('/admin/legacy/test-catalog/capabilities'),api.request('/admin/legacy/templates/capabilities'),api.request('/admin/legacy/template-bindings/capabilities'),api.request('/admin/legacy/finance/capabilities'),api.request('/admin/legacy/monthly-reports/capabilities'),api.request('/admin/legacy/mail-settings/capabilities'),api.request('/admin/legacy/payment-logs/capabilities')]);
+    const results = await Promise.allSettled([api.request('/admin/legacy/capabilities'),api.request('/admin/legacy/test-catalog/capabilities'),api.request('/admin/legacy/templates/capabilities'),api.request('/admin/legacy/template-bindings/capabilities'),api.request('/admin/legacy/finance/capabilities'),api.request('/admin/legacy/monthly-reports/capabilities'),api.request('/admin/legacy/mail-settings/capabilities'),api.request('/admin/legacy/payment-logs/capabilities'),api.request('/admin/legacy/bank-payments/capabilities')]);
     for(const result of results)if(result.status==='fulfilled')Object.assign(capabilities,result.value||{});
   }
   if (version !== shellSequence || token !== store.getState().token) return;

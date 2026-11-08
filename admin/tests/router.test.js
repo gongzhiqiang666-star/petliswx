@@ -35,3 +35,5 @@ test('legacy reviewer 仅能进入审核中心且不能获得管理员页面', (
 test('迁移字典入口同时受管理员角色和服务端能力开关控制',()=>{
  const admin={roles:['ADMIN']};assert.equal(isRouteAllowed('legacyDictionaries',admin),false);assert.equal(isRouteAllowed('legacyDictionaries',admin,{dictionaries:false}),false);assert.equal(isRouteAllowed('legacyDictionaries',admin,{dictionaries:true}),true);assert.equal(isRouteAllowed('legacyDictionaries',{roles:['DOCTOR']},{dictionaries:true}),false)
 });
+
+test('原网银核价仅管理员且业务开关开启可见',()=>{assert.equal(isRouteAllowed('legacyBankPayments',{roles:['ADMIN']},{bankPayments:true}),true);assert.equal(isRouteAllowed('legacyBankPayments',{roles:['ADMIN']},{}),false);assert.equal(isRouteAllowed('legacyBankPayments',{roles:['DOCTOR']},{bankPayments:true}),false);});
