@@ -7,6 +7,18 @@ try{
  const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));await page.goto(origin+'/#/legacy-monthly-reports');const button=page.locator(`[data-monthly-draft="${f.hospital}"]`);await button.waitFor();const list=await page.locator('[data-monthly-list]').innerText();for(const amount of ['12.50','7.25','4.00'])assert.ok(list.includes(amount));assert.match(list,/未通知/);await button.click();
  await page.locator('[name=reportTemplate]').selectOption(String(f.report));await page.locator('[name=mailTemplate]').selectOption(String(f.mail));await page.locator('[data-monthly-render]').click();await page.waitForFunction(()=>!document.querySelector('[data-monthly-render]')?.disabled);
  assert.equal(await page.locator('[data-monthly-unpaid]').innerText(),'12.50 元');assert.match(await page.locator('[data-monthly-count]').innerText(),/4 条/);assert.equal(await page.locator('[data-monthly-frame="reportHtml"]').getAttribute('sandbox'),'');
- const body=await page.frameLocator('[data-monthly-frame="reportHtml"]').locator('body').innerText();for(const text of [f.prefix,'壹拾贰元伍角整','2024-02-29','50.00','免除'])assert.ok(body.includes(text),text);assert.match(await page.frameLocator('[data-monthly-frame="mailHtml"]').locator('body').innerText(),/邮件.*12\.50/);assert.deepEqual(posts,[]);assert.deepEqual(errors,[]);
- console.log(JSON.stringify({actualPcMonthlyReports:true,realJava:true,originalViewAmounts:true,templateSelectionAndDraft:true,unpaidOnlyTotal:true,exemptStillListed:true,noWriteRequests:true,pageErrors:0,discoveryQueryRestricted:true}));
+ const body=await page.frameLocator('[data-monthly-frame="reportHtml"]').locator('body').innerText();for(const text of [f.prefix,'壹拾贰元伍角整','2024-02-29','50.00','免除'])assert.ok(body.includes(text),text);assert.match(await page.frameLocator('[data-monthly-frame="mailHtml"]').locator('body').innerText(),/邮件.*12\.50/);if(f.editor){
+  const report=page.locator('[data-monthly-editor="reportHtml"] .tiptap'),mail=page.locator('[data-monthly-editor="mailHtml"] .tiptap');
+  await report.click();await page.keyboard.press('ControlOrMeta+End');await page.keyboard.type(' REPORT_EDIT_END');
+  await mail.click();await page.keyboard.press('ControlOrMeta+End');await page.keyboard.type(' MAIL_EDIT_ONLY');
+  await page.locator('[name=monthlyPdfTitle]').fill('2024-02 合成账单修订');
+  await page.locator('[name=monthlyTitle]').fill('合成邮件标题修订');
+  await page.locator('[data-monthly-refresh]').click();
+  const reportBody=await page.frameLocator('[data-monthly-frame="reportHtml"]').locator('body').innerText();assert.ok(reportBody.includes('REPORT_EDIT_END'));assert.ok(reportBody.includes('壹拾贰元伍角整'));assert.ok(reportBody.includes('50.00'));assert.ok(!reportBody.includes('MAIL_EDIT_ONLY'));
+  await page.locator('[data-monthly-render]').click();assert.match(await page.locator('[data-monthly-message]').innerText(),/已修改/);assert.ok((await report.innerText()).includes('REPORT_EDIT_END'));
+  if(f.pdf){const downloading=page.waitForEvent('download').catch(async error=>{throw Error('PDF下载未完成：'+await page.locator('[data-monthly-editor-message]').innerText()+'; '+error.message)});await page.locator('[data-monthly-pdf]').click();const download=await downloading;assert.equal(download.suggestedFilename(),'2024-02 合成账单修订.pdf');await download.saveAs(f.output);
+  assert.equal(fs.readFileSync(f.output).subarray(0,5).toString(),'%PDF-');assert.deepEqual(posts,['/api/admin/legacy/html-pdf/preview']);}else assert.deepEqual(posts,[]);
+  await page.screenshot({path:f.screenshot,fullPage:true});
+ }else assert.deepEqual(posts,[]);assert.deepEqual(errors,[]);
+ console.log(JSON.stringify({actualPcMonthlyReports:true,realJava:true,originalViewAmounts:true,templateSelectionAndDraft:true,unpaidOnlyTotal:true,exemptStillListed:true,noBusinessWrites:true,currentBodyPdf:!!f.pdf,templateCannotOverwriteEdits:!!f.editor,pageErrors:0,discoveryQueryRestricted:true}));
 }finally{await browser?.close();await new Promise(resolve=>server.close(resolve));}
