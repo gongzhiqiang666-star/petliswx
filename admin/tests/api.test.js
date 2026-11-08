@@ -117,3 +117,7 @@ test('download 拒绝JSON成功信封并容忍错误文件名编码',async()=>{
  const api=createApi({fetchImpl:async()=>new Response('{"code":200,"message":"操作成功","data":null}',{headers:{'Content-Type':'application/json'}})});await assert.rejects(api.download('/files/1/download'),/文件/);
  const valid=createApi({fetchImpl:async()=>new Response('%PDF-1.4',{headers:{'Content-Type':'application/pdf','Content-Disposition':"attachment; filename=fallback.pdf; filename*=UTF-8''%ZZ"}})});assert.equal((await valid.download('/files/1/download')).filename,'fallback.pdf');
 });
+test('download 可通过认证POST当前正文并接收PDF文件',async()=>{
+ let request;const api=createApi({getToken:()=> 'test-token',fetchImpl:async(url,options)=>{request={url,options};return new Response('%PDF-test',{headers:{'Content-Type':'application/pdf','Content-Disposition':'attachment; filename=preview.pdf'}});}});
+ const file=await api.download('/admin/legacy/html-pdf/preview',{method:'POST',data:{html:'<p>中文报告</p>'}});assert.equal(request.options.method,'POST');assert.equal(request.options.headers.Authorization,'Bearer test-token');assert.equal(request.options.headers['Content-Type'],'application/json');assert.equal(JSON.parse(request.options.body).html,'<p>中文报告</p>');assert.equal(file.filename,'preview.pdf');
+});

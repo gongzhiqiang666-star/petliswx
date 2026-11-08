@@ -76,13 +76,14 @@ export function createApi({ baseUrl = '/api', fetchImpl = globalThis.fetch, getT
     return body.data;
   }
 
-  async function download(path) {
+  async function download(path, { method = 'GET', data } = {}) {
     const headers = {};
     const token = getToken();
     if (token) headers.Authorization = `Bearer ${token}`;
     let response;
     try {
-      response = await fetchImpl(`${baseUrl}${path}`, { headers });
+      if (data !== undefined) headers['Content-Type'] = 'application/json';
+      response = await fetchImpl(`${baseUrl}${path}`, { headers, method, ...(data === undefined ? {} : {body: JSON.stringify(data)}) });
     } catch (cause) {
       throw new ApiError('网络连接失败，请检查服务是否可用', { status: 0, cause });
     }
