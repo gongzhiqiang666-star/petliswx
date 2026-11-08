@@ -25,20 +25,30 @@ public class LegacyPaymentLogService {
  public record DeleteCommand(String requestKey,String expectedToken){}
  boolean[] policy(boolean lock){
   access.requireAdmin();var rows=store.jdbc().queryForList("SELECT config_value FROM lin_operational_config WHERE config_key='legacy-payment-logs' AND scope_type='GLOBAL' AND scope_id=0 AND status='ACTIVE'"+(lock?" FOR UPDATE":""));
-  if(rows.size()!=1)return new boolean[]{false,false,false,false,false};
-  try{var json=new ObjectMapper().readTree(rows.get(0).get("config_value").toString());boolean read=json.path("enabled").isBoolean()&&json.path("enabled").asBoolean(),write=read&&json.path("writeEnabled").isBoolean()&&json.path("writeEnabled").asBoolean();return new boolean[]{read,write,write&&json.path("deleteEnabled").isBoolean()&&json.path("deleteEnabled").asBoolean(),write&&json.path("importEnabled").isBoolean()&&json.path("importEnabled").asBoolean(),write&&json.path("batchEnabled").isBoolean()&&json.path("batchEnabled").asBoolean()};}catch(Exception e){throw new BusinessException(409,"交易流水参数无效");}
+  if(rows.size()!=1)return new boolean[]{false,false,false,false,false,false};
+  try{var json=new ObjectMapper().readTree(rows.get(0).get("config_value").toString());boolean read=json.path("enabled").isBoolean()&&json.path("enabled").asBoolean(),write=read&&json.path("writeEnabled").isBoolean()&&json.path("writeEnabled").asBoolean();return new boolean[]{read,write,write&&json.path("deleteEnabled").isBoolean()&&json.path("deleteEnabled").asBoolean(),write&&json.path("importEnabled").isBoolean()&&json.path("importEnabled").asBoolean(),write&&json.path("batchEnabled").isBoolean()&&json.path("batchEnabled").asBoolean(),read&&json.path("exportEnabled").isBoolean()&&json.path("exportEnabled").asBoolean()};}catch(Exception e){throw new BusinessException(409,"交易流水参数无效");}
  }
- @Transactional(readOnly=true) public Map<String,Boolean> capabilities(){var p=policy(false);return Map.of("paymentLogs",p[0],"paymentLogWrites",p[1],"paymentLogDeletes",p[2],"paymentLogImports",p[3],"paymentLogBatches",p[4]);}
+ @Transactional(readOnly=true) public Map<String,Boolean> capabilities(){var p=policy(false);return Map.of("paymentLogs",p[0],"paymentLogWrites",p[1],"paymentLogDeletes",p[2],"paymentLogImports",p[3],"paymentLogBatches",p[4],"paymentLogExports",p[5]);}
  private void read(){if(!policy(false)[0])throw new BusinessException(409,"交易流水维护尚未开启");}
  private void id(long id){if(id<1||id>4294967295L)throw new BusinessException(400,"交易流水编号无效");}
  Map<String,Object> raw(long id,boolean lock){id(id);return new LinkedHashMap<>(store.one("SELECT "+COLUMNS+" FROM lin_lb_paylog WHERE PayLogId=?"+(lock?" FOR UPDATE":""),id));}
  String token(Map<String,Object> row){try{return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(store.encode(new TreeMap<>(row)).getBytes(StandardCharsets.UTF_8)));}catch(Exception e){throw new IllegalStateException(e);}}
  Map<String,Object> display(Map<String,Object> raw){var row=new LinkedHashMap<>(raw);row.put("TotalFee",((BigDecimal)raw.get("TotalFee")).toPlainString());Object date=raw.get("CreateDt");if(date instanceof java.sql.Timestamp t)date=t.toLocalDateTime();if(date instanceof LocalDateTime t)date=DATE.format(t);row.put("CreateDt",date);return row;}
- @Transactional(readOnly=true) public Map<String,Object> list(String q,int page,int size){
-  read();if(page<0||size<1||size>100||q!=null&&q.length()>1000)throw new BusinessException(400,"交易流水查询无效");
-  String term="%"+(q==null?"":q)+"%",where=" FROM lin_lb_paylog WHERE TradeNoAli LIKE ? OR TradeNoUser LIKE ? OR BuyerId LIKE ? OR Subject LIKE ?";
-  var result=new LinkedHashMap<>(store.page("SELECT COUNT(*)"+where,"SELECT "+COLUMNS+where+" ORDER BY PayLogId DESC",page,size,term,term,term,term));
+ @Transactional(readOnly=true) public Map<String,Object> list(String q,int page,int size){return list(Map.of("q",q==null?"":q),page,size);}
+ @Transactional(readOnly=true) public Map<String,Object> list(Map<String,String> query,int page,int size){
+  read();if(page<0||size<1||size>100)throw new BusinessException(400,"交易流水查询无效");var plan=LegacyPaymentLogQuery.build(query);
+  var result=new LinkedHashMap<>(store.page("SELECT COUNT(*)"+plan.where(),"SELECT "+COLUMNS+plan.where()+plan.order(),page,size,plan.args().toArray()));
   @SuppressWarnings("unchecked") var rows=(List<Map<String,Object>>)result.get("items");result.put("items",rows.stream().map(this::display).toList());return result;
+ }
+ @Transactional(readOnly=true) public byte[] export(Map<String,String> query){
+  if(!policy(false)[5])throw new BusinessException(409,"交易流水导出尚未开启");var plan=LegacyPaymentLogQuery.build(query);var rows=store.jdbc().queryForList("SELECT "+COLUMNS+plan.where()+plan.order(),plan.args().toArray());
+  try(var workbook=new org.apache.poi.xssf.usermodel.XSSFWorkbook();var output=new java.io.ByteArrayOutputStream()){
+   var sheet=workbook.createSheet("交易流水");var columns=new ArrayList<String>();columns.add("PayLogId");columns.addAll(FIELDS);var header=sheet.createRow(0);for(int i=0;i<columns.size();i++){header.createCell(i).setCellValue(columns.get(i));sheet.setColumnWidth(i,24*256);}sheet.createFreezePane(0,1);
+   int number=1;for(var raw:rows){var data=display(raw);var row=sheet.createRow(number++);for(int i=0;i<columns.size();i++)row.createCell(i).setCellValue(Objects.toString(data.get(columns.get(i)),""));}
+   var legend=workbook.createSheet("字段说明");String[] labels={"编号","卖家账户","卖家支付宝ID","平台流水号（原标签：报告编号）","商户订单号（原标签：样本编号）","交易金额（元）","交易状态","标题","内容","扩展","交易时间"};
+   for(int i=0;i<columns.size();i++){var row=legend.createRow(i);row.createCell(0).setCellValue(columns.get(i));row.createCell(1).setCellValue(labels[i]);}legend.setColumnWidth(0,24*256);legend.setColumnWidth(1,50*256);
+   workbook.write(output);return output.toByteArray();
+  }catch(java.io.IOException e){throw new BusinessException(500,"流水导出生成失败，请重试");}
  }
  @Transactional(readOnly=true) public Map<String,Object> detail(long id){read();var raw=raw(id,false);var row=display(raw);row.put("editToken",token(raw));return row;}
  private void request(String key){if(key==null||!key.matches("[A-Za-z0-9_-]{16,64}"))throw new BusinessException(400,"交易流水请求号无效");}

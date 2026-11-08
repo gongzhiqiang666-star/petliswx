@@ -1,0 +1,4 @@
+import test from 'node:test';import assert from 'node:assert/strict';
+import {paymentLogQuery} from '../src/components/legacy-payment-log-query.js';
+test('组合条件保持金额原精度与前导零，零边界格式化，时间不发生时区换算',()=>{const q=paymentLogQuery({q:'订单',TradeNoAli:'000123',amountMin:'0',amountMax:'9999999999999999.99',from:'2020-02-29T13:14',to:'2020-02-29T13:14:15',sort:'TotalFee',order:'ASC'},2);assert.equal(q.TradeNoAli,'000123');assert.equal(q.amountMin,'0.00');assert.equal(q.amountMax,'9999999999999999.99');assert.equal(q.from,'2020-02-29 13:14:00');assert.equal(q.to,'2020-02-29 13:14:15');assert.equal(q.page,2);});
+test('非法金额或倒置期间不发出请求，未填写条件不添加筛选',()=>{assert.throws(()=>paymentLogQuery({amountMin:'NaN'},0));assert.throws(()=>paymentLogQuery({from:'2020-03-01T00:00',to:'2020-02-29T00:00'},0));const q=paymentLogQuery({},0);assert.equal(q.sort,'PayLogId');assert.equal(q.order,'DESC');assert.ok(!('amountMin' in q));});
