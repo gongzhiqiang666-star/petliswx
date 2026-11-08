@@ -29,6 +29,7 @@ public class LegacyMailTransport {
  public static final class DeliveryUncertainException extends RuntimeException {
   public DeliveryUncertainException(){super("邮件发送结果未确认，请核对投递记录后处理，勿直接重复发送");}
  }
+ public boolean available(){return "TEST_LOCAL".equals(mode)&&localPort>0&&localPort<=65535||"SMTP".equals(mode)&&smtpEnabled;}
  public void send(Profile profile,Message command){send(profile,command,LegacyMailRoutingRules.Kind.FINANCE);}
  public void send(Profile profile,Message command,LegacyMailRoutingRules.Kind kind){
   boolean local="TEST_LOCAL".equals(mode);

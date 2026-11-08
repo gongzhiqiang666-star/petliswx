@@ -60,7 +60,13 @@ public class LegacyOrderDetailService {
  @Transactional(readOnly=true) public String quote(long orderId,QuoteCommand command){read();order(orderId,false);if(command==null)throw error(400,"价格或折扣格式无效");return LegacyPricingRules.quote(command.price(),command.discount());}
  /** Internal composition entry: link must be constructed by the server link provider, never taken from an HTTP field. */
  @Transactional(readOnly=true) public String renderBody(long orderId,long detailId,String body,int type,String serverLink){
-  read();order(orderId,false);if(detailId<0)throw error(400,"明细编号无效");
+  read();return renderBodyCore(orderId,detailId,body,type,serverLink);
+ }
+ @Transactional(readOnly=true) public String renderSampleNoticeBody(long orderId,String body){
+  access.requireAdmin();String link=LegacyDictionarySelector.display(body).indexOf("{报告链接}")>0?links.detail(0):"";return renderBodyCore(orderId,0,body,2,link);
+ }
+ private String renderBodyCore(long orderId,long detailId,String body,int type,String serverLink){
+  order(orderId,false);if(detailId<0)throw error(400,"明细编号无效");
   if(detailId>0)store.one("SELECT DiagnosisDetailId FROM lin_lb_diagnosisdetail WHERE DiagnosisDetailId=? AND ListDiagnosisProjectId=?",detailId,orderId);
   var project=new LinkedHashMap<>(store.one("SELECT * FROM lin_lb_listdiagnosisproject WHERE ListDiagnosisProjectId=?",orderId));
   var rows=new HashMap<String,Map<String,Object>>();rows.put("ListDiagnosisProject",project);
