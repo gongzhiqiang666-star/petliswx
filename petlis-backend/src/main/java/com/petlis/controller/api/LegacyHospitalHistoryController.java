@@ -15,6 +15,8 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class LegacyHospitalHistoryController {
     private final LegacyHospitalHistoryService service;
+    private final com.petlis.service.impl.LegacyHospitalReportService reports;
+    @GetMapping("/reports/{detailId}/pdf") public org.springframework.http.ResponseEntity<?> report(@PathVariable long detailId,@RequestParam int hospitalId) { return reports.download(detailId,hospitalId); }
     private final LegacyHospitalCancellationService cancellations;
     private final LegacyHospitalDraftService drafts;
     private final LegacyHospitalDraftItemsService items;

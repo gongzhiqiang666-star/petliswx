@@ -29,13 +29,13 @@ public class LegacyHospitalHistoryService {
     @Transactional(readOnly = true)
     public Map<String, Boolean> capabilities() { return policy(false); }
     Map<String, Boolean> policy(boolean lock) {
-        if (!hospitalRole()) return Map.of("legacyHospitalHistory", false, "legacyHospitalHistoryCancel", false,"legacyHospitalDrafts",false,"legacyHospitalDraftWrites",false,"legacyHospitalDraftItems",false,"legacyHospitalDraftCreates",false,"legacyHospitalDraftSubmit",false);
+        if (!hospitalRole()) return Map.of("legacyHospitalReportDownload",false,"legacyHospitalHistory", false, "legacyHospitalHistoryCancel", false,"legacyHospitalDrafts",false,"legacyHospitalDraftWrites",false,"legacyHospitalDraftItems",false,"legacyHospitalDraftCreates",false,"legacyHospitalDraftSubmit",false);
         var rows = store.jdbc().queryForList("SELECT config_value FROM lin_operational_config WHERE config_key='legacy-hospital-history' AND scope_type='GLOBAL' AND scope_id=0 AND status='ACTIVE'" + (lock ? " FOR UPDATE" : ""));
-        if (rows.size() != 1) return Map.of("legacyHospitalHistory", false, "legacyHospitalHistoryCancel", false,"legacyHospitalDrafts",false,"legacyHospitalDraftWrites",false,"legacyHospitalDraftItems",false,"legacyHospitalDraftCreates",false,"legacyHospitalDraftSubmit",false);
+        if (rows.size() != 1) return Map.of("legacyHospitalReportDownload",false,"legacyHospitalHistory", false, "legacyHospitalHistoryCancel", false,"legacyHospitalDrafts",false,"legacyHospitalDraftWrites",false,"legacyHospitalDraftItems",false,"legacyHospitalDraftCreates",false,"legacyHospitalDraftSubmit",false);
         try {
             var json = new ObjectMapper().readTree(rows.get(0).get("config_value").toString());
             boolean enabled = flag(json, "enabled");
-            return Map.of("legacyHospitalHistory", enabled, "legacyHospitalHistoryCancel", enabled && flag(json,"writeEnabled") && flag(json,"cancelEnabled"),"legacyHospitalDrafts",enabled && flag(json,"draftEnabled"),"legacyHospitalDraftWrites",enabled && flag(json,"draftEnabled") && flag(json,"writeEnabled") && flag(json,"draftWriteEnabled"),"legacyHospitalDraftItems",enabled && flag(json,"draftEnabled") && flag(json,"writeEnabled") && flag(json,"draftWriteEnabled") && flag(json,"draftItemsEnabled"),"legacyHospitalDraftCreates",enabled && flag(json,"draftEnabled") && flag(json,"writeEnabled") && flag(json,"draftWriteEnabled") && flag(json,"draftCreateEnabled"),"legacyHospitalDraftSubmit",enabled && flag(json,"draftEnabled") && flag(json,"writeEnabled") && flag(json,"draftWriteEnabled") && flag(json,"draftSubmitEnabled") && Set.of("ID","LEGACY").contains(json.path("previewVarietyMode").asText()));
+            return Map.of("legacyHospitalReportDownload",enabled&&flag(json,"reportDownloadEnabled"),"legacyHospitalHistory", enabled, "legacyHospitalHistoryCancel", enabled && flag(json,"writeEnabled") && flag(json,"cancelEnabled"),"legacyHospitalDrafts",enabled && flag(json,"draftEnabled"),"legacyHospitalDraftWrites",enabled && flag(json,"draftEnabled") && flag(json,"writeEnabled") && flag(json,"draftWriteEnabled"),"legacyHospitalDraftItems",enabled && flag(json,"draftEnabled") && flag(json,"writeEnabled") && flag(json,"draftWriteEnabled") && flag(json,"draftItemsEnabled"),"legacyHospitalDraftCreates",enabled && flag(json,"draftEnabled") && flag(json,"writeEnabled") && flag(json,"draftWriteEnabled") && flag(json,"draftCreateEnabled"),"legacyHospitalDraftSubmit",enabled && flag(json,"draftEnabled") && flag(json,"writeEnabled") && flag(json,"draftWriteEnabled") && flag(json,"draftSubmitEnabled") && Set.of("ID","LEGACY").contains(json.path("previewVarietyMode").asText()));
         } catch (Exception error) { throw new BusinessException(409, "医院历史查询参数无效"); }
     }
     @Transactional(readOnly=true)
@@ -99,7 +99,7 @@ public class LegacyHospitalHistoryService {
             var details = store.jdbc().queryForList("SELECT d.ListDiagnosisProjectId AS orderId,d.DiagnosisDetailId AS detailId,t.TestName AS testName,t.TestNO AS testNo,d.IsSendMail AS mailFlag FROM lin_lb_diagnosisdetail d INNER JOIN lin_lb_infotesttype t ON t.InfoTestTypeId=d.InfoTestTypeId WHERE d.ListDiagnosisProjectId IN (" + placeholders + ") ORDER BY d.DiagnosisDetailId", ids.toArray());
             for (var detail : details) byOrder.computeIfAbsent(((Number)detail.get("orderId")).longValue(), id -> new ArrayList<>()).add(detail);
         }
-        boolean cancelEnabled = capabilities().get("legacyHospitalHistoryCancel");
+        var caps=capabilities();boolean cancelEnabled = caps.get("legacyHospitalHistoryCancel"),reportDownload=caps.get("legacyHospitalReportDownload");
         for (var row : rows) {
             int status = ((Number)row.get("sampleStatus")).intValue();
             row.put("cancelToken", cancellationToken(row));
@@ -111,7 +111,7 @@ public class LegacyHospitalHistoryService {
             var items = byOrder.getOrDefault(((Number)row.get("orderId")).longValue(), List.of());
             for (var item : items) {
                 int sent = item.get("mailFlag") instanceof Number n ? n.intValue() : 0;
-                item.put("canViewLegacyReport",status>=2&&sent==1);
+                item.put("canViewLegacyReport",status>=2&&sent==1);item.put("canDownloadLegacyReport",reportDownload&&status>=2&&sent==1);
                 item.put("reportState", status == 2 || status == 3 ? sent == 0 ? "等待报告" : "已出报告" : "");
                 item.remove("mailFlag"); item.remove("orderId");
             }

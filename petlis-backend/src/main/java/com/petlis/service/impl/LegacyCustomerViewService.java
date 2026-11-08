@@ -16,21 +16,27 @@ public class LegacyCustomerViewService {
   var result=new LinkedHashMap<String,Object>();result.put("kind",command.kind());result.put("previewOnly",true);result.put("needPay",false);result.put("reportAllowed",false);result.put("nextAction","HOSPITAL_BILL");result.put("message","可保存此链接,以便下次查阅");
   long hospitalId=id;
   if("CID".equals(command.kind())){
+   var permission=reportPermissionAt(id,today);result.putAll(permission);hospitalId=((Number)permission.get("hospitalId")).longValue();
+  }
+  var hospital=hospital(hospitalId);result.put("hospital",hospital);result.put("hospitalId",hospitalId);
+  var months=store.jdbc().queryForList("SELECT LEFT(ReceiveSampleDt,7) AS mouth,CAST(SUM(IF(PayStatus2=0,TestPrice,0)) AS CHAR) AS totalNoPayFee,CAST(SUM(IF(PayStatus2<>0,TestPrice,0)) AS CHAR) AS totalHasPayFee,CAST(SUM(TestPrice) AS CHAR) AS TestPrice FROM vwdiagnosisdetail WHERE InfoHospitalId=? AND IsCheckPass=0 AND ReceiveSampleDt>='2018-09-01 00:00:00' GROUP BY LEFT(ReceiveSampleDt,7) ORDER BY mouth DESC",hospitalId);
+  for(var month:months)for(String key:List.of("totalNoPayFee","totalHasPayFee","TestPrice"))month.put(key,display(month.get(key)));result.put("months",months);return result;
+ }
+ // Internal rule reuse: callers must independently authorize hospital ownership before calling.
+ Map<String,Object> reportPermissionAt(long id,LocalDate today){
+  var result=new LinkedHashMap<String,Object>();
    var detail=store.one("SELECT DiagnosisDetailId,ListDiagnosisProjectId,InfoTestTypeId,PDFHttpUrl FROM lin_lb_diagnosisdetail WHERE DiagnosisDetailId=?",id);
    store.one("SELECT InfoTestTypeId FROM lin_lb_infotesttype WHERE InfoTestTypeId=?",detail.get("InfoTestTypeId"));
    var content=projectContent(true,detail.get("ListDiagnosisProjectId"));
    @SuppressWarnings("unchecked")var order=(Map<String,Object>)content.get("project");
-   @SuppressWarnings("unchecked")var hospital=(Map<String,Object>)content.get("hospital");hospitalId=((Number)order.get("InfoHospitalId")).longValue();result.putAll(content);result.put("detailId",id);
+   @SuppressWarnings("unchecked")var hospital=(Map<String,Object>)content.get("hospital");long hospitalId=((Number)order.get("InfoHospitalId")).longValue();result.put("hospitalId",hospitalId);result.putAll(content);result.put("detailId",id);
    boolean needPay;
    if(number(hospital,"PayType")==1){var cutoff=LegacyCustomerViewRules.debtCutoff(today);result.put("debtCutoff",cutoff);needPay=Boolean.TRUE.equals(store.jdbc().queryForObject("SELECT EXISTS(SELECT 1 FROM vwdiagnosisdetail WHERE InfoHospitalId=? AND IsCheckPass=0 AND ReceiveSampleDt BETWEEN '2018-09-01 00:00:00' AND ? AND PayStatus2=0)",Boolean.class,hospitalId,cutoff));result.put("message","您是月结账户,按月支付账单,即可查看报告!");}
    else{
     BigDecimal amount=store.jdbc().queryForObject("SELECT COALESCE(SUM(TestPrice),0) FROM vwdiagnosisdetail WHERE ListDiagnosisProjectId=? AND IsCheckPass=0 AND PayStatus2=0 AND (InfoTestTypeId=246 OR ReceiveSampleDt>'1970-01-01 00:00:00')",BigDecimal.class,order.get("ListDiagnosisProjectId"));if(amount==null)amount=BigDecimal.ZERO;needPay=amount.signum()>0;result.put("amount",display(amount));if(needPay)result.put("message","您有账单待支付,支付后刷新此页即可查看报告! ");
    }
    boolean allowed=!needPay&&detail.get("PDFHttpUrl")!=null&&!detail.get("PDFHttpUrl").toString().isEmpty()&&!"0".equals(detail.get("PDFHttpUrl").toString());result.put("needPay",needPay);result.put("reportAllowed",allowed);result.put("nextAction",allowed?"REPORT":needPay?(number(hospital,"PayType")==1?"HOSPITAL_BILL":"ORDER_PAYMENT"):"REPORT_PENDING");if(allowed)result.put("reportReference",detail.get("PDFHttpUrl"));
-  }
-  var hospital=hospital(hospitalId);result.put("hospital",hospital);result.put("hospitalId",hospitalId);
-  var months=store.jdbc().queryForList("SELECT LEFT(ReceiveSampleDt,7) AS mouth,CAST(SUM(IF(PayStatus2=0,TestPrice,0)) AS CHAR) AS totalNoPayFee,CAST(SUM(IF(PayStatus2<>0,TestPrice,0)) AS CHAR) AS totalHasPayFee,CAST(SUM(TestPrice) AS CHAR) AS TestPrice FROM vwdiagnosisdetail WHERE InfoHospitalId=? AND IsCheckPass=0 AND ReceiveSampleDt>='2018-09-01 00:00:00' GROUP BY LEFT(ReceiveSampleDt,7) ORDER BY mouth DESC",hospitalId);
-  for(var month:months)for(String key:List.of("totalNoPayFee","totalHasPayFee","TestPrice"))month.put(key,display(month.get(key)));result.put("months",months);return result;
+  return result;
  }
  public record MonthCommand(Long hospitalId,String token,String month,String userNo){}
  @Transactional(readOnly=true) public Map<String,Object> month(MonthCommand c){

@@ -1,6 +1,6 @@
 const request=require('../../utils/request')
 Page({
- data:{cancellingId:null,hospitalId:null,hospitalName:'',enabled:false,loading:false,error:'',items:[],total:0,page:0,hasMore:false,userNo:'',startDate:'',endDate:'',status:'-1',statusIndex:0,statuses:[{value:'-1',label:'全部'},{value:'0',label:'待审核'},{value:'1',label:'审核未通过'},{value:'2',label:'审核通过'},{value:'3',label:'已出报告'},{value:'4',label:'已取消'}]},
+ data:{openingReportId:null,cancellingId:null,hospitalId:null,hospitalName:'',enabled:false,loading:false,error:'',items:[],total:0,page:0,hasMore:false,userNo:'',startDate:'',endDate:'',status:'-1',statusIndex:0,statuses:[{value:'-1',label:'全部'},{value:'0',label:'待审核'},{value:'1',label:'审核未通过'},{value:'2',label:'审核通过'},{value:'3',label:'已出报告'},{value:'4',label:'已取消'}]},
  onLoad(){this._unloaded=false;this.setData({hospitalId:getApp().getHospitalId()})},
  onShow(){this.load()},
  onUnload(){this._unloaded=true;this._version=(this._version||0)+1},
@@ -9,7 +9,7 @@ Page({
  reset(){this.setData({userNo:'',startDate:'',endDate:'',status:'-1',statusIndex:0});return this.load()},
  search(){return this.load()},
  async load(append=false){
-  if(typeof append!=='boolean')append=false;
+  this._reportRetry=null;if(typeof append!=='boolean')append=false;
   if(append&&(!this.data.hasMore||this.data.loading))return;
   const version=(this._version||0)+1;this._version=version;
   const hospitalId=this.data.hospitalId;
@@ -26,6 +26,10 @@ Page({
    this.setData({items,hospitalName:result.hospitalName||'',total:Number(result.total),page:query.page,hasMore:items.length<Number(result.total)});
   }catch(error){if(version===this._version)this.setData({error:error.message||'历史记录加载失败，请重试。'})}
   finally{if(version===this._version)this.setData({loading:false})}
+ },
+ async openReport(event){
+  if(this.data.openingReportId)return;const order=this.data.items.find(row=>Number(row.orderId)===Number(event.currentTarget.dataset.order)),detail=order?.items?.find(row=>Number(row.detailId)===Number(event.currentTarget.dataset.detail));if(detail?.canDownloadLegacyReport!==true)return;
+  this._reportRetry=null;this.setData({openingReportId:detail.detailId,error:''});try{const path=await request.downloadFile('/orders/hospital-history/reports/'+detail.detailId+'/pdf?hospitalId='+this.data.hospitalId);if(!this._unloaded)await wx.openDocument({filePath:path,fileType:'pdf',showMenu:true})}catch(error){if(!this._unloaded){this._reportRetry={order:order.orderId,detail:detail.detailId};this.setData({error:error.message||'报告打开失败，请重试'})}}finally{if(!this._unloaded)this.setData({openingReportId:null})}
  },
  async cancelOrder(event){
   if(this._cancelBusy)return;
@@ -44,5 +48,5 @@ Page({
   finally{this._cancelBusy=false;if(!this._unloaded)this.setData({cancellingId:null})}
  },
  more(){return this.load(true)},
- retry(){return this.data.items.length?this.more():this.load()}
+ retry(){if(this._reportRetry)return this.openReport({currentTarget:{dataset:{...this._reportRetry}}});return this.data.items.length?this.more():this.load()}
 })
