@@ -1,8 +1,9 @@
 """Owned local quote, preparation and simulated settlement; never calls a payment provider."""
-import base64,sys,importlib.util,json,secrets,subprocess,socket,time,os,signal,re,stat,hashlib
+import urllib.parse,shlex,base64,sys,importlib.util,json,secrets,subprocess,socket,time,os,signal,re,stat,hashlib
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[2]
-CUSTOMER='--customer-views' in sys.argv
+REPORT_DOWNLOAD='--customer-reports' in sys.argv
+CUSTOMER='--customer-views' in sys.argv or REPORT_DOWNLOAD
 REFUND='--refund' in sys.argv
 NOTIFY='--notify' in sys.argv
 DISPATCH_ROLLBACK='--dispatch-rollback' in sys.argv
@@ -19,7 +20,7 @@ for key in keys:
  value=sql("SELECT HEX(JSON_OBJECT('config_value',config_value,'status',status,'updated_at',DATE_FORMAT(updated_at,'%Y-%m-%d %H:%i:%s'))) FROM lin_operational_config WHERE config_key="+lit(key)+" AND scope_type='GLOBAL' AND scope_id=0")
  old[key]=json.loads(bytes.fromhex(value).decode()) if value else None
  assert not old[key] or (old[key]['config_value'] if isinstance(old[key]['config_value'],dict) else json.loads(old[key]['config_value'])).get('enabled') is False,'Do not override an enabled development gate'
-private=Path.home()/'.local/share/petlis/qa';private.mkdir(mode=0o700,parents=True,exist_ok=True);process=None;hospital=test=None;orders=[];details=[];payments=[];request_keys=[];gateway_fixture=None;animal=None;paid=None;customer_proof={}
+private=Path.home()/'.local/share/petlis/qa';private.mkdir(mode=0o700,parents=True,exist_ok=True);process=None;hospital=test=None;orders=[];details=[];payments=[];request_keys=[];gateway_fixture=None;animal=None;paid=None;customer_proof={};report_root=None;owned_report=None;downloaded_report=None
 def make_order(number,date):
  columns=[line.split('\t') for line in sql("SELECT COLUMN_NAME,DATA_TYPE,IS_NULLABLE,IFNULL(COLUMN_DEFAULT,'<NULL>'),EXTRA FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='lin_lb_listdiagnosisproject' ORDER BY ORDINAL_POSITION").splitlines()];names=[];values=[]
  for parts in columns:
@@ -61,7 +62,7 @@ try:
  if CUSTOMER:paid=make_order(prefix+'_paid','2024-03-01 12:00:00')
  for key in keys:
   value=json.dumps({'enabled':True,**({'writeEnabled':True} if key=='legacy-order-details' else ({'prepareEnabled':True,**({'sendEnabled':True,'queryEnabled':True,**({'notifyEnabled':True} if NOTIFY else {}),**({'refundEnabled':True,'refundQueryEnabled':True} if REFUND else {})} if DISPATCH else {})} if PREPARE else {}))})
-  if key=='legacy-customer-views':value=json.dumps({'enabled':True})
+  if key=='legacy-customer-views':value=json.dumps({'enabled':True,**({'reportDownloadEnabled':True} if REPORT_DOWNLOAD else {})})
   sql('INSERT INTO lin_operational_config(config_key,config_value,description,updated_by) VALUES('+lit(key)+','+lit(value)+",'bank quote UI fixture',(SELECT MIN(id) FROM lin_user)) ON DUPLICATE KEY UPDATE config_value=VALUES(config_value),status='ACTIVE'")
  command='set -a; source "$HOME/.local/share/petlis/mysql/backend.env"; set +a; [[ "$DB_URL" == "jdbc:mysql://127.0.0.1:13306/laboklin?"* ]] || exit 17; export JAVA_HOME="$HOME/.local/share/petlis/tools/Home" MAVEN_HOME="$HOME/.local/share/petlis/tools/libexec" APP_SCHEDULING_ENABLED=false DB_MIGRATIONS_ENABLED=false PDF_STORAGE_PATH="$HOME/.local/share/petlis/reports"; exec ./petlis-backend/mvnw -o -q -f petlis-backend/pom.xml spring-boot:run -Dspring-boot.run.profiles=dev -Dspring-boot.run.arguments=--server.port=18082'
  if PREPARE:command=command.replace('-Dspring-boot.run.arguments=--server.port=18082',"'-Dspring-boot.run.arguments=--server.port=18082 --app.legacy-bank.merchant=TESTLOCAL'")
@@ -75,6 +76,17 @@ try:
    assert sql('SELECT IsPayMoney FROM lin_lb_listdiagnosisproject WHERE ListDiagnosisProjectId='+str(unreceived))==str(original_parent_pay)
   gateway_fixture=BankGatewayFixture(private,prefix,DISPATCH_ROLLBACK,verify_settlement_rollback if DISPATCH_ROLLBACK else None)
   command=command.replace("--app.legacy-bank.merchant=TESTLOCAL'","--app.legacy-bank.merchant=TESTLOCAL --app.legacy-bank.mode=TEST_LOCAL --app.legacy-bank.app-id=owned-test --app.legacy-bank.endpoint="+gateway_fixture.endpoint+" --app.legacy-bank.private-key="+str(gateway_fixture.private_key)+" --app.legacy-bank.public-key="+str(gateway_fixture.public_key)+" --app.legacy-bank.timeout-ms=1500'")
+ if REPORT_DOWNLOAD:
+  report_root=private/(prefix+'_report_root');report_root.mkdir(mode=0o700);owned_report=report_root/'owned-客户报告.pdf';downloaded_report=private/(prefix+'_download.pdf')
+  stream=b'BT /F1 12 Tf 50 780 Td (OWNED CUSTOMER REPORT) Tj ET'
+  objects=[b'<< /Type /Catalog /Pages 2 0 R >>',b'<< /Type /Pages /Kids [3 0 R] /Count 1 >>',b'<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >>',b'<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>',b'<< /Length '+str(len(stream)).encode()+b' >>\nstream\n'+stream+b'\nendstream']
+  pdf=bytearray(b'%PDF-1.4\n');offsets=[0]
+  for i,obj in enumerate(objects,1):offsets.append(len(pdf));pdf+=str(i).encode()+b' 0 obj\n'+obj+b'\nendobj\n'
+  xref=len(pdf);pdf+=b'xref\n0 6\n0000000000 65535 f \n'+b''.join(('%010d 00000 n \n'%offset).encode() for offset in offsets[1:])+b'trailer\n<< /Size 6 /Root 1 0 R >>\nstartxref\n'+str(xref).encode()+b'\n%%EOF\n'
+  fd=os.open(owned_report,os.O_WRONLY|os.O_CREAT|os.O_EXCL|os.O_NOFOLLOW,0o600)
+  with os.fdopen(fd,'wb') as artifact:artifact.write(pdf)
+  valid=subprocess.run(['/opt/homebrew/bin/pdfinfo',str(owned_report)],capture_output=True,text=True,timeout=10);assert valid.returncode==0 and re.search(r'Pages:\s+1\b',valid.stdout),'Owned PDF fixture must parse as one page'
+  command=command.replace('exec ./petlis-backend/mvnw','export APP_LEGACY_REPORTS_STORAGE_PATH='+shlex.quote(str(report_root))+'; exec ./petlis-backend/mvnw')
  if CUSTOMER:command=command.replace('exec ./petlis-backend/mvnw','export APP_LEGACY_LINK_KEY_PHRASE=public-customer-view-test; exec ./petlis-backend/mvnw')
  fd=os.open(private/(prefix+'.log'),os.O_WRONLY|os.O_CREAT|os.O_EXCL|os.O_NOFOLLOW,0o600)
  with os.fdopen(fd,'w') as log:process=subprocess.Popen(['/bin/zsh','-c',command],cwd=ROOT,stdout=log,stderr=subprocess.STDOUT,start_new_session=True)
@@ -94,12 +106,17 @@ try:
  for order,kind,price,paid_status,exempt in fixture_details:
   request=prefix+'_detail_'+str(len(details));body={'testTypeId':kind,'originalPrice':price,'originalDiscount':'10','testPrice':price,'detailRemark':prefix,'modelId':0,'mailTitle':'','isSendMail':0,'isCheckPass':exempt,'payStatus':paid_status,'diagnosisStatus':0,'mailReport':'','reportResult':'','requestKey':request};detail=int(staff.call(f'/admin/legacy/order-details/orders/{order}',body,session['token']));details.append((detail,order,request))
  if CUSTOMER:
-  sql('UPDATE lin_lb_diagnosisdetail SET PDFHttpUrl='+lit('https://petlis.invalid/owned.pdf')+' WHERE DiagnosisDetailId='+str(details[-1][0]))
+  report_reference=('https://old.example.invalid/Content/FilePdf/'+urllib.parse.quote(owned_report.name) if REPORT_DOWNLOAD else 'https://petlis.invalid/owned.pdf')
+  sql('UPDATE lin_lb_diagnosisdetail SET PDFHttpUrl='+lit(report_reference)+' WHERE DiagnosisDetailId='+str(details[-1][0]))
   def cipher(value):
    key=hashlib.md5(b'DDMpublic-customer-view-testDDM').hexdigest()[:8].encode().hex();r=subprocess.run(['/usr/bin/openssl','enc','-des-cbc','-nosalt','-K',key,'-iv',key],input=str(value).encode(),capture_output=True,timeout=10);assert r.returncode==0,'Owned public-key cipher fixture failed';return base64.b64encode(r.stdout).decode().replace('+','!').replace('=','-')
-  customer_proof={'detail':details[0][0],'paidDetail':details[-1][0],'detailToken':cipher(details[0][0]),'hospitalToken':cipher(hospital)}
+  customer_proof={'detail':details[0][0],'paidDetail':details[-1][0],'detailToken':cipher(details[0][0]),'hospitalToken':cipher(hospital),'reportDownload':REPORT_DOWNLOAD,'reportReference':report_reference,**({'downloadPath':str(downloaded_report),'reportName':owned_report.name,'reportSha':hashlib.sha256(owned_report.read_bytes()).hexdigest(),'reportSize':owned_report.stat().st_size} if REPORT_DOWNLOAD else {})}
  original_parent_pay=int(sql(f'SELECT IsPayMoney FROM lin_lb_listdiagnosisproject WHERE ListDiagnosisProjectId={unreceived}'))
  before=snapshot(ignore_payments=PREPARE);run=subprocess.run(['node','scripts/editor-parity/'+('legacy-customer-views-live.js' if CUSTOMER else 'bank-payment-quote-live.js')],cwd=ROOT,input=json.dumps({'token':session['token'],'prefix':prefix,'hospital':hospital,'prepare':PREPARE,'dispatch':DISPATCH,'dispatchRollback':DISPATCH_ROLLBACK,'notify':NOTIFY,'refund':REFUND,'noticeUrl':(gateway_fixture.endpoint.rsplit('/',1)[0]+'/notification' if NOTIFY else None),'screenshot':str(private/(prefix+'.png')),**customer_proof}),capture_output=True,text=True,timeout=90);assert run.returncode==0,'Browser failed: '+run.stderr[-1000:];proof=json.loads(run.stdout)
+ if REPORT_DOWNLOAD:
+  assert downloaded_report.is_file() and hashlib.sha256(downloaded_report.read_bytes()).hexdigest()==customer_proof['reportSha']
+  text=subprocess.run(['/opt/homebrew/bin/pdftotext',str(downloaded_report),'-'],capture_output=True,text=True,timeout=10);assert text.returncode==0 and 'OWNED CUSTOMER REPORT' in text.stdout
+  proof['downloadedPdfBytesAndTextVerified']=True
  if PREPARE:
   rows=sql('SELECT OrderId FROM lin_lb_payordermain WHERE Remark='+lit('订单:'+prefix)).splitlines();payments.extend(rows);assert len(rows)==1,'Expected one payment despite uncertain first response'
   request_keys.extend(proof['requestKeys']);assert len(set(request_keys))==1
@@ -124,6 +141,9 @@ finally:
   try:process.wait(timeout=8)
   except subprocess.TimeoutExpired:os.killpg(process.pid,signal.SIGKILL);process.wait(timeout=5)
  if gateway_fixture:gateway_fixture.close()
+ if report_root:
+  if owned_report and owned_report.exists():owned_report.unlink()
+  report_root.rmdir()
  # Discover only owned rows even when the browser failed before returning its proof.
  if PREPARE and hospital:
   payments=sql('SELECT OrderId FROM lin_lb_payordermain WHERE Remark='+lit('订单:'+prefix)).splitlines()
