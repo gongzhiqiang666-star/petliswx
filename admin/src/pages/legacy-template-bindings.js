@@ -1,0 +1,21 @@
+import {pageHeader,renderTable,renderState,field} from '../components/ui.js';
+import {escapeHtml} from '../utils.js';
+const base='/admin/legacy/template-bindings';
+export async function render(container,context){
+ const caps=await context.api.request(base+'/capabilities');let page=0,sequence=0;
+ container.innerHTML=pageHeader('模板变量绑定','维护变量名称与业务字段的对应关系',caps.bindingWrites?'<button class="button" data-binding-new>新增变量绑定</button>':'')+'<section class="panel"><p class="muted">正文中使用 {变量名称}。替换读取送检主单、医院、性别、物种、样本类型及检测明细视图；维护绑定不会改写已保存的报告正文。</p><div class="toolbar"><label>绑定表、列或变量名称 <input type="search" data-binding-search></label><button class="button secondary" data-binding-query>查询</button></div><div data-binding-list></div></section>';
+ const list=container.querySelector('[data-binding-list]');
+ async function load(){const current=++sequence;list.innerHTML=renderState('loading');try{const d=await context.api.request(base,{query:{q:container.querySelector('[data-binding-search]').value,page,size:20}});if(current!==sequence||!container.isConnected)return;
+  list.innerHTML=renderTable({rows:d.items??[],columns:[{label:'编号',key:'id'},{label:'绑定表',key:'BindTable'},{label:'绑定列',key:'ColumnName'},{label:'变量名称',key:'DescName'}],actions:r=>`${caps.bindingWrites?`<button class="button text" data-binding-edit="${r.id}">编辑</button>`:''}${caps.bindingDeletes?`<button class="button text" data-binding-delete="${r.id}">删除</button>`:''}`})+`<div class="toolbar"><span>共 ${Number(d.total)} 条 · 第 ${page+1} 页</span><button class="button secondary" data-binding-prev ${page===0?'disabled':''}>上一页</button><button class="button secondary" data-binding-next ${(page+1)*20>=Number(d.total)?'disabled':''}>下一页</button></div>`;
+ }catch(error){if(current===sequence)list.innerHTML=renderState('error',error);}}
+ container.addEventListener('click',async event=>{const button=event.target.closest('[data-binding-new],[data-binding-edit],[data-binding-delete],[data-binding-query],[data-binding-prev],[data-binding-next],[data-action=retry]');if(!button||button.disabled)return;button.disabled=true;try{
+  if(button.hasAttribute('data-binding-new')||button.hasAttribute('data-binding-edit')){
+   const id=button.dataset.bindingEdit?Number(button.dataset.bindingEdit):null,row=id==null?{}:await context.api.request(`${base}/${id}`),requestKey=crypto.randomUUID();let submitted=null;
+   context.dialog({title:id==null?'新增变量绑定':'编辑变量绑定',submitLabel:'保存绑定',body:`${field({name:'bindTable',label:'绑定表',value:row.BindTable??'',required:true})}${field({name:'columnName',label:'绑定列',value:row.ColumnName??'',required:true})}${field({name:'description',label:'变量名称（不含花括号）',value:row.DescName??'',required:true})}<p class="muted">已知绑定表：ListDiagnosisProject、InfoHospital、DictSex、InfoAnimal、InfoSampleType、VwDiagnosisDetail。保留历史自由文本；未知表或列不会自动产生替换结果。</p>`,async onSubmit(form){
+    const command={bindTable:form.elements.bindTable.value,columnName:form.elements.columnName.value,description:form.elements.description.value,requestKey,expectedToken:row.editToken??null},canonical=JSON.stringify(command);if(submitted&&submitted!==canonical)throw Error('上次保存结果未确认，请先用原内容重试或重新打开核对');submitted=canonical;
+    try{await context.api.request(id==null?base:`${base}/${id}`,{method:id==null?'POST':'PUT',data:command});}catch(error){if([400,401,403,404,422].includes(error.status)||error.status===200&&[400,401,403,404,422].includes(Number(error.code)))submitted=null;throw error;}if(form.isConnected){context.toast('变量绑定已保存');await load();}
+   }});
+  }else if(button.hasAttribute('data-binding-delete')){const id=Number(button.dataset.bindingDelete),row=await context.api.request(`${base}/${id}`),requestKey=crypto.randomUUID();context.dialog({title:'删除变量绑定',submitLabel:'确认删除绑定',body:`<p>确认删除变量「${escapeHtml(row.DescName)}」？模板源文保持原样，后续生成时可能不再替换该变量。</p>`,async onSubmit(){await context.api.request(`${base}/${id}/delete`,{method:'POST',data:{requestKey,expectedToken:row.editToken}});context.toast('绑定已删除');await load();}});}
+  else{if(button.hasAttribute('data-binding-prev'))page--;else if(button.hasAttribute('data-binding-next'))page++;else page=0;await load();}
+ }catch(error){context.toast(error.message,'error');}finally{button.disabled=false;}});await load();
+}

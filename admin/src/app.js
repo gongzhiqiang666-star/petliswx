@@ -18,10 +18,11 @@ import * as operations from './pages/operations.js';
 import * as messages from './pages/messages.js';
 import * as system from './pages/system.js';
 import * as legacyTestCatalog from './pages/legacy-test-catalog.js';
+import * as legacyTemplateBindings from './pages/legacy-template-bindings.js';
 import * as legacyTemplates from './pages/legacy-templates.js';
 import * as legacyDictionaries from './pages/legacy-dictionaries.js';
 
-const pages = { legacyTemplates, legacyTestCatalog, legacyDictionaries, dashboard, reviews, organizations, hospitalDocuments, orders, logistics, laboratory, reports, catalog, finance, operations, messages, system };
+const pages = { legacyTemplateBindings, legacyTemplates, legacyTestCatalog, legacyDictionaries, dashboard, reviews, organizations, hospitalDocuments, orders, logistics, laboratory, reports, catalog, finance, operations, messages, system };
 const root = document.querySelector('#app');
 let api;
 const store = createStore({
@@ -63,7 +64,7 @@ async function renderShell() {
   const version = ++shellSequence, token = store.getState().token;
   let capabilities = {};
   if (user.roles?.includes('ADMIN')) {
-    const results = await Promise.allSettled([api.request('/admin/legacy/capabilities'),api.request('/admin/legacy/test-catalog/capabilities'),api.request('/admin/legacy/templates/capabilities')]);
+    const results = await Promise.allSettled([api.request('/admin/legacy/capabilities'),api.request('/admin/legacy/test-catalog/capabilities'),api.request('/admin/legacy/templates/capabilities'),api.request('/admin/legacy/template-bindings/capabilities')]);
     for(const result of results)if(result.status==='fulfilled')Object.assign(capabilities,result.value||{});
   }
   if (version !== shellSequence || token !== store.getState().token) return;

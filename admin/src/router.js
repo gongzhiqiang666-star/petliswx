@@ -10,6 +10,7 @@ export const routes = [
   { id: 'legacyDictionaries', path: '/legacy-dictionaries', label: '\u57fa\u7840\u6570\u636e\u7ba1\u7406', group: '\u8d44\u6e90\u7ba1\u7406', icon: '\u25c7', roles: ['ADMIN'], capability: 'dictionaries' },
   { id: 'legacyTestCatalog', path: '/legacy-test-catalog', label: '检测项目资料', group: '资源管理', icon: '◇', roles: ['ADMIN'], capability: 'testCatalog' },
   { id: 'legacyTemplates', path: '/legacy-templates', label: '业务模板', group: '资源管理', icon: '◇', roles: ['ADMIN'], capability: 'templates' },
+  { id: 'legacyTemplateBindings', path: '/legacy-template-bindings', label: '模板变量绑定', group: '资源管理', icon: '◇', roles: ['ADMIN'], capability: 'templateBindings' },
   { id: 'catalog', path: '/catalog', label: '项目与签约定价', group: '资源管理', icon: '◇', roles: ['ADMIN'] },
   { id: 'finance', path: '/finance', label: '财务处理', group: '财务运营', icon: '¥', roles: ['ADMIN', 'HOSPITAL_ADMIN', 'LAB_STAFF'] },
   { id: 'operations', path: '/operations', label: '运营管理', group: '财务运营', icon: '✦', roles: ['ADMIN'] },
