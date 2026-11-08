@@ -19,3 +19,17 @@ export async function openHospitalProfile(context,id,onSaved){
   if(form.isConnected){context.toast('医院档案已保存');await onSaved?.();}
  }});
 }
+
+export async function openHospitalCredentials(context,id){
+ const base='/admin/legacy/hospital-profiles';
+ const [capabilities,row]=await Promise.all([context.api.request(base+'/capabilities'),context.api.request(`${base}/${id}/credentials`)]);
+ if(capabilities.hospitalCredentialWrites!==true)throw Error('原医院登录资料维护尚未开启');
+ const requestKey=crypto.randomUUID();let pending=null;
+ context.dialog({title:'原医院登录资料',submitLabel:'保存登录资料',body:`<p>维护原医院登录资料，不会创建会员账号或授予新权限。${row.passwordConfigured?'当前已设置密码。':'当前未设置密码。'}</p><div class="form-grid">${field({name:'loginName',label:'原登录名',value:row.loginName??''})}${field({name:'password',label:'新密码（留空保留）',type:'password'})}${field({name:'clearPassword',label:'清空原密码',value:'false',options:[{value:'false',label:'否，保留或修改'},{value:'true',label:'是，清空密码'}]})}</div>`,async onSubmit(form){
+  const values=formData(form),command={loginName:values.loginName,password:values.password||null,clearPassword:values.clearPassword==='true',requestKey,expectedToken:row.editToken};
+  if(command.clearPassword&&command.password)throw Error('不能同时填写新密码和清空密码');
+  const canonical=JSON.stringify(command);if(pending&&pending!==canonical)throw Error('上次结果未确认，请用原内容重试或重新打开核对');pending=canonical;
+  try{await context.api.request(`${base}/${id}/credentials`,{method:'PUT',data:command});}catch(error){if([400,401,403,404,422].includes(error.status)||error.status===200&&[400,401,403,404,422].includes(Number(error.code)))pending=null;throw error;}
+  context.toast('原医院登录资料已保存');
+ }});
+}

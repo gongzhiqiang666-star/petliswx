@@ -1,4 +1,4 @@
-import {openHospitalProfile} from '../components/hospital-profile.js';
+import {openHospitalProfile,openHospitalCredentials} from '../components/hospital-profile.js';
 import {openHospitalContacts} from '../components/hospital-contacts.js';
 import { rolePayload, userStatusPayload } from '../adapters.js';
 import { formData } from './shared.js';
@@ -53,7 +53,7 @@ export async function render(container, context) {
           { label: '医院名称', key: 'name' }, { label: '登录编码', key: 'code' }, { label: '状态', render: (row) => badge(row.status) }
         ],
         actions: (row) => tab === 'hospitals'
-          ? `${contactCapabilities.hospitalContacts===true?`<button class="button text" data-hospital-contacts="${row.id}">联系人</button>`:''}<button class="button text" data-hospital="${row.id}">查看档案</button>${profileCapabilities.hospitalProfileWrites===true?`<button class="button text" data-hospital-profile="${row.id}">编辑档案</button>`:''}<button class="button text" data-hospital-documents="${row.id}">资料文件</button>${fundCapabilities.hospitalFunds===true?`<button class="button text" data-hospital-funds="${row.id}">医院资金</button>`:''}`
+          ? `${contactCapabilities.hospitalContacts===true?`<button class="button text" data-hospital-contacts="${row.id}">联系人</button>`:''}<button class="button text" data-hospital="${row.id}">查看档案</button>${profileCapabilities.hospitalProfileWrites===true?`<button class="button text" data-hospital-profile="${row.id}">编辑档案</button>`:''}${profileCapabilities.hospitalCredentialWrites===true?`<button class="button text" data-hospital-credentials="${row.id}">原登录资料</button>`:''}<button class="button text" data-hospital-documents="${row.id}">资料文件</button>${fundCapabilities.hospitalFunds===true?`<button class="button text" data-hospital-funds="${row.id}">医院资金</button>`:''}`
           : `<button class="button text" data-user-roles="${row.id}">角色</button><button class="button ${row.status === 'ACTIVE' ? 'danger' : ''} text" data-user-status="${row.id}" data-current-status="${row.status}">${row.status === 'ACTIVE' ? '停用' : '启用'}</button>`
       });
     } catch (error) { list.innerHTML = renderState(error.status === 403 ? 'forbidden' : 'error', error); }
@@ -97,6 +97,7 @@ export async function render(container, context) {
       container.querySelectorAll('[data-tab]').forEach((button) => button.classList.toggle('active', button === tabButton));
       load();
     }
+    const credentialsButton=event.target.closest('[data-hospital-credentials]');if(credentialsButton){try{await openHospitalCredentials(context,Number(credentialsButton.dataset.hospitalCredentials))}catch(error){context.toast(error.message,'error')}return;}
     const newHospital=event.target.closest('[data-hospital-new]');if(newHospital){try{await openHospitalProfile(context,null,load)}catch(error){context.toast(error.message,'error')}return;}
     const profileButton=event.target.closest('[data-hospital-profile]');if(profileButton){try{await openHospitalProfile(context,Number(profileButton.dataset.hospitalProfile),load)}catch(error){context.toast(error.message,'error')}return;}
     const hospitalButton = event.target.closest('[data-hospital]');

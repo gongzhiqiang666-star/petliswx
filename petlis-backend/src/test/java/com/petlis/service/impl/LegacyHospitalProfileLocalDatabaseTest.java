@@ -16,6 +16,16 @@ class LegacyHospitalProfileLocalDatabaseTest {
  void gate(boolean read,boolean write){store.jdbc().update("INSERT INTO lin_operational_config(config_key,config_value,description,updated_by) VALUES('legacy-hospital-profiles',?,'transaction-only profile test',?) ON DUPLICATE KEY UPDATE config_value=VALUES(config_value),status='ACTIVE'",store.encode(Map.of("enabled",read,"writeEnabled",write)),actor);}
  String key(){return "profile_"+UUID.randomUUID().toString().replace("-","");}
  LegacyHospitalProfileService.Command command(String token,String key){return new LegacyHospitalProfileService.Command(" 修改医院 ","Hospital","抬头",0,"地区","详细地址","电话","传真",1,key,token);}
+ @Test void credentialMaintenanceKeepsBlankClearsExplicitlyAndNeverReturnsSecrets(){
+  var before=service.credentials(hospital);assertEquals("historical-login",before.get("loginName"));assertEquals(true,before.get("passwordConfigured"));assertFalse(before.containsKey("password"));
+  var keep=new LegacyHospitalProfileService.CredentialsCommand("renamed",null,false,key(),before.get("editToken").toString());
+  assertEquals(409,assertThrows(BusinessException.class,()->service.updateCredentials(hospital,keep)).getCode());
+  store.jdbc().update("UPDATE lin_operational_config SET config_value=? WHERE config_key='legacy-hospital-profiles' AND scope_type='GLOBAL' AND scope_id=0",store.encode(Map.of("enabled",true,"writeEnabled",true,"credentialWriteEnabled",true)));
+  service.updateCredentials(hospital,keep);assertEquals(hospital,service.updateCredentials(hospital,keep));assertEquals("historical-secret",store.one("SELECT LoginPwd FROM lin_lb_infohospital WHERE InfoHospitalId=?",hospital).get("LoginPwd"));
+  var current=service.credentials(hospital);var clear=new LegacyHospitalProfileService.CredentialsCommand("renamed","",true,key(),current.get("editToken").toString());service.updateCredentials(hospital,clear);assertEquals(false,service.credentials(hospital).get("passwordConfigured"));
+  var change=new LegacyHospitalProfileService.CredentialsCommand("renamed","synthetic-new-secret",false,key(),service.credentials(hospital).get("editToken").toString());service.updateCredentials(hospital,change);
+  String audit=store.jdbc().queryForList("SELECT after_json FROM lin_audit_record WHERE actor_user_id=? AND action='LEGACY_HOSPITAL_CREDENTIALS_UPDATED'",actor).toString();assertFalse(audit.contains("synthetic-new-secret"));assertFalse(audit.contains("historical-secret"));assertEquals("37.21",store.one("SELECT amount FROM lin_lb_infohospital WHERE InfoHospitalId=?",hospital).get("amount").toString());
+ }
  @Test void createUsesOriginalDefaultsAndRedactsCredentialsFromAudit(){
   var c=new LegacyHospitalProfileService.CreateCommand(command(null,key()),"new-legacy-login","new-legacy-secret",null);
   assertEquals(409,assertThrows(BusinessException.class,()->service.create(c)).getCode());
