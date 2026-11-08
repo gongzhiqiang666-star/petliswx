@@ -40,7 +40,7 @@
 
 ## 实施进度（2026-11-08）
 
-M24增量：[支付单准备与请求恢复](php-parity/M24-BANK-PREPARATION-CONTRACT.md)已新增内部事务落库，复用Java幂等表，保留原主单/分摊规则；22项专项验证通过。尚未接PC创建及银行发送/结果核对，不视为支付功能或整模块验收完成。无DDL、真实外发或定时任务启用。
+M24增量：[支付单准备与请求恢复](php-parity/M24-BANK-PREPARATION-CONTRACT.md)已新增内部事务落库，复用Java幂等表，保留原主单/分摊规则；现已接PC保存及当前账号记录，响应丢失后关闭重开确认框使用同一请求，实际仅创建一单；25项Java、152项PC通过。尚未接银行发送/结果核对，不视为支付功能或整模块验收完成。无DDL、真实外发或定时任务启用。
 
 M24已开始：[原网银源码契约及首批核价](php-parity/M24-BANK-PAYMENT-SOURCE-CONTRACT.md)记录只读选项与金额，Java/PC两种核价已实际验证；现补[协议及本机通道](php-parity/M24-BANK-WIRE-CONTRACT.md)，四类方法封包/原文验签及OpenSSL互通等18项专项通过，默认关闭；下单持久化/查询回写/退款业务仍未完成。M30已记录[原汇总回写及混合状态待决定项](php-parity/M30-RECONCILIATION-CONTRACT.md)，只读统计后已询问用户处理方式，尚未实现或执行回写。
 

@@ -61,4 +61,15 @@ class LegacyBankPaymentQuoteLocalDatabaseTest {
   assertEquals(0,store.jdbc().queryForObject("SELECT COUNT(*) FROM lin_lb_payorderdetail WHERE UserNo=?",Integer.class,prefix));
   assertEquals(0,store.jdbc().queryForObject("SELECT COUNT(*) FROM lin_order_idempotency WHERE user_id=? AND operation='LEGACY_BANK_PREPARE' AND idempotency_key=?",Integer.class,actor,prefix));
  }
+ @Test void pcReceiptQueriesRecoverOwnOriginalRequestAndDoNotExposeAnotherActor(){
+  detail(246,"12.50",0,0);store.jdbc().update("UPDATE lin_operational_config SET config_value='{\"enabled\":true,\"prepareEnabled\":true}' WHERE config_key='legacy-bank-payments'");
+  var preparations=new LegacyBankPaymentPreparationService(store,access,service);
+  var app=new LegacyBankPaymentApplicationService(store,access,service,preparations,"LOCALTEST");
+  var result=app.prepare(new LegacyBankPaymentPreparationService.Command("ORDER",hospital,null,prefix,"12.50",prefix));
+  assertEquals(result.orderId(),app.request(prefix).get("orderId"));
+  assertEquals(1L,app.requests(0,20).get("total"));
+  @SuppressWarnings("unchecked") var rows=(List<Map<String,Object>>)app.requests(0,20).get("items");assertEquals(prefix,rows.get(0).get("requestKey"));assertFalse(rows.get(0).containsKey("request_hash"));
+  when(access.current()).thenReturn(new CurrentActor(actor+1000000,Set.of(PlatformRole.ADMIN),Set.of(),Set.of(),new DataScope(true,Set.of(),Set.of(),null)));
+  assertEquals(404,assertThrows(BusinessException.class,()->app.request(prefix)).getCode());assertEquals(0L,app.requests(0,20).get("total"));
+ }
 }
