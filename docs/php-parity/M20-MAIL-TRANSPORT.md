@@ -25,7 +25,7 @@
 - 已补齐 Spring Boot 3.4.1 BOM 管理的 `spring-boot-starter-mail`。缺少的官方 Maven Central 构件通过远端 SHA-1 校验后补入本机缓存；依赖版本沿用当前工程，不自制 SMTP 客户端。
 - `LegacyMailTransport` 默认 DISABLED。TEST_LOCAL 只能连接明确配置的 `127.0.0.1` 测试端口，不读取旧服务器地址、不认证、不传输旧密码。本次测试仅连接测试自身分配的临时本机端口。
 - SMTP 模式同时需要独立的私有 `app.legacy-mail.smtp-enabled` 明确开启；代码强制认证、STARTTLS、证书主机名校验及连接/读写超时。该模式未启用、未作真实网络验收；不因为本机测试通过宣布 TLS 或供应商联调通过。
-- 原 PHP `Env::get(app.email)` 非空时仅替换 To，不替换配置的 BCC；Java 消息对象显式表达这个规则，空串和字符串 0 按 PHP 空值语义不覆盖。该规则已由本机 SMTP 实收验证。
+- 财务与收样通知的原 PHP `Env::get(app.email)` 非空时仅替换 To；报告邮件 `Base::sendmail` 同时替换 To 和 BCC。Java 按业务类型区分，空串和字符串 0 按 PHP 空值语义不覆盖。两种路径均有本机 SMTP 实收验证，详见 M19-MAIL-SOURCE-CONTRACTS.md。
 - 中文 HTML、UTF-8 发件人显示名和 PDF 附件文件名/字节验证通过；重复 To 去重，BCC 进入 SMTP 信封但不出现在收到的 Bcc 头。非法地址/邮件头注入在连接前拒绝，附件有大小/数量限制，不静默丢弃。
 - SMTP 发送异常保守标为“结果未确认”，不盲目重发；未将发送失败伪装为业务成功。持久化尝试、细分失败及受控重试仍需在业务发送服务接入时完成。
 - 本次 6 项传输测试加已有 9 项邮件专项，共 15 项通过且无跳过。覆盖本机 SMTP 实收正文/附件/信封、环境覆盖、拒收、默认关闭和无效输入。测试未触及真实 SMTP，也未改变订单/月报通知状态。

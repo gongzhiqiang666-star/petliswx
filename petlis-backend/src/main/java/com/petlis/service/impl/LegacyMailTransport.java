@@ -19,7 +19,7 @@ public class LegacyMailTransport {
  private final String mode;private final int localPort;private final boolean smtpEnabled;
  public LegacyMailTransport(@Value("${app.legacy-mail.mode:DISABLED}") String mode,@Value("${app.legacy-mail.local-test-port:0}") int localPort,@Value("${app.legacy-mail.smtp-enabled:false}") boolean smtpEnabled){this.mode=mode;this.localPort=localPort;this.smtpEnabled=smtpEnabled;}
  public record Profile(String host,int port,String username,String password,String bcc){@Override public String toString(){return "MailProfile[credentials=REDACTED]";}}
- /** overrideTo models PHP Env::get(app.email): replaces To only; BCC remains configured. */
+ /** overrideTo models PHP Env::get(app.email); its BCC behavior depends on business kind. */
  public record Message(String to,String overrideTo,String subject,String html,List<Attachment> attachments){}
  public record Attachment(String filename,String contentType,byte[] bytes){
   public Attachment{bytes=bytes==null?null:bytes.clone();}
@@ -29,7 +29,8 @@ public class LegacyMailTransport {
  public static final class DeliveryUncertainException extends RuntimeException {
   public DeliveryUncertainException(){super("邮件发送结果未确认，请核对投递记录后处理，勿直接重复发送");}
  }
- public void send(Profile profile,Message command){
+ public void send(Profile profile,Message command){send(profile,command,LegacyMailRoutingRules.Kind.FINANCE);}
+ public void send(Profile profile,Message command,LegacyMailRoutingRules.Kind kind){
   boolean local="TEST_LOCAL".equals(mode);
   if(!local&&!("SMTP".equals(mode)&&smtpEnabled))throw new IllegalStateException("邮件传输尚未开启");
   if(local&&(localPort<1||localPort>65535))throw new IllegalStateException("本机邮件测试端口未配置");
@@ -37,8 +38,8 @@ public class LegacyMailTransport {
   header(profile.username());header(command.subject());
   if(command.subject().isEmpty()||command.subject().length()>2000||command.html()==null||command.html().getBytes(StandardCharsets.UTF_8).length>2*1024*1024)throw new IllegalArgumentException("邮件标题或正文无效或过长");
   var from=address(profile.username(),LegacyMailAddressRules.senderName(profile.username()));
-  String to=command.overrideTo()==null||command.overrideTo().isEmpty()||command.overrideTo().equals("0")?command.to():command.overrideTo();
-  var recipients=addresses(to);var bcc=addresses(profile.bcc());
+  var route=LegacyMailRoutingRules.route(kind,command.to(),command.overrideTo(),profile.bcc());
+  var recipients=addresses(route.to());var bcc=addresses(route.bcc());
   List<Attachment> attachments=command.attachments()==null?List.of():List.copyOf(command.attachments());long bytes=0;
   for(var attachment:attachments){
    header(attachment.filename());header(attachment.contentType());

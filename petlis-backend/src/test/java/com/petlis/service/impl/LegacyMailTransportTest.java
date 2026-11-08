@@ -44,6 +44,12 @@ class LegacyMailTransportTest {
    sink.received.get(8,TimeUnit.SECONDS);assertEquals(List.of("<sandbox@example.test>","<audit@example.test>"),sink.recipients);
   }
  }
+ @Test void reportOverrideDoesNotLeakToOriginalBcc() throws Exception {
+  try(var sink=new Sink()){
+   var original=message();new LegacyMailTransport("TEST_LOCAL",sink.port(),false).send(profile(),new LegacyMailTransport.Message(" original@example.test ","sandbox@example.test",original.subject(),original.html(),List.of()),LegacyMailRoutingRules.Kind.REPORT);
+   sink.received.get(8,TimeUnit.SECONDS);assertFalse(sink.recipients.isEmpty());assertTrue(sink.recipients.stream().allMatch(address->address.equals("<sandbox@example.test>")));
+  }
+ }
  @Test void smtpDataFailureIsUncertainAndDoesNotAutomaticallyResend(){
   try(var sink=new Sink(true)){
    assertThrows(LegacyMailTransport.DeliveryUncertainException.class,()->new LegacyMailTransport("TEST_LOCAL",sink.port(),false).send(profile(),message()));
