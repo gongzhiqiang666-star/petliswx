@@ -1,6 +1,7 @@
 export const routes = [
   { id: 'dashboard', path: '/dashboard', label: '数据看板', group: '工作台', icon: '⌂', roles: ['ADMIN', 'LAB_STAFF'] },
   { id: 'reviews', path: '/reviews', label: '资质与送检审核', group: '业务管理', icon: '✓', roles: ['ADMIN', 'REVIEWER'] },
+  { id: 'hospitalHistory', path: '/hospital-history', label: '本院送检历史', group: '业务管理', icon: '▤', roles: ['ADMIN','HOSPITAL_ADMIN','DOCTOR'], capability: 'legacyHospitalHistory' },
   { id: 'hospitalDrafts', path: '/hospital-drafts', label: '本院送检草稿', group: '业务管理', icon: '▤', roles: ['ADMIN','HOSPITAL_ADMIN','DOCTOR'], capability: 'legacyHospitalDrafts' },
   { id: 'hospitalDocuments', path: '/hospital-documents', label: '医院资料', group: '业务管理', icon: '▤', roles: ['ADMIN', 'HOSPITAL_ADMIN'] },
   { id: 'organizations', path: '/organizations', label: '用户与医院', group: '业务管理', icon: '◎', roles: ['ADMIN'] },

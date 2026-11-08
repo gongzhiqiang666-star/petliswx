@@ -6,7 +6,7 @@
 
 PC新增“业务管理 → 本院送检草稿”，ADMIN、HOSPITAL_ADMIN、DOCTOR且 `legacyHospitalDrafts=true` 才显示。应用壳为医院角色取得现有医院草稿capabilities；无该角色的实验员/审核员/配送员不会获得入口。后端继续独立鉴权和限制医院，前端隐藏不能代替后端控制。
 
-新增GET `/orders/hospital-history/hospitals` 仅返回当前账号可访问的医院，支持名称搜索和分页，复用现有 CurrentActor 数据范围，不在客户端输入任意医院ID绕过归属。读取不额外过滤停用医院历史；登录/实际保存仍按现有账号和业务权限验证。该查询需现有enabled/draftEnabled开关，未启用时拒绝；不产生新配置表。
+新增GET `/orders/hospital-history/hospitals` 仅返回当前账号可访问的医院，支持名称搜索和分页，复用现有 CurrentActor 数据范围，不在客户端输入任意医院ID绕过归属。读取不额外过滤停用医院历史；登录/实际保存仍按现有账号和业务权限验证。该共用查询需现有医院历史enabled开关；草稿入口仍另需draftEnabled，历史可独立使用，未启用时拒绝；不产生新配置表。
 
 页面列出所选医院原-2且未进入新工作流的草稿。点击“编辑备注”通过现有 `GET/PUT /orders/hospital-history/drafts/{id}` 读写，**只提交Remark**，不提交患者资料、医院归属、金额、状态或明细。医生与医院管理员无需ADMIN权限。管理员仍按实际授权范围查询。
 

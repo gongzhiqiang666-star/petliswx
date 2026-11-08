@@ -7,6 +7,7 @@ import { bindRetry } from './components/retry.js';
 import * as dashboard from './pages/dashboard.js';
 import * as reviews from './pages/reviews.js';
 import * as organizations from './pages/organizations.js';
+import * as hospitalHistory from './pages/hospital-history.js';
 import * as hospitalDrafts from './pages/hospital-drafts.js';
 import * as hospitalDocuments from './pages/hospital-documents.js';
 import * as orders from './pages/orders.js';
@@ -29,7 +30,7 @@ import * as legacyTemplateBindings from './pages/legacy-template-bindings.js';
 import * as legacyTemplates from './pages/legacy-templates.js';
 import * as legacyDictionaries from './pages/legacy-dictionaries.js';
 
-const pages = { hospitalDrafts, legacyCustomerViews, legacyBankPayments, legacyPaymentLogs, legacyMailSettings, legacyMonthlyReports, legacyFinance, legacyTemplateBindings, legacyTemplates, legacyTestCatalog, legacyDictionaries, dashboard, reviews, organizations, hospitalDocuments, orders, logistics, laboratory, reports, catalog, finance, operations, messages, system };
+const pages = { hospitalHistory, hospitalDrafts, legacyCustomerViews, legacyBankPayments, legacyPaymentLogs, legacyMailSettings, legacyMonthlyReports, legacyFinance, legacyTemplateBindings, legacyTemplates, legacyTestCatalog, legacyDictionaries, dashboard, reviews, organizations, hospitalDocuments, orders, logistics, laboratory, reports, catalog, finance, operations, messages, system };
 const root = document.querySelector('#app');
 let api;
 const store = createStore({

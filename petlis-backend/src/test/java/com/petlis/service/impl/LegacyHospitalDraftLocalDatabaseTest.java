@@ -86,7 +86,9 @@ class LegacyHospitalDraftLocalDatabaseTest {
   store.jdbc().update("UPDATE lin_lb_infohospital SET HospitalName=?,IsActive=0 WHERE InfoHospitalId=?",f.f.prefix+"_own",f.f.hospital);
   store.insert("INSERT INTO lin_lb_infohospital(HospitalName,HospitalName_en,PayType,amount,IsActive,CityId) VALUES(?,?,1,0,1,1)",f.f.prefix+"_foreign",f.f.prefix);
   var result=f.service.hospitals(f.f.prefix,0,20);assertEquals(1,((Number)result.get("total")).intValue());var item=(Map<?,?>)((java.util.List<?>)result.get("items")).get(0);assertEquals(f.f.hospital,((Number)item.get("id")).longValue());assertEquals(f.f.prefix+"_own",item.get("name"));
-  assertEquals(400,assertThrows(BusinessException.class,()->f.service.hospitals("",-1,20)).getCode());f.gate("{\"enabled\":true,\"draftEnabled\":false}");assertEquals(409,assertThrows(BusinessException.class,()->f.service.hospitals("",0,20)).getCode());
+  assertEquals(400,assertThrows(BusinessException.class,()->f.service.hospitals("",-1,20)).getCode());f.gate("{\"enabled\":false,\"draftEnabled\":false}");assertEquals(409,assertThrows(BusinessException.class,()->f.service.hospitals("",0,20)).getCode());
  }
+
+ @Test void hospitalPickerWorksWithHistoryOnlyWhileDraftsRemainClosed(){f.gate("{\"enabled\":true,\"draftEnabled\":false}");assertEquals(1,((Number)f.service.hospitals("",0,20).get("total")).intValue());assertEquals(false,f.service.capabilities().get("legacyHospitalDrafts"));assertEquals(409,assertThrows(BusinessException.class,()->service.list((int)f.f.hospital,0,20)).getCode());}
 
 }

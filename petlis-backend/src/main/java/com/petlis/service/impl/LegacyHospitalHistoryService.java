@@ -41,7 +41,7 @@ public class LegacyHospitalHistoryService {
     @Transactional(readOnly=true)
     public Map<String,Object> hospitals(String query,int page,int size){
         if(!hospitalRole())throw new BusinessException(403,"需要医院业务权限");
-        if(!policy(false).get("legacyHospitalDrafts"))throw new BusinessException(409,"原医院草稿查询尚未开启");
+        if(!policy(false).get("legacyHospitalHistory"))throw new BusinessException(409,"医院历史查询尚未开启");
         String q=query==null?"":query.trim();
         if(page<0||size<1||size>100||(long)page*size>Integer.MAX_VALUE||q.length()>100)throw new BusinessException(400,"医院查询参数无效");
         var actor=access.current();var ids=new TreeSet<>(actor.hospitalIds());ids.removeIf(id->id<=0);var args=new ArrayList<Object>();
@@ -111,6 +111,7 @@ public class LegacyHospitalHistoryService {
             var items = byOrder.getOrDefault(((Number)row.get("orderId")).longValue(), List.of());
             for (var item : items) {
                 int sent = item.get("mailFlag") instanceof Number n ? n.intValue() : 0;
+                item.put("canViewLegacyReport",status>=2&&sent==1);
                 item.put("reportState", status == 2 || status == 3 ? sent == 0 ? "等待报告" : "已出报告" : "");
                 item.remove("mailFlag"); item.remove("orderId");
             }

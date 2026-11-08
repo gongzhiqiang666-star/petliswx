@@ -65,4 +65,9 @@ class LegacyHospitalHistoryLocalDatabaseTest {
   String token=sessions.issue(f.actor).getToken();
   mvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/api/orders/hospital-history").contextPath("/api").param("hospitalId",String.valueOf(f.hospital)).header("Authorization","Bearer "+token)).andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isOk()).andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath("$.code").value(200));
  }
+ @Test void originalReportLinkEligibilitySurvivesCancellationEvenWhenReportStateLabelIsBlank(){
+  f.detail(f.test,"8.25",1,0);store.jdbc().update("UPDATE lin_lb_diagnosisdetail SET IsSendMail=1 WHERE ListDiagnosisProjectId=?",f.order);store.jdbc().update("UPDATE lin_lb_listdiagnosisproject SET SampleStatus=4 WHERE ListDiagnosisProjectId=?",f.order);
+  var row=rows(service.list(query(f.prefix,null,null,null,0,20))).get(0);var detail=(Map<?,?>)((List<?>)row.get("items")).get(0);assertEquals("",detail.get("reportState"));assertEquals(true,detail.get("canViewLegacyReport"));
+ }
+
 }
