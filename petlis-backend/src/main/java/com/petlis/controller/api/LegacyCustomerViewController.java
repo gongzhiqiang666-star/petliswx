@@ -5,4 +5,5 @@ public class LegacyCustomerViewController {
  private final LegacyCustomerViewService service;
  @GetMapping("/capabilities") public Result<Map<String,Boolean>> capabilities(){return Result.success(service.capabilities());}
  @PostMapping("/preview") public Result<Map<String,Object>> preview(@RequestBody LegacyCustomerViewService.Command command){return Result.success(service.preview(command));}
+ @PostMapping("/month-preview") public Result<Map<String,Object>> month(@RequestBody LegacyCustomerViewService.MonthCommand command){return Result.success(service.month(command));}
 }
